@@ -1,0 +1,16 @@
+{
+  "name": "padel-arena-3d",
+  "version": "0.43.0",
+  "private": true,
+  "type": "module",
+  "description": "Simulation de padel 3D jouable dans le navigateur (Three.js, Gamepad API)",
+  "scripts": {
+    "start": "npx --yes serve -l 5173 .",
+    "test": "node tests/physics.test.mjs && node tests/career.test.mjs",
+    "build": "node scripts/build-single.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "three": "0.170.0"
+  }
+}

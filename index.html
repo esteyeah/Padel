@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Padel Arena 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- HUD en jeu -->
+  <div id="hud" class="hidden">
+    <div id="scoreboard"></div>
+    <div id="drill" class="hidden"></div>
+    <div id="mission" class="hidden"></div>
+    <div id="banner"></div>
+    <div id="shotinfo"></div>
+    <div id="hint"></div>
+    <div id="power"><div class="label"></div><div class="bar"><div class="fill"></div></div></div>
+    <div id="energy" title="Énergie"><span>ÉNERGIE</span><div class="bar"><div class="fill"></div></div></div>
+    <div id="controls"></div>
+  </div>
+  <div id="pad-status"></div>
+
+  <!-- Menus -->
+  <div id="menu" class="overlay">
+    <div class="panel">
+      <div class="brand">
+        <div class="logo">PADEL<span>ARENA</span></div>
+        <div class="tag">Simulation 3D · version 0.43</div>
+      </div>
+      <div class="m-body"></div>
+    </div>
+  </div>
+
+  <!-- Mode carrière -->
+  <div id="career" class="overlay hidden">
+    <div class="panel wide"><div class="c-body"></div></div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pause" class="overlay hidden">
+    <div class="panel small">
+      <div class="title">PAUSE</div>
+      <div class="actions"><span><kbd data-menu="A">A</kbd> Reprendre</span><span class="quit-item hidden"><kbd class="quit-key">X</kbd> Quitter sans abandonner</span><span><kbd data-menu="B">B</kbd> <span class="back-label">Menu</span></span></div>
+    </div>
+  </div>
+
+  <!-- Fin de match -->
+  <div id="end" class="overlay hidden">
+    <div class="panel small">
+      <div class="title"></div>
+      <div class="detail"></div>
+      <div class="actions"><span><kbd data-menu="A">A</kbd> <span class="confirm-label">Rejouer</span></span><span class="back-item"><kbd data-menu="B">B</kbd> Menu</span></div>
+    </div>
+  </div>
+
+  <div id="fatal" class="overlay hidden">
+    <div class="panel small"><div class="title">WebGL indisponible</div><div class="detail">Ce navigateur ne peut pas afficher la 3D. Essayez Chrome, Edge ou Firefox récents.</div></div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
