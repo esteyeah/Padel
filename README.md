@@ -483,3 +483,7 @@ padel-sim/
 ### 0.48
 - Ceyreste : murets en trop retirés entre le terrain gris et le court central ; bancs, mûrier et poubelles devant la porte du court central, au niveau du filet (comme sur la photo) ; tableau de score lisible du bon côté.
 - Nouveau lieu « Tennis de La Ciotat » (d'après les photos) : 4 courts de padel couleur terre battue, structures noires, tonnelles bleu marine, tribune en gradins et escalier jusqu'au club-house (terrasse sous auvent), courts de tennis autour, parking avec voitures, pins, palmiers, lauriers-roses et agaves. Tournoi régional « Open de La Ciotat », lieu achetable (450 points) en exhibition.
+
+### 0.49
+- Tennis de La Ciotat : le court de tennis vert du bout passe de l'autre côté ; à sa place, le parking surélevé sur une restanque de terre (pierres sèches, buissons) ; beaucoup plus de verdure autour du club-house, surtout sur sa droite.
+- Concerts : 2 % de chances d'un orchestre et 8 % d'un DJ (Ceyreste) en temps normal ; bien plus dans les gros tournois (selon le niveau du tournoi, et encore plus en demi-finale et en finale).

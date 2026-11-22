@@ -651,6 +651,8 @@ export class Career {
       venue: t.venue || 'club', court: (t.court ??= Math.floor(this.rand()() * ({ ceyreste: 5, club: 3, hangar: 4, laciotat: 4 }[t.venue] || 1))), bag: bagById(look.bag), mission: liveMission(t.mission),
       ambiance: t.venue === 'beach' ? ((t.week % 3) ? 'day' : 'sunset') : t.venue === 'pro' || t.venue === 'national' ? 'night' : ['day', 'sunset', 'night'][(t.week + tierIndex(t.tier)) % 3],
       title: nm.round.toUpperCase(), subtitle: t.name,
+      // réputation du tournoi (0..1) : plus elle est haute, plus il y a de chances d'avoir un concert
+      reputation: Math.min(1, ({ amateur: 0.15, regional: 0.4, national: 0.75, pro: 1 }[t.tier] || 0.2) + (nm.round === 'Finale' ? 0.25 : /Demi/.test(nm.round) ? 0.1 : 0)),
       replays: t.tier === 'national' || t.tier === 'pro',
       chatter: Object.fromEntries(nm.opponents.players.filter((p) => CHATTER[p.id]).map((p) => [p.short, CHATTER[p.id]])),
       endCutscene: rafEndCutscene(nm.opponents.players, me.name),

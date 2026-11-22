@@ -954,20 +954,43 @@ function decorLaCiotat(out, renderer) {
   terr.add(mesh(tables, new THREE.MeshStandardMaterial({ color: 0x3a2d22, roughness: 0.6 }), { shadow: true }));
   sign(out, renderer, 'TENNIS CLUB · PADEL', [['#111214', '#26282c'], '#ffffff', '#ff8a50'], 6, plat0 + 8.45, UP + 2.6, -2, Math.PI / 2);
 
-  // --- parking en haut, derrière le club-house
-  const park = { ...out, group: new THREE.Group() }; park.group.position.y = UP; out.group.add(park.group);
-  flat(park, 16, 30, plat0 + 30, 10, 0x55585c, 0.02);
-  const pl = [];
-  for (let i = 0; i <= 10; i++) pl.push(at(new THREE.PlaneGeometry(4.6, 0.1), plat0 + 25.3, 0.03, -4 + i * 2.6, -Math.PI / 2), at(new THREE.PlaneGeometry(4.6, 0.1), plat0 + 34.7, 0.03, -4 + i * 2.6, -Math.PI / 2));
-  park.group.add(mesh(pl, new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.8 })));
-  const carCols = [0x1c2a4a, 0xe8e8e8, 0x8c1c1c, 0x2b2b2b, 0x9aa0a6, 0x2e5d8a, 0xd8c8a0, 0x101010];
-  for (let i = 0; i < 9; i++) if (Math.random() < 0.8) car(park, plat0 + (i % 2 ? 34.7 : 25.3), -2.7 + Math.floor(i / 2) * 5.2 + (i % 2) * 2.6, Math.PI / 2 + (i % 2 ? Math.PI : 0), carCols[i % carCols.length]);
+  // --- verdure autour du club-house, surtout sur sa droite (vu depuis les courts)
+  {
+    const hi = { ...out, group: new THREE.Group() }; hi.group.position.y = UP; out.group.add(hi.group);
+    treeInstances(hi, 'pine', [[plat0 + 6, 13, 1.0], [plat0 + 12, 16, 1.15], [plat0 + 19, 12, 0.95], [plat0 + 24, 4, 1.1], [plat0 + 22, -14, 1.0], [plat0 + 8, -17, 0.9]]);
+    treeInstances(hi, 'plane', [[plat0 + 15, 9, 0.8]]);
+    treeInstances(hi, 'cypress', [[plat0 + 2.2, 9.5, 0.9], [plat0 + 2.2, -13, 0.9]]);
+    bushGroup(hi, [[plat0 + 3, 12, 1.2], [plat0 + 5, 16, 1.4], [plat0 + 9, 11.5, 1.1], [plat0 + 13, 13, 1.3], [plat0 + 17, 17, 1.2], [plat0 + 20, 8, 1.0], [plat0 + 4, 20, 1.3], [plat0 + 10, 21, 1.1], [plat0 + 3, -12, 1.0], [plat0 + 6, -15, 1.2]], 0x3f6b30);
+    bushGroup(hi, [[plat0 + 7, 14, 0.8], [plat0 + 15, 19, 0.9], [plat0 + 11, 18, 0.7], [plat0 + 2.5, 15, 0.7]], 0x7f9a45);
+  }
+
+  // --- parking surélevé au bout des courts, sur une restanque de terre plantée de buissons
+  {
+    const PH = 1.6, px0 = -16, px1 = 12, pz0 = 37, pz1 = 62;
+    const earth = new THREE.MeshStandardMaterial({ color: 0xb59a74, roughness: 1 });
+    out.group.add(mesh([at(new THREE.BoxGeometry(px1 - px0, PH, pz1 - pz0), (px0 + px1) / 2, PH / 2, (pz0 + pz1) / 2)], earth, { shadow: true }));
+    // talus en pente (restanque) côté courts
+    const slope = new THREE.Mesh(new THREE.PlaneGeometry(px1 - px0, Math.hypot(2.2, PH)), new THREE.MeshStandardMaterial({ map: TX.groundTex(renderer, 'dirt', 8, 1), color: 0xd8c6a6, roughness: 1 }));
+    slope.rotation.x = -Math.PI / 2 + Math.atan2(PH, 2.2); slope.position.set((px0 + px1) / 2, PH / 2, pz0 - 1.1); slope.receiveShadow = true; out.group.add(slope);
+    // pierres sèches au pied de la restanque
+    limestone(out, Array.from({ length: 16 }, (_, i) => [px0 + 0.8 + i * 1.75, pz0 - 2.1, 0.32 + (i % 3) * 0.08]));
+    bushGroup(out, Array.from({ length: 12 }, (_, i) => [px0 + 1.2 + i * 2.3, pz0 - 0.9 + (i % 2) * 0.4, 0.55 + (i % 3) * 0.15]), 0x4c7a36);
+    bushGroup(out, Array.from({ length: 6 }, (_, i) => [px0 + 2.4 + i * 4.6, pz0 - 1.4, 0.45]), 0x8a9a5a);
+    const park = { ...out, group: new THREE.Group() }; park.group.position.y = PH; out.group.add(park.group);
+    flat(park, px1 - px0 - 1, pz1 - pz0 - 1, (px0 + px1) / 2, (pz0 + pz1) / 2, 0x5a5d61, 0.01);
+    const pl = [];
+    for (let i = 0; i <= 10; i++) pl.push(at(new THREE.PlaneGeometry(0.1, 4.6), px0 + 1.5 + i * 2.5, 0.02, pz0 + 3.3, -Math.PI / 2), at(new THREE.PlaneGeometry(0.1, 4.6), px0 + 1.5 + i * 2.5, 0.02, pz1 - 3.3, -Math.PI / 2));
+    park.group.add(mesh(pl, new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: 0.8 })));
+    const carCols = [0x1c2a4a, 0xe8e8e8, 0x8c1c1c, 0x2b2b2b, 0x9aa0a6, 0x2e5d8a, 0xd8c8a0, 0x101010];
+    for (let i = 0; i < 20; i++) if (Math.random() < 0.7) car(park, px0 + 2.75 + (i % 10) * 2.5, i < 10 ? pz0 + 3.3 : pz1 - 3.3, i < 10 ? 0 : Math.PI, carCols[i % carCols.length]);
+    treeInstances(park, 'pine', [[px0 + 1, pz0 + 12, 1.0], [px1 - 1, pz0 + 10, 1.1]]);
+  }
 
   // --- courts de tennis autour : terre battue et résine verte
   tennisCourt(out, renderer, -28, -14, 'clay');
   tennisCourt(out, renderer, -28, 24, 'hard', 0x2e7a55);
   tennisCourt(out, renderer, -4, -48, 'clay');
-  tennisCourt(out, renderer, -4, 48, 'hard', 0x2e7a55);
+  tennisCourt(out, renderer, -28, -52, 'hard', 0x2e7a55);
 
   // --- végétation : pins d'Alep, palmiers, lauriers-roses en fleurs, agaves
   treeInstances(out, 'pine', [[-16, -30, 1.1], [-17, 6, 1.0], [16, -30, 1.2], [-40, 4, 1.1], [14, 34, 1.0], [-16, 34], [26, 26, 1.1], [30, -26], [-42, -34, 1.2], [8, -64], [-20, 62, 1.1], [40, 40]]);

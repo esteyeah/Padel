@@ -78,9 +78,16 @@ export class Game {
     // ambiance sonore : musique de fête de village dans les petits clubs, foule dans les stades
     const big = ['national', 'pro', 'beach'].includes(arena.venue?.id);
     // l'orchestre vient à certaines parties seulement ; quand il est là, il joue tout du long
-    const party = o.party ?? (!o.attract && !big && Math.random() < 0.45);
-    // à Ceyreste, la fête se fait parfois avec une sono et les mêmes musiques que le hangar
-    const sono = o.sono ?? (party && arena.venue?.id === 'ceyreste' && Math.random() < 0.5);
+    // concerts : rares en temps normal (2 % orchestre, 8 % DJ à Ceyreste), bien plus fréquents
+    // dans les gros tournois (selon la réputation du tournoi, 0..1)
+    const rep = o.reputation ?? 0, cey = arena.venue?.id === 'ceyreste';
+    let party = o.party, sono = o.sono;
+    if (party === undefined) {
+      const r = Math.random(), pBand = 0.02 + 0.3 * rep, pDJ = cey ? 0.08 + 0.4 * rep : 0;
+      party = !o.attract && !big && r < pBand + pDJ;
+      sono = party && cey && r >= pBand;
+    }
+    sono = !!sono;
     this.partyFlags = { party, sono };
     arena.setParty(party || !!o.attract, sono);
     const indoor = !!arena.venue?.def.indoor;
