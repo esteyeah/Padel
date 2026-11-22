@@ -456,3 +456,6 @@ padel-sim/
 - Les terrains s'achètent en points boutique ; code secret (Paramètres > Code secret) pour tout débloquer.
 - Raquettes : 3 nouveaux modèles, 12 designs de tamis achetables à part, texture haute définition (logo, trous, vernis).
 - Hangar : vrai Pro Shop avec les raquettes de la boutique et leurs prix.
+
+### 0.45
+- Ceyreste plus fidèle aux photos du club : façade du club-house (porte vitrée blanche, store, panneau d'affichage, applique, poubelle verte, cyprès, laurier, olivier), terrain de pétanque à droite de la porte, jardin de rochers calcaires et gravier, large allée en béton, bancs blancs à lattes avec les affaires des joueurs, poubelle en bois et conteneur bleu, mûrier aux feuilles jaunies, tableau de score à volets sur le grillage, sol plus clair.

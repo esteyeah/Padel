@@ -404,7 +404,7 @@ function stand(out, { x, z, along = 'x', away = 1, length, rows, rowD = 0.85, ro
 function treeInstances(out, kind, spots) {
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
   let trunkGeo, F, trunkMat, coreColor, leafKind = 'leaf', tint = 0xffffff;
-  if (kind === 'plane') {        // platanes
+  if (kind === 'plane' || kind === 'autumn') {        // platanes (autumn : mûrier-platane aux feuilles jaunies)
     trunkGeo = mergeGeometries([
       new THREE.CylinderGeometry(0.22, 0.34, 4.2, 12).translate(0, 2.1, 0),
       new THREE.CylinderGeometry(0.1, 0.16, 2.4, 8).rotateZ(0.6).translate(0.7, 4.4, 0),
@@ -413,6 +413,7 @@ function treeInstances(out, kind, spots) {
     F = foliage([[0, 5.6, 0, 2.2, 0.85], [1.5, 5.2, 0.5, 1.6], [-1.2, 5.4, -0.6, 1.7], [0.2, 6.6, -0.8, 1.5], [-0.4, 6.3, 1.2, 1.4]], { density: 22, card: 1.1 });
     { const bk = TX.photoTex('bark_brown_02', 1, 3); trunkMat = new THREE.MeshStandardMaterial({ map: bk, normalMap: bk.userData.normal, color: 0xe8e0d0, roughness: 0.9 }); }
     coreColor = 0x34521f;
+    if (kind === 'autumn') { coreColor = 0x6f6a26; tint = 0xf0d870; }
   } else if (kind === 'pine') { // pins d'Alep : tronc penché, couronne en parasol
     trunkGeo = mergeGeometries([0, 1, 2, 3].map((k) => new THREE.CylinderGeometry(0.16 - k * 0.025, 0.2 - k * 0.025, 2.2, 10).rotateZ(-0.12 - k * 0.05).translate(0.18 + k * 0.32, 1.1 + k * 2.05, 0).toNonIndexed()).concat(
       [new THREE.CylinderGeometry(0.05, 0.08, 1.8, 6).rotateZ(1.0).translate(0.4, 8.4, 0.3).toNonIndexed(), new THREE.CylinderGeometry(0.05, 0.08, 1.8, 6).rotateZ(-1.0).rotateY(2).translate(1.6, 8.5, -0.2).toNonIndexed()]));
@@ -421,7 +422,7 @@ function treeInstances(out, kind, spots) {
     coreColor = 0x22371a; leafKind = 'needle';
   } else {                       // cyprès
     trunkGeo = new THREE.CylinderGeometry(0.12, 0.15, 1, 8).translate(0, 0.5, 0);
-    F = foliage([[0, 2.2, 0, 0.9, 1.6], [0, 4.0, 0, 0.85, 1.7], [0, 5.7, 0, 0.6, 1.8], [0, 6.9, 0, 0.35, 1.6]], { density: 40, card: 0.6 });
+    F = foliage([[0, 1.5, 0, 0.62, 1.5], [0, 2.4, 0, 0.7, 1.6], [0, 3.3, 0, 0.68, 1.6], [0, 4.2, 0, 0.6, 1.7], [0, 5.1, 0, 0.5, 1.8], [0, 5.9, 0, 0.36, 1.8], [0, 6.6, 0, 0.2, 1.8]], { density: 46, card: 0.5 });
     trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a432f, roughness: 0.95 });
     coreColor = 0x1c321a; leafKind = 'needle'; tint = 0xcfd8c8;
   }
@@ -544,7 +545,7 @@ function tileTex() {
   return t;
 }
 
-function building(out, { x, z, w, d, h, y = 0, wall = 0xd9d4cb, roof = 0x3a3d44, tiles = false, rotY = 0, wood = false }) {
+function building(out, { x, z, w, d, h, y = 0, wall = 0xd9d4cb, roof = 0x3a3d44, tiles = false, rotY = 0, wood = false, keepWin = null }) {
   const g = new THREE.Group();
   const wallTex = wood ? woodTex(Math.max(w, d)) : TX.photoTex('white_plaster_rough_01', w / 3, h / 3);
   const b = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, 0.08), new THREE.MeshStandardMaterial({ color: wall, roughness: 0.92, map: wallTex, normalMap: wood ? null : wallTex.userData.normal }));
@@ -579,6 +580,7 @@ function building(out, { x, z, w, d, h, y = 0, wall = 0xd9d4cb, roof = 0x3a3d44,
   const frames = [], sills = [];
   const nWin = Math.floor(w / 2.2);
   for (const side of [1, -1]) for (let i = 0; i < nWin; i++) {
+    if (keepWin && !keepWin(side, i)) continue;
     const wx = -w / 2 + 1.3 + i * 2.2, wy = Math.min(h * 0.55, h - 1.1), wz = side * (d / 2);
     const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 1.15), win);
     glass.position.set(wx, wy, wz + side * 0.02);
@@ -695,6 +697,135 @@ function decorMunicipal(out, renderer) {
  *  - arbres et buissons au fond ; tout le reste est en terre ; collines boisées à l'horizon.
  *  Repère : 1 m ≈ 11 px en largeur et 9,5 px en hauteur sur le plan, origine au court du milieu.
  */
+/** Rochers calcaires blancs (jardin de rochers de Ceyreste) : blocs anguleux, teinte claire. */
+function limestone(out, spots, y = 0) {
+  const geos = [];
+  let seed = 11;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (const [x, z, s = 0.5] of spots) {
+    const g = new THREE.IcosahedronGeometry(1, 2).toNonIndexed();
+    const pp = g.attributes.position;
+    const offs = new Map();
+    for (let i = 0; i < pp.count; i++) {
+      const k = `${pp.getX(i).toFixed(3)},${pp.getY(i).toFixed(3)},${pp.getZ(i).toFixed(3)}`;
+      if (!offs.has(k)) offs.set(k, 0.75 + rnd() * 0.5);
+      const f = offs.get(k);
+      pp.setXYZ(i, pp.getX(i) * f * 1.25, Math.max(-0.35, pp.getY(i) * f * 0.7), pp.getZ(i) * f);
+    }
+    g.computeVertexNormals();
+    g.scale(s, s, s); g.rotateY(rnd() * Math.PI * 2); g.translate(x, y + s * 0.2, z);
+    geos.push(g);
+  }
+  const m = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshStandardMaterial({ color: 0xa9a291, roughness: 0.92 }));
+  m.castShadow = m.receiveShadow = true;
+  out.group.add(m);
+}
+
+/**
+ * Ceyreste, d'après les photos du club : façade du club-house (porte vitrée blanche,
+ * store, panneau d'affichage, cyprès, poubelle verte), terrain de pétanque à droite de
+ * la porte, jardin de rochers calcaires blancs et gravier, large allée en béton vers le
+ * premier court bleu, bancs blancs à lattes avec les affaires des joueurs, poubelle en
+ * bois, mûrier aux feuilles jaunies, tableau de score à volets sur le grillage.
+ */
+function ceyresteDetails(out, renderer, DEPTH) {
+  const low = new THREE.Group(); low.position.y = -DEPTH; out.group.add(low);
+  const L = { ...out, group: low };
+  const FX = -39.95;                                   // façade du club-house (côté terrasse)
+  const white = new THREE.MeshStandardMaterial({ color: 0xf4f4f2, roughness: 0.45 });
+  const glass = new THREE.MeshStandardMaterial({ color: 0x9fb4bd, roughness: 0.08, metalness: 0.4 });
+  // porte vitrée double, blanche
+  low.add(mesh([at(new THREE.BoxGeometry(0.12, 2.3, 1.7), FX, 1.15, 9)], white, { shadow: true }));
+  low.add(mesh([at(new THREE.PlaneGeometry(0.66, 1.9), FX + 0.07, 1.15, 8.6, 0, Math.PI / 2), at(new THREE.PlaneGeometry(0.66, 1.9), FX + 0.07, 1.15, 9.4, 0, Math.PI / 2)], glass));
+  low.add(mesh([at(new THREE.BoxGeometry(0.05, 0.03, 0.22), FX + 0.12, 1.1, 8.9), at(new THREE.BoxGeometry(0.05, 0.03, 0.22), FX + 0.12, 1.1, 9.1)], new THREE.MeshStandardMaterial({ color: 0xbfc4ca, metalness: 0.9, roughness: 0.3 })));
+  // applique au-dessus de la porte, petites fenêtres
+  low.add(mesh([at(new THREE.BoxGeometry(0.12, 0.14, 0.3), FX + 0.07, 2.65, 9)], new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0xfff2d0, emissiveIntensity: 0.3 })));
+  for (const z of [2.2, 3.1]) low.add(mesh([at(new THREE.BoxGeometry(0.08, 0.5, 0.5), FX + 0.03, 2.1, z)], white), mesh([at(new THREE.PlaneGeometry(0.4, 0.4), FX + 0.08, 2.1, z, 0, Math.PI / 2)], glass));
+  // store banne blanc replié (au-dessus des baies de gauche)
+  low.add(mesh([at(new THREE.BoxGeometry(0.35, 0.28, 5.2), FX + 0.2, 2.75, 13)], white, { shadow: true }));
+  low.add(mesh([at(new THREE.BoxGeometry(0.06, 0.06, 5.0), FX + 0.4, 2.62, 13)], new THREE.MeshStandardMaterial({ color: 0x8a8f96, metalness: 0.7 })));
+  // panneau d'affichage du club (affiches)
+  const board = canvasTex(256, 320, (g) => {
+    g.fillStyle = '#e9e9e6'; g.fillRect(0, 0, 256, 320);
+    const cols = ['#f2c94c', '#ffffff', '#cfe3ff', '#ffd6d6', '#ffffff', '#e8f5d0'];
+    for (let i = 0; i < 6; i++) { const x = 14 + (i % 2) * 120, y = 14 + Math.floor(i / 2) * 100; g.fillStyle = cols[i]; g.fillRect(x, y, 106, 88); g.fillStyle = '#333'; g.font = 'bold 13px sans-serif'; g.fillText(['TOURNOI', 'PLANNING', 'ÉCOLE', 'RÉSERVER', 'RÈGLEMENT', 'APÉRO'][i], x + 8, y + 22); g.fillStyle = '#888'; for (let k = 0; k < 4; k++) g.fillRect(x + 8, y + 34 + k * 12, 70 + (k % 2) * 18, 4); }
+  });
+  low.add(mesh([at(new THREE.BoxGeometry(0.06, 1.0, 0.8), FX + 0.03, 1.75, 10.9)], new THREE.MeshStandardMaterial({ color: 0xd7d7d4, metalness: 0.5, roughness: 0.4 })));
+  low.add(mesh([at(new THREE.PlaneGeometry(0.72, 0.92), FX + 0.07, 1.75, 10.9, 0, Math.PI / 2)], new THREE.MeshStandardMaterial({ map: board, roughness: 0.3 })));
+  // tablettes en bois le long de la façade (accoudoirs)
+  low.add(mesh([at(new THREE.BoxGeometry(0.22, 0.05, 6), FX + 0.13, 1.15, 13), at(new THREE.BoxGeometry(0.22, 0.05, 3.5), FX + 0.13, 1.25, 5)], new THREE.MeshStandardMaterial({ color: 0x6b4426, roughness: 0.8 })));
+  // poubelle verte à roulettes, à droite de la porte
+  const green = new THREE.MeshStandardMaterial({ color: 0x1f6b3a, roughness: 0.55 });
+  low.add(mesh([at(new THREE.BoxGeometry(0.75, 1.0, 0.65), FX + 0.6, 0.5, 7.2), at(new THREE.BoxGeometry(0.8, 0.07, 0.7), FX + 0.6, 1.04, 7.2)], green, { shadow: true }));
+  // cyprès contre la façade, laurier-rose et olivier en boule
+  treeInstances(L, 'cypress', [[FX + 1.2, 15.0, 0.95], [FX + 1.3, 6.2, 1.05], [FX + 1.1, -5.6, 0.9]]);
+  bushGroup(L, [[FX + 1.6, 16.6, 1.3], [FX + 1.3, 11.6, 0.6], [FX + 1.5, -4.2, 1.0]], 0x587a3c);
+  bushGroup(L, [[FX + 2.4, 18.6, 1.7]], 0x7d9a6a);
+
+  // --- terrain de pétanque : sable stabilisé, bordures en bois, boules et cochonnet
+  const PX = -36, PZ = 1.2, PW = 4, PL = 10;
+  flat(L, PW, PL, PX, PZ, 0xfff1d2, 0.02, TX.groundTex(renderer, 'sand', 2, 6));
+  const bord = new THREE.MeshStandardMaterial({ color: 0x7a5434, roughness: 0.9 });
+  low.add(mesh([
+    at(new THREE.BoxGeometry(0.12, 0.16, PL + 0.24), PX - PW / 2 - 0.06, 0.08, PZ), at(new THREE.BoxGeometry(0.12, 0.16, PL + 0.24), PX + PW / 2 + 0.06, 0.08, PZ),
+    at(new THREE.BoxGeometry(PW, 0.16, 0.12), PX, 0.08, PZ - PL / 2 - 0.06), at(new THREE.BoxGeometry(PW, 0.16, 0.12), PX, 0.08, PZ + PL / 2 + 0.06),
+  ], bord, { shadow: true }));
+  const boules = [];
+  for (const [bx, bz] of [[0.3, -3.1], [-0.4, -2.6], [0.9, -2.2], [-0.2, -3.6], [0.6, 3.5], [-0.7, 4.2]]) boules.push(at(new THREE.SphereGeometry(0.038, 12, 8), PX + bx, 0.06, PZ + bz));
+  low.add(mesh(boules, new THREE.MeshStandardMaterial({ color: 0xb8bcc2, metalness: 0.95, roughness: 0.25 })));
+  low.add(mesh([at(new THREE.SphereGeometry(0.015, 8, 6), PX + 0.1, 0.04, PZ - 2.9)], new THREE.MeshStandardMaterial({ color: 0xe0b020, roughness: 0.5 })));
+  low.add(mesh([at(new THREE.TorusGeometry(0.25, 0.012, 6, 24), PX - 1.2, 0.03, PZ + 5.2, Math.PI / 2)], new THREE.MeshStandardMaterial({ color: 0xff3d00, roughness: 0.6 })));
+  // banc des boulistes
+  const bench = (g, x, z, ry) => {
+    const b = new THREE.Group(); b.position.set(x, 0, z); b.rotation.y = ry; g.add(b);
+    const slats = [];
+    for (let i = 0; i < 6; i++) slats.push(at(new THREE.BoxGeometry(1.9, 0.035, 0.07), 0, 0.45, -0.2 + i * 0.08));
+    for (let i = 0; i < 5; i++) slats.push(at(new THREE.BoxGeometry(1.9, 0.07, 0.035), 0, 0.58 + i * 0.09, -0.27, -0.18));
+    for (const sx of [-0.85, 0.85]) slats.push(at(new THREE.BoxGeometry(0.05, 0.45, 0.05), sx, 0.22, 0.15), at(new THREE.BoxGeometry(0.05, 0.9, 0.05), sx, 0.45, -0.25, -0.18));
+    b.add(mesh(slats, white, { shadow: true }));
+    return b;
+  };
+  bench(low, PX - 2.8, PZ, Math.PI / 2);
+
+  // --- jardin de rochers calcaires blancs et gravier, sur le talus devant la terrasse
+  flat(out, 6, 14, -24.4, 12, 0xd2c6b0, 0.006, TX.groundTex(renderer, 'dirt', 3, 7));
+  limestone(out, [[-26.6, 7.5, 0.55], [-26.2, 9.0, 0.7], [-25.8, 10.6, 0.5], [-26.7, 12.1, 0.8], [-25.9, 13.8, 0.6], [-26.4, 15.4, 0.75], [-25.2, 16.6, 0.45], [-24.8, 8.4, 0.4], [-25.0, 14.6, 0.5], [-24.2, 11.6, 0.35],
+    [-26.9, 6.2, 0.45], [-25.4, 9.8, 0.3], [-26.0, 17.4, 0.5], [-24.6, 12.9, 0.28], [-25.6, 7.0, 0.32], [-27.0, 10.0, 0.4], [-26.9, 14.3, 0.35]]);
+  bushGroup(out, [[-24.6, 10.0, 0.6], [-24.4, 15.8, 0.5]], 0x6f8a3c);
+
+  // --- large allée en béton entre le club-house et le premier court bleu
+  flat(out, 5.5, 34, -21.3, 2, 0xc8c3b8, 0.004, TX.groundTex(renderer, 'concrete', 3, 18));
+
+  // --- bancs blancs avec les affaires des joueurs, poubelle en bois, mûrier jauni
+  const bA = bench(out.group, -23.6, 12.5, Math.PI / 2 + 0.25);
+  const props = new THREE.Group(); bA.add(props);
+  props.add(mesh([at(new THREE.CylinderGeometry(0.035, 0.035, 0.24, 10), 0.4, 0.6, 0, 0, 0, Math.PI / 2 - 0.2)], new THREE.MeshStandardMaterial({ color: 0xe8f2ff, roughness: 0.1, transparent: true, opacity: 0.6 })));
+  props.add(mesh([at(new THREE.CylinderGeometry(0.045, 0.045, 0.26, 12), -0.1, 0.52, 0.05, 0, 0, Math.PI / 2)], new THREE.MeshStandardMaterial({ color: 0x1e6fd9, roughness: 0.4 })));
+  props.add(mesh([at(new THREE.BoxGeometry(0.5, 0.18, 0.32), -0.55, 0.56, 0)], new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.9 }), { shadow: true }));
+  props.add(mesh([at(new THREE.BoxGeometry(0.08, 0.015, 0.16), 0.75, 0.48, 0.05)], new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.2 })));
+  const rk = makeRacketMesh(RACKETS.find((r) => r.id === 'carbon') || RACKETS[0], designById('carbon3k'));
+  rk.rotation.set(-Math.PI / 2, 0, 0.4); rk.position.set(0.25, 0.49, 0.03); props.add(rk);
+  bench(out.group, -23.4, 15.2, Math.PI / 2 + 0.1);
+  const bin = new THREE.Group(); bin.position.set(-19.2, 0, 10.5); out.group.add(bin);
+  const staves = [];
+  for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; staves.push(at(new THREE.BoxGeometry(0.1, 0.85, 0.03), Math.cos(a) * 0.28, 0.43, Math.sin(a) * 0.28, 0, -a + Math.PI / 2)); }
+  bin.add(mesh(staves, new THREE.MeshStandardMaterial({ color: 0x8a4f2c, roughness: 0.85 }), { shadow: true }));
+  bin.add(mesh([at(new THREE.TorusGeometry(0.29, 0.015, 6, 20), 0, 0.82, 0, Math.PI / 2), at(new THREE.TorusGeometry(0.29, 0.015, 6, 20), 0, 0.1, 0, Math.PI / 2)], new THREE.MeshStandardMaterial({ color: 0x555a60, metalness: 0.7 })));
+  out.group.add(mesh([at(new THREE.BoxGeometry(0.7, 1.05, 0.7), -19.3, 0.53, 12.0)], new THREE.MeshStandardMaterial({ color: 0x1e5aa8, roughness: 0.55 }), { shadow: true }));
+  treeInstances(out, 'autumn', [[-24.9, 13.6, 0.75]]);
+
+  // --- tableau de score à volets accroché au grillage du court bleu le plus proche
+  const sb = canvasTex(256, 192, (g) => {
+    g.fillStyle = '#1b2f5a'; g.beginPath(); g.roundRect(0, 0, 256, 192, 26); g.fill();
+    g.fillStyle = '#ffffff'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.fillText('SCORE', 128, 34);
+    for (const [y, lab] of [[48, 'HOME'], [118, 'GUEST']]) {
+      g.fillStyle = '#ffffff'; g.fillRect(56, y, 144, 18); g.fillStyle = '#1b2f5a'; g.font = 'bold 15px sans-serif'; g.fillText(lab, 128, y + 15);
+      for (let k = 0; k < 3; k++) { g.fillStyle = '#ffffff'; g.beginPath(); g.arc(70 + k * 58, y + 44, 21, 0, Math.PI * 2); g.fill(); g.fillStyle = '#111'; g.font = 'bold 26px sans-serif'; g.fillText(String(Math.floor(Math.random() * 7)), 70 + k * 58, y + 53); }
+    }
+  });
+  out.group.add(mesh([at(new THREE.PlaneGeometry(1.1, 0.82), -18.72, 1.55, -1.2, 0, -Math.PI / 2)], new THREE.MeshStandardMaterial({ map: sb, roughness: 0.5, side: THREE.DoubleSide })));
+}
+
 function decorCeyreste(out, renderer) {
   const DEPTH = 0.9;                                  // la terrasse est en contrebas de la terre
   const deck = { x0: -60, x1: -27.5, z0: -16, z1: 27.5 };
@@ -711,7 +842,7 @@ function decorCeyreste(out, renderer) {
   groundGeo.rotateX(Math.PI / 2);                     // plan XY -> XZ (z du plan = z du monde)
   const uv = groundGeo.attributes.uv, gp = groundGeo.attributes.position;
   for (let i = 0; i < uv.count; i++) uv.setXY(i, gp.getX(i) / 300 + 0.5, gp.getZ(i) / 300 + 0.5);
-  const groundMesh = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ map: dirt, normalMap: dirt.userData.normal, color: 0xe8d6c0, roughness: 1, side: THREE.DoubleSide }));
+  const groundMesh = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({ map: dirt, normalMap: dirt.userData.normal, color: 0xfff4e2, roughness: 1, side: THREE.DoubleSide }));
   groundMesh.receiveShadow = true;
   out.group.add(groundMesh);
 
@@ -736,12 +867,14 @@ function decorCeyreste(out, renderer) {
   out.group.add(mesh(rail, new THREE.MeshStandardMaterial({ color: 0x6b4426, roughness: 0.9 })));
 
   // --- club-house en contrebas : murs ocre clair, toit de tuiles
-  building(out, { x: -46, y: -DEPTH, z: 4.5, w: 22, d: 12, h: 3.6, wall: 0xe4cfae, roof: 0xb5603f, tiles: true, rotY: Math.PI / 2 });
+  // façade côté terrasse presque aveugle (porte, store, panneau) comme sur les photos
+  const ch = building(out, { x: -46, y: -DEPTH, z: 4.5, w: 22, d: 12, h: 3.6, wall: 0xe0bf86, roof: 0xb5603f, tiles: true, rotY: Math.PI / 2, keepWin: (side, i) => side < 0 || i >= 7 });
+  ch.children[0].material.color.set(0xdcb57c);
   sign(out, renderer, 'TENNIS PADEL CEYRESTE', [['#123f86', '#1f5fbf'], '#ffffff', '#f2c94c'], 7.5, -39.85, 2.4, 4.5, Math.PI / 2);
   // tables sur la terrasse
   const tops = [], legs = [];
   for (let i = 0; i < 4; i++) {
-    const x = -33.5, z = -10 + i * 6.5;
+    const x = i % 2 ? -30.5 : -33, z = 18 + i * 2.6;
     tops.push(at(new THREE.ConeGeometry(1.3, 0.45, 10), x, 2.4 - DEPTH, z));
     legs.push(at(new THREE.CylinderGeometry(0.03, 0.03, 2.3, 6), x, 1.15 - DEPTH, z), at(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 12), x, 0.74 - DEPTH, z));
     for (const dz of [-0.7, 0.7]) if (Math.random() < 0.6) out.crowdSeats.push({ x, y: 0.05 - DEPTH, z: z + dz, ry: Math.PI / 2 });
@@ -750,7 +883,7 @@ function decorCeyreste(out, renderer) {
   out.group.add(mesh(legs, new THREE.MeshStandardMaterial({ color: 0x2a2d33, metalness: 0.6, roughness: 0.4 })));
 
   // fête de village sur la terrasse en contrebas
-  fete(out, renderer, -37, -8, Math.PI / 2, -DEPTH, 'FÊTE DU PADEL · CEYRESTE');
+  fete(out, renderer, -37, -10.5, Math.PI / 2, -DEPTH, 'FÊTE DU PADEL · CEYRESTE');
 
   // --- route (en haut à gauche du plan)
   flat(out, 6.5, 60, -60, -44, 0x6e7074, 0.01);
@@ -778,6 +911,8 @@ function decorCeyreste(out, renderer) {
   out.group.add(mesh([at(new THREE.CylinderGeometry(0.35, 0.35, 1, 12), -10.3, 0.5, 14.8)], new THREE.MeshStandardMaterial({ color: 0x1f5fbf, roughness: 0.6 })));
   const stone = new THREE.MeshStandardMaterial({ color: 0xcbbd9f, roughness: 1, flatShading: true });
   out.group.add(mesh([at(new THREE.BoxGeometry(14, 0.9, 0.7), -20, 0.45, -18), at(new THREE.BoxGeometry(0.7, 0.9, 10), -27, 0.45, -13)], stone, { shadow: true }));
+
+  ceyresteDetails(out, renderer, DEPTH);
 
   // --- végétation : arbres et buissons du plan, pins sur les collines
   const bushMat = (c) => new THREE.MeshStandardMaterial({ color: c, roughness: 1, flatShading: true });
