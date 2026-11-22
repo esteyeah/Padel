@@ -86,12 +86,24 @@ export class HUD {
 
   /** Affiche les contrôles correspondant à la manette détectée. */
   updatePad() {
+    // H (clavier) ou clic du stick droit : masquer / afficher les aides en bas à gauche
+    if (this.input.pressed.HELP) {
+      this.helpHidden = !this.helpHidden;
+      try { localStorage.setItem('padel-arena.help', this.helpHidden ? 'off' : 'on'); } catch { /* ignoré */ }
+    }
+    if (this.helpHidden === undefined) { try { this.helpHidden = localStorage.getItem('padel-arena.help') === 'off'; } catch { this.helpHidden = false; } }
+    this.controlsEl.style.display = this.helpHidden ? 'none' : '';
+    this.padEl.style.display = this.helpHidden && this.input.padType !== 'keyboard' ? 'none' : '';
+    // la manette ne répond que si la page a le focus : on le signale
+    const focus = document.hasFocus();
+    if (focus !== this._focus) { this._focus = focus; this._ver = -1; }
     const type = this.input.padType;
     if (this.input.version === this._ver && type === this._padType) return;
     this._padType = type;
     this._ver = this.input.version;
     const names = { xbox: 'Manette Xbox', playstation: 'Manette PlayStation', generic: 'Manette', keyboard: 'Clavier' };
-    this.padEl.innerHTML = `<span class="dot ${type === 'keyboard' ? '' : 'on'}"></span>${names[type]}${type === 'keyboard' ? ' · branchez une manette et appuyez sur un bouton' : ' connectée'}`;
+    this.padEl.innerHTML = !focus ? '<span class="dot"></span>Cliquez dans le jeu pour réactiver la manette et le clavier'
+      : `<span class="dot ${type === 'keyboard' ? '' : 'on'}"></span>${names[type]}${type === 'keyboard' ? ' · branchez une manette et appuyez sur un bouton' : ' connectée'} · <kbd>${type === 'keyboard' ? 'H' : 'R3'}</kbd> masquer les aides`;
     const L = this.input.labels();
     const k = (t) => `<kbd>${t}</kbd>`;
     this.controlsEl.innerHTML = `

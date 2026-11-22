@@ -9,6 +9,7 @@
 //  actions sont déclarées par data-act / data-arg et traitées dans `act()`.
 // ============================================================================
 import { RACKET_DESIGNS } from '../entities/Racket.js';
+import { KIT_STYLES } from '../entities/Appearance.js';
 import { STAFF, CLUB, DECOS, clubTournament } from '../career/Business.js';
 import { unread, taunt } from '../career/Story.js';
 import { Career, DEFAULT_LOOK } from '../career/Career.js';
@@ -45,6 +46,8 @@ const LOOK_FIELDS = [
   ['hair', 'Cheveux', HAIR_COLORS.map((c, i) => [c, HAIR_COLOR_LABELS[i], c])],
   ['beard', 'Barbe', BEARDS.map((b) => [b.id, b.label])],
   ['headwear', 'Accessoire', HEADWEAR_ITEMS.map((h) => [h.id, h.label]), 'headwear'],
+  ['kitStyle', 'Maillot', KIT_STYLES.map((k) => [k.id, k.label]), 'kit'],
+  ['number', 'Numéro', Array.from({ length: 99 }, (_, i) => [i + 1, `N° ${i + 1}`])],
   ['primary', 'Couleur dominante', colorOpts, 'color'],
   ['secondary', 'Couleur secondaire', colorOpts, 'color'],
   ['shortsColor', 'Short / jupe', colorOpts, 'color'],

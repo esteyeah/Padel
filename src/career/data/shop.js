@@ -3,7 +3,7 @@
 //  en mission et à l'entraînement. Les objets achetés servent aussi dans le
 //  mode exhibition (terrains, tenue, raquette, sac).
 // ============================================================================
-import { COLORS, HEADWEAR_ITEMS, RACKETS, BAGS } from '../../entities/Appearance.js';
+import { COLORS, HEADWEAR_ITEMS, RACKETS, BAGS, KIT_STYLES } from '../../entities/Appearance.js';
 import { RACKET_DESIGNS } from '../../entities/Racket.js';
 
 const FREE_COLORS = ['blue', 'red', 'green', 'black', 'white', 'navy', 'grey', 'yellow'];
@@ -18,6 +18,7 @@ const VENUE_PRICE = { municipal: 0, club: 0, ceyreste: 350, national: 800, beach
 export const SHOP_CATEGORIES = [
   { id: 'color', label: 'Couleurs de tenue' },
   { id: 'headwear', label: 'Casquettes et bandeaux' },
+  { id: 'kit', label: 'Maillots' },
   { id: 'racket', label: 'Raquettes' },
   { id: 'design', label: 'Designs de raquette' },
   { id: 'bag', label: 'Sacs' },
@@ -31,6 +32,7 @@ export const SHOP_ITEMS = [
     id: `racket:${r.id}`, cat: 'racket', ref: r.id, label: r.label, hex: r.frame, price: RACKET_PRICE[r.id] ?? 450, eur: true,
     desc: Object.entries(r.bonus).map(([k, v]) => `+${v} ${{ drive: 'coup droit & revers', lob: 'lob', smash: 'smash', strength: 'force' }[k]}`).join(', ') || 'Raquette de club, sans bonus',
   })),
+  ...KIT_STYLES.map((k) => ({ id: `kit:${k.id}`, cat: 'kit', ref: k.id, label: k.label, price: k.price, eur: true, desc: 'Coupe de maillot, aux couleurs de votre tenue' })),
   ...RACKET_DESIGNS.map((d) => ({ id: `design:${d.id}`, cat: 'design', ref: d.id, label: d.label, hex: d.face ?? 0xffd400, price: d.price, eur: true, desc: d.id === 'model' ? 'Le design livré avec la raquette' : 'Se pose sur n\'importe quelle raquette (sans bonus)' })),
   ...BAGS.map((b) => ({ id: `bag:${b.id}`, cat: 'bag', ref: b.id, label: b.label, hex: b.main, price: BAG_PRICE[b.id] ?? 100, eur: true })),
   ...['municipal', 'club', 'ceyreste', 'hangar', 'national', 'beach', 'pro'].map((v) => ({ id: `venue:${v}`, cat: 'venue', ref: v, price: VENUE_PRICE[v] })),

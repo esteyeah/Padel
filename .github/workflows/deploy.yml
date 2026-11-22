@@ -1,0 +1,27 @@
+# Mise en ligne automatique : à chaque envoi sur la branche main, le jeu est reconstruit
+# (dossier public/) et déployé sur Cloudflare Workers avec son serveur en ligne.
+# Secrets à créer dans GitHub (Settings > Secrets and variables > Actions) :
+#   CLOUDFLARE_API_TOKEN   jeton Cloudflare (modèle « Edit Cloudflare Workers »)
+#   CLOUDFLARE_ACCOUNT_ID  identifiant du compte Cloudflare (affiché sur le tableau de bord)
+name: Déploiement
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: node scripts/build-single.mjs --web
+      - run: npm install
+        working-directory: server
+      - run: npx wrangler deploy
+        working-directory: server
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

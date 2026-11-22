@@ -23,6 +23,7 @@ import { flatStats } from './config.js';
 
 import { loadRocks } from './render/Rocks.js';
 import { OnlineUI } from './net/Online.js';
+import { askPad } from './ui/Ask.js';
 
 const params = new URLSearchParams(location.search);
 await loadRocks();
@@ -137,6 +138,7 @@ game.start({ attract: true, difficulty: 'hard' });
 
 // le son ne peut démarrer qu'après une interaction utilisateur
 for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => sfx.unlock(), { once: false, passive: true });
+addEventListener('pointerdown', () => { try { window.focus(); } catch { /* ignoré */ } }, { passive: true });
 
 if (params.get('ambiance') === 'day') r3d.arena.setAmbiance('day');
 if (params.has('demo')) menu.start({ mode: 'demo' });
@@ -145,9 +147,15 @@ else if (params.has('career')) { menu.hide(); career.open(); }
 
 let last = performance.now();
 function loop(now) {
+  requestAnimationFrame(loop);
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
+  // une erreur dans une image ne doit jamais arrêter la boucle (sinon plus rien ne répond)
+  try { frame(dt); } catch (err) { console.error(err); }
+}
+function frame(dt) {
   input.poll();
+  if (askPad(input)) { hud.updatePad(); r3d.render(dt); return; }
   if (career.visible) career.update();
   else if (menu.visible) {
     menu.update();
@@ -156,7 +164,6 @@ function loop(now) {
   game.frame(dt);
   hud.updatePad();
   r3d.render(dt);
-  requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 

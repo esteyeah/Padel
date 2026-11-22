@@ -78,6 +78,19 @@ export const BAGS = [
   { id: 'pink', label: 'Fluo rose', main: 0xec407a, accent: 0x202226 },
   { id: 'gold', label: 'Pro doré', main: 0xd4a72c, accent: 0x17100b, metal: true },
 ];
+/** Coupes de maillot (motif teinté par la couleur secondaire). price : euros (0 = offert). */
+export const KIT_STYLES = [
+  { id: 'tech', label: 'Technique (panneaux)', price: 0 },
+  { id: 'shoulders', label: 'Épaules contrastées', price: 0 },
+  { id: 'stripes', label: 'Rayures verticales', price: 60 },
+  { id: 'hoops', label: 'Cerclé (bandes)', price: 60 },
+  { id: 'half', label: 'Bicolore', price: 80 },
+  { id: 'diagonal', label: 'Bandes diagonales', price: 90 },
+  { id: 'chevron', label: 'Chevrons', price: 110 },
+  { id: 'fade', label: 'Dégradé', price: 120 },
+  { id: 'pixel', label: 'Pixel', price: 140 },
+  { id: 'retro', label: 'Rétro années 80', price: 160 },
+];
 export const rackById = (id) => RACKETS.find((r) => r.id === id) || RACKETS[0];
 export const bagById = (id) => BAGS.find((b) => b.id === id) || BAGS[0];
 
@@ -95,7 +108,7 @@ export const KITS = {
 export const DEFAULT_LOOK = {
   female: false, height: 1.0, buildId: 'normal', skin: SKIN_TONES[3], hair: HAIR_COLORS[1], hairStyle: 'short', beard: 'none',
   headwear: 'band', skirt: false, primary: 'blue', secondary: 'yellow', shortsColor: 'navy', shoeColor: 'white',
-  racket: 'classic', racketDesign: 'model', bag: 'none', number: 10,
+  racket: 'classic', racketDesign: 'model', kitStyle: 'tech', bag: 'none', number: 10,
 };
 
 /** Détails propres à un personnage (maillot de club, tatouages, montre…). */
@@ -116,7 +129,7 @@ export function resolveLook(look) {
     metal: { shirt: p.metal, accent: s.metal, shorts: sh.metal },
     racket: r.frame, racketLabel: r.label, racketMetal: !!r.metal,
     ...(() => { const d = designById(L.racketDesign); return d.id === 'model' ? { racketFace: r.face, racketBase: r.base, racketPattern: r.pattern, racketAccent: r.accent } : { racketFace: d.face, racketBase: d.base, racketPattern: d.pattern, racketAccent: d.accent }; })(),
-    skin: L.skin, hair: L.hair, hairStyle: L.hairStyle, beard: L.beard, headwear: L.headwear === 'none' ? null : L.headwear,
+    kitStyle: L.kitStyle || 'tech', skin: L.skin, hair: L.hair, hairStyle: L.hairStyle, beard: L.beard, headwear: L.headwear === 'none' ? null : L.headwear,
     female: L.female, skirt: L.female && L.skirt, height: L.height, build: b.build, belly: b.belly, muscle: b.muscle || 0, number: L.number,
     ...extras(L),
   };
@@ -163,7 +176,7 @@ export function makeAppearance(kitName, seed, over = {}) {
     beard: female ? 'none' : pick(['none', 'none', 'stubble', 'beard', 'goatee'], r),
     headwear: pick([null, 'band', 'cap', 'visor', null, 'capback'], r),
     skirt: female && r() < 0.5,
-    number: 1 + Math.floor(r() * 39),
+    number: 1 + Math.floor(r() * 39), kitStyle: KIT_STYLES[Math.floor(r() * KIT_STYLES.length)].id,
     name: pick(female ? NAMES_F : NAMES_M, r),
     ...over,
   };

@@ -547,7 +547,7 @@ export class Career {
     const ok = (cat, ref, fallback) => (this.owns(`${cat}:${ref}`) ? ref : fallback);
     L.primary = ok('color', L.primary, 'blue'); L.secondary = ok('color', L.secondary, 'yellow');
     L.shortsColor = ok('color', L.shortsColor, 'navy'); L.shoeColor = ok('color', L.shoeColor, 'white');
-    L.headwear = ok('headwear', L.headwear, 'band'); L.racket = ok('racket', L.racket, 'classic'); L.racketDesign = ok('design', L.racketDesign || 'model', 'model'); L.bag = ok('bag', L.bag, 'none');
+    L.headwear = ok('headwear', L.headwear, 'band'); L.racket = ok('racket', L.racket, 'classic'); L.racketDesign = ok('design', L.racketDesign || 'model', 'model'); L.kitStyle = ok('kit', L.kitStyle || 'tech', 'tech'); L.bag = ok('bag', L.bag, 'none');
     return L;
   }
   ownedVenues() { return SHOP_ITEMS.filter((i) => i.cat === 'venue' && this.owns(i.id)).map((i) => i.ref); }

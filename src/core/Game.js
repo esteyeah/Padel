@@ -119,7 +119,7 @@ export class Game {
     this.rallyHits = 0;
     this.tally = { points: [0, 0], longestRally: 0 };
     // statistiques du joueur humain (missions)
-    this.stats = { winners: {}, aces: 0, doubleFaults: 0, netWinners: 0, glassWinners: 0, porTres: 0, wallShots: 0, wallSuccess: 0, outsideReturns: 0, maxRallyWon: 0, pointsWon: 0, pointsLost: 0 };
+    this.stats = { winners: {}, aces: 0, doubleFaults: 0, netWinners: 0, glassWinners: 0, porTres: 0, porCuatro: 0, porTresOnly: 0, door: 0, deepLobs: 0, drops: 0, volleysIn: 0, outsideWinners: 0, returnsWon: 0, serveGames: 0, breaks: 0, firstServesIn: 0, streak: 0, bestStreak: 0, wallShots: 0, wallSuccess: 0, outsideReturns: 0, maxRallyWon: 0, pointsWon: 0, pointsLost: 0 };
     this.mission = o.mission || null;
     this.ownGlass = false;
     this.humanShot = null;
@@ -498,6 +498,15 @@ export class Game {
       this.stats.wallSuccess++;
       this.refreshMission();
     }
+    // première chute d'un coup du joueur dans le camp adverse : lob profond (entre la ligne de service
+    // et la vitre du fond), amortie courte (près du filet)
+    if (h && e.type === 'floor' && this.humanShot && !this.humanShot.landed && ref.lastHitterSide === h.side && e.side === -h.side) {
+      this.humanShot.landed = true;
+      const z = Math.abs(e.z ?? 0);
+      if (this.humanShot.type === 'lob' && z >= 6.95 && z <= 10) { this.stats.deepLobs++; this.refreshMission(); }
+      if (this.humanShot.type === 'drop' && z <= 3) { this.stats.drops++; this.refreshMission(); }
+      if (this.humanShot.type === 'volley') { this.stats.volleysIn++; this.refreshMission(); }
+    }
     const d = this.referee.handle(e);
     if (d) this.resolve(d);
   }
@@ -512,6 +521,9 @@ export class Game {
     const st = this.stats;
     if (mine) st.pointsWon++; else st.pointsLost++;
     if (mine) st.maxRallyWon = Math.max(st.maxRallyWon, this.rallyHits);
+    st.streak = mine ? st.streak + 1 : 0;
+    st.bestStreak = Math.max(st.bestStreak, st.streak);
+    if (mine && this.server && this.server.side !== h.side) st.returnsWon++;
     if (/Double faute/.test(d.reason) && this.server === h) st.doubleFaults++;
     if (mine && this.lastShot?.player === h) {
       const hs = this.humanShot || {};
@@ -521,6 +533,10 @@ export class Game {
       if (hs.atNet) st.netWinners++;
       if (hs.afterGlass) st.glassWinners++;
       if (/por tres|por cuatro|porte/i.test(d.reason)) st.porTres++;
+      if (/por cuatro/i.test(d.reason)) st.porCuatro++;
+      if (/por tres/i.test(d.reason)) st.porTresOnly++;
+      if (/porte/i.test(d.reason)) st.door++;
+      if (hs.outside) st.outsideWinners++;
     }
     this.refreshMission();
   }

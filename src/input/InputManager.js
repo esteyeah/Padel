@@ -42,7 +42,9 @@ const KEYMAP = {
   START: ['Escape', 'KeyP'],
   VIEW: ['KeyC'],
   SPRINT: ['ShiftLeft', 'ShiftRight'],
+  HELP: ['KeyH'],
 };
+const HELP_BTN = 11;         // clic du stick droit : afficher / masquer les aides
 const SPRINT_BTN = 10;       // clic du stick gauche : petit sprint
 const VIEW_BTN = 8;          // View / Select / Share : changer de caméra
 const COMBO_KEY = 'KeyU';    // contre-vitre au clavier
@@ -204,10 +206,10 @@ export class InputManager {
     this.aim.x = ax; this.aim.y = ay;
 
     // --- actions
-    for (const name of ['A', 'B', 'X', 'Y', 'START', 'VIEW', 'SPRINT']) {
+    for (const name of ['A', 'B', 'X', 'Y', 'START', 'VIEW', 'SPRINT', 'HELP']) {
       let h = KEYMAP[name].some((c) => k.has(c));
       if (pad) {
-        const idx = name === 'START' ? START_BTN : name === 'VIEW' ? VIEW_BTN : name === 'SPRINT' ? SPRINT_BTN : this.mapping[name];
+        const idx = name === 'START' ? START_BTN : name === 'VIEW' ? VIEW_BTN : name === 'SPRINT' ? SPRINT_BTN : name === 'HELP' ? HELP_BTN : this.mapping[name];
         if (isDown(pad.buttons[idx])) h = true;
       }
       this.pressed[name] = h && !this._prev[name];

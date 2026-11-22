@@ -22,6 +22,16 @@ export const MISSIONS = [
   { id: 'portres', text: () => 'faire sortir la balle du terrain (par 3 ou par la porte)', target: T(1, 1, 1, 1), metric: (s) => s.porTres, reward: 'sp', needs: 'power' },
   { id: 'rally', text: (n) => `gagner un échange de ${n} frappes ou plus`, target: T(6, 8, 10, 12), metric: (s) => s.maxRallyWon, reward: 'shop' },
   { id: 'nodf', text: () => 'gagner le match sans double faute', target: T(1, 1, 1, 1), metric: (s) => (s.won && s.doubleFaults === 0 ? 1 : 0), reward: 'shop' },
+  // missions plus spécifiques
+  { id: 'deeplob', text: (n) => `réussir ${n} lobs qui retombent entre la ligne de service et la vitre du fond`, target: T(3, 5, 8, 10), metric: (s) => s.deepLobs || 0, reward: 'shop' },
+  { id: 'por4', text: () => 'réussir un « par 4 » (smash qui ressort par la porte)', target: T(1, 1, 1, 1), metric: (s) => s.porCuatro || 0, reward: 'sp', needs: 'power' },
+  { id: 'por3', text: () => 'réussir un « par 3 » (smash qui ressort par-dessus les vitres)', target: T(1, 1, 1, 1), metric: (s) => s.porTresOnly || 0, reward: 'sp', needs: 'power' },
+  { id: 'drop', text: (n) => `réussir ${n} amortie${n > 1 ? 's' : ''} qui retombe${n > 1 ? 'nt' : ''} à moins de 3 m du filet`, target: T(1, 2, 3, 4), metric: (s) => s.drops || 0, reward: 'shop' },
+  { id: 'volleys', text: (n) => `passer ${n} volées dans le terrain adverse`, target: T(6, 10, 14, 18), metric: (s) => s.volleysIn || 0, reward: 'sp' },
+  { id: 'outside', text: () => 'gagner un point après être sorti du terrain pour la rattraper', target: T(1, 1, 1, 1), metric: (s) => s.outsideWinners || 0, reward: 'sp' },
+  { id: 'returns', text: (n) => `gagner ${n} points en retour de service`, target: T(4, 6, 8, 10), metric: (s) => s.returnsWon || 0, reward: 'shop' },
+  { id: 'streak', text: (n) => `gagner ${n} points d'affilée`, target: T(4, 5, 6, 7), metric: (s) => s.bestStreak || 0, reward: 'shop' },
+  { id: 'smashes', text: (n) => `gagner ${n} points sur smash ou bandeja`, target: T(2, 3, 4, 5), metric: (s) => (s.winners.smash || 0) + (s.winners.bandeja || 0), reward: 'sp' },
   { id: 'clean', text: (n) => `gagner en perdant au plus ${n} jeu${n > 1 ? 'x' : ''}`, target: T(1, 2, 2, 3), metric: (s, n) => (s.won && s.gamesLost <= n ? n : 0), reward: 'sp', needs: 'games' },
 ];
 

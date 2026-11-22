@@ -1361,6 +1361,43 @@ function decorHangar(out, renderer) {
   const bench = [];
   for (const sx of [-1, 1]) for (const zz of [-12.5, 12.5]) { bench.push(at(new THREE.BoxGeometry(0.5, 0.45, 3), sx * 13.4, 0.22, zz)); for (let k = 0; k < 4; k++) if (Math.random() < 0.7) out.crowdSeats.push({ x: sx * 13.4, y: 0.45, z: zz - 1.2 + k * 0.8, ry: -sx * Math.PI / 2 }); }
   out.group.add(mesh(bench, wood, { shadow: true }));
+
+  // --- résine époxy dans les allées (sol plus soigné, légers reflets)
+  const epoxy = new THREE.MeshStandardMaterial({ color: 0x5d6b66, roughness: 0.28, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  out.group.add(mesh([at(new THREE.PlaneGeometry(2.3, 2 * 22), 0, 0.006, 0, -Math.PI / 2), at(new THREE.PlaneGeometry(2 * 14.2, 4.6), 0, 0.006, 0, -Math.PI / 2)], epoxy));
+  // --- panneaux « PISTE 1..4 » suspendus au-dessus de chaque court
+  [[-6.2, -12.5], [6.2, -12.5], [-6.2, 12.5], [6.2, 12.5]].forEach(([px, pz], i) => {
+    const tex = canvasTex(256, 96, (g) => { g.fillStyle = '#111418'; g.fillRect(0, 0, 256, 96); g.strokeStyle = '#ff9800'; g.lineWidth = 6; g.strokeRect(5, 5, 246, 86); g.fillStyle = '#ffffff'; g.font = 'bold 54px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center'; g.fillText(`PISTE ${i + 1}`, 128, 68); });
+    const m = new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.6, roughness: 0.5, side: THREE.DoubleSide });
+    const zEdge = pz + Math.sign(pz) * -10.6;
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.68), m); p.position.set(px, 5.7, zEdge); out.group.add(p);
+    out.group.add(mesh([at(new THREE.CylinderGeometry(0.006, 0.006, 1.6, 4), px - 0.8, 6.8, zEdge), at(new THREE.CylinderGeometry(0.006, 0.006, 1.6, 4), px + 0.8, 6.8, zEdge)], new THREE.MeshStandardMaterial({ color: 0x222222 })));
+  });
+  // --- fanions de couleur sous le cintre, d'un mur à l'autre, au-dessus de l'allée centrale
+  const flagCols = [0xff9800, 0xffffff, 0x1e88e5, 0xffd400, 0xe53935];
+  const flags = flagCols.map(() => []);
+  for (const fz of [-19, -6, 6, 19]) {
+    const n = 30;
+    for (let k = 1; k < n; k++) {
+      const t = k / n, x = X0 + 0.5 + t * (W - 1), y = 6.6 - Math.sin(Math.PI * t) * 0.9;
+      const tri = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([-0.16, 0, 0, 0.16, 0, 0, 0, -0.34, 0], 3));
+      tri.computeVertexNormals();
+      flags[k % flagCols.length].push(tri.translate(x, y, fz));
+    }
+  }
+  flags.forEach((list, k) => out.group.add(mesh(list, new THREE.MeshStandardMaterial({ color: flagCols[k], roughness: 0.8, side: THREE.DoubleSide }))));
+  // --- fresque graphique sur le pignon ouest (au-dessus de l'entrée)
+  const mural = canvasTex(1024, 256, (g, Wd, Ht) => {
+    g.fillStyle = '#20242b'; g.fillRect(0, 0, Wd, Ht);
+    const cols = ['#ff9800', '#1e88e5', '#ffd400', '#e53935', '#43a047'];
+    for (let i = 0; i < 9; i++) { g.fillStyle = cols[i % cols.length]; g.globalAlpha = 0.85; g.beginPath(); g.moveTo(i * 130 - 60, Ht); g.lineTo(i * 130 + 40, 0); g.lineTo(i * 130 + 110, 0); g.lineTo(i * 130 + 10, Ht); g.fill(); }
+    g.globalAlpha = 1; g.fillStyle = '#ffffff'; g.font = 'bold 130px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center';
+    g.lineWidth = 12; g.strokeStyle = '#111'; g.strokeText('HANGAR PADEL', Wd / 2, 175); g.fillText('HANGAR PADEL', Wd / 2, 175);
+  });
+  for (const zz of [-Z + 0.05, Z - 0.05]) {
+    const mm = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), new THREE.MeshStandardMaterial({ map: mural, roughness: 0.8 }));
+    mm.position.set(0, 4.9, zz); mm.rotation.y = zz < 0 ? 0 : Math.PI; out.group.add(mm);
+  }
 }
 
 /** Chaise d'arbitre (au niveau du filet) et table des commentateurs avec caméra TV. */
@@ -1847,6 +1884,26 @@ export function buildVenue(id, ctx, courtIdx = 0, club = null) {
     flat({ ...d, group: g }, 2 * HW + 2, 2 * HL + 2, 0, 0, def.apron, 0.003);
     out.ambient.push(new AmbientMatch(g, { x: 0, z: 0, seed: 1000 + i * 77 + id.length, doubles: ctx.quality !== 'low' }));
   });
+  // spectateurs assis « au ras du sol » : on leur donne une vraie chaise (sinon les jambes traversent le sol)
+  {
+    const chairs = [];
+    for (const st of out.crowdSeats) {
+      const floor = st.y < -0.5 ? -0.9 : 0;
+      if (st.y - floor > 0.25) continue;
+      const g = new THREE.Group();
+      g.position.set(st.x, floor, st.z); g.rotation.y = st.ry;
+      chairs.push(g);
+      st.y = floor + 0.44;
+    }
+    if (chairs.length) {
+      const seatG = new THREE.BoxGeometry(0.42, 0.04, 0.4).translate(0, 0.43, 0.02);
+      const backG = new THREE.BoxGeometry(0.42, 0.42, 0.03).translate(0, 0.66, -0.18);
+      const legG = mergeGeometries([[-0.18, -0.16], [0.18, -0.16], [-0.18, 0.18], [0.18, 0.18]].map(([lx, lz]) => new THREE.CylinderGeometry(0.014, 0.014, 0.43, 5).translate(lx, 0.215, lz)));
+      const mk = (geo, mat) => { const im = new THREE.InstancedMesh(geo, mat, chairs.length); chairs.forEach((c, i) => { c.updateMatrix(); im.setMatrixAt(i, c.matrix); }); im.castShadow = true; decor.add(im); };
+      const plastic = new THREE.MeshStandardMaterial({ color: id === 'ceyreste' ? 0xf2f2ee : id === 'hangar' ? 0x2b2f36 : 0xe8e3d8, roughness: 0.55 });
+      mk(seatG, plastic); mk(backG, plastic); mk(legG, new THREE.MeshStandardMaterial({ color: 0x8d939b, metalness: 0.7, roughness: 0.35 }));
+    }
+  }
   if (!out.crowd) out.crowd = new Crowd(decor, out.crowdSeats.length ? out.crowdSeats : [{ x: 0, y: -10, z: 0, ry: 0 }]);
   // un petit sac de padel au bord du court (remplacé par celui du joueur si besoin)
   out.benchSpot = def.outside ? { x: -(HW + 1.9), z: -1.2 } : { x: -(HW + 1.2), z: -2.8 };

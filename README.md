@@ -459,3 +459,14 @@ padel-sim/
 
 ### 0.45
 - Ceyreste plus fidèle aux photos du club : façade du club-house (porte vitrée blanche, store, panneau d'affichage, applique, poubelle verte, cyprès, laurier, olivier), terrain de pétanque à droite de la porte, jardin de rochers calcaires et gravier, large allée en béton, bancs blancs à lattes avec les affaires des joueurs, poubelle en bois et conteneur bleu, mûrier aux feuilles jaunies, tableau de score à volets sur le grillage, sol plus clair.
+
+### 0.46
+- Saisie du code secret et du pseudo en ligne dans le jeu (les fenêtres du navigateur étaient bloquées dans l'aperçu).
+- La boucle du jeu ne s'arrête plus sur une erreur ; message « cliquez dans le jeu » quand la page perd le focus (manette inactive).
+- Touche H / clic du stick droit : masquer les aides en bas à gauche.
+- Vitres : une balle lente s'écrase et ne remonte plus le long de la vitre.
+- Chaises pour les spectateurs qui étaient assis par terre.
+- 10 coupes de maillot (dont 8 achetables) et choix du numéro.
+- 10 nouvelles missions : lobs profonds, par 3, par 4, amorties courtes, volées, retours gagnants, séries de points…
+- Hangar : allées en résine, panneaux PISTE 1 à 4, fanions, fresques.
+- Déploiement automatique (GitHub Actions → Cloudflare).

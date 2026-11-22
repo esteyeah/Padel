@@ -56,7 +56,11 @@ function bounce(s, n, mat, rand) {
   const vn = v.dot(n);
   if (vn >= 0) return 0;
   const impact = -vn;
-  const e = Math.max(mat.eMin, mat.e - mat.eLoss * impact + (mat === SURFACES.glass ? s.boost : 0));
+  const isGlass = mat === SURFACES.glass;
+  let e = Math.max(mat.eMin, mat.e - mat.eLoss * impact + (isGlass ? s.boost : 0));
+  // vitre : une balle lente s'écrase et meurt (la vitre absorbe), seule une balle rapide repart bien
+  if (isGlass) { const k = Math.min(1, Math.max(0, (impact - 3) / 9)); e = Math.min(e, 0.4 + 0.35 * k * k * (3 - 2 * k) + s.boost); }
+  const vyIn = v.y;
 
   _vt.copy(v).addScaledVector(n, -vn);      // vitesse tangentielle
   _rc.copy(n).multiplyScalar(-R);            // centre -> point de contact
@@ -72,6 +76,13 @@ function bounce(s, n, mat, rand) {
     w.add(_tmp);
   }
   v.addScaledVector(n, jn);
+  if (isGlass && Math.abs(n.y) < 0.5) {
+    // le frottement sur la vitre ne doit pas faire « grimper » la balle : la vitesse verticale
+    // ne peut pas dépasser celle d'arrivée, et une balle lente perd aussi en glisse
+    const cap = Math.max(vyIn, 0) * 0.92 + 0.15;
+    if (v.y > cap) v.y = cap;
+    if (impact < 9) { const damp = 0.8 + 0.2 * (impact / 9); v.x *= n.x ? 1 : damp; v.z *= n.z ? 1 : damp; if (v.y > 0) v.y *= damp; }
+  }
 
   if (mat.rand > 0) {
     const k = mat.rand * v.length();

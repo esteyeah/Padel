@@ -189,12 +189,24 @@ function hairNormal() {
 }
 /** Maillot technique : panneaux latéraux et coutures teintés par la couleur secondaire. */
 const _jersey = new Map();
-function jerseyTex(accent) {
-  const key = accent;
+function jerseyTex(accent, style = 'tech') {
+  const key = `${accent}|${style}`;
   if (_jersey.has(key)) return _jersey.get(key);
   const ac = new THREE.Color(accent);
-  const t = canvas(256, 64, (g, W, H) => {
+  const A = `#${ac.getHexString()}`;
+  const t = canvas(256, 128, (g, W, H) => {
     g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    // motifs de maillot (u = tour du corps, v = hauteur) ; le blanc prend la couleur principale
+    g.fillStyle = A;
+    if (style === 'stripes') for (let x = 0; x < W; x += 32) g.fillRect(x, 0, 14, H);
+    else if (style === 'hoops') for (let y = 8; y < H; y += 30) g.fillRect(0, y, W, 13);
+    else if (style === 'half') { g.fillRect(W * 0.25, 0, W * 0.5, H); }
+    else if (style === 'chevron') { g.beginPath(); for (const off of [0, W / 2]) { g.moveTo(off, 30); g.lineTo(off + W / 4, 60); g.lineTo(off + W / 2, 30); g.lineTo(off + W / 2, 52); g.lineTo(off + W / 4, 82); g.lineTo(off, 52); } g.fill(); }
+    else if (style === 'fade') { const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, A); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
+    else if (style === 'pixel') { for (let y = 0; y < H; y += 8) for (let x = 0; x < W; x += 8) if (((x * 7 + y * 13) % 29) < 9 + y / 10) g.fillRect(x, y, 8, 8); }
+    else if (style === 'diagonal') { g.save(); g.translate(W / 4, H / 2); g.rotate(-0.6); g.fillRect(-W, -14, W * 2, 28); g.restore(); g.save(); g.translate(W * 0.75, H / 2); g.rotate(-0.6); g.fillRect(-W, -14, W * 2, 28); g.restore(); }
+    else if (style === 'shoulders') { g.fillRect(0, 0, W, 26); }
+    else if (style === 'retro') { g.fillRect(0, 0, W, 10); for (let x = 6; x < W; x += 64) { g.fillRect(x, 0, 6, H); g.fillRect(x + 12, 0, 3, H); } }
     // u = tour du corps : 0 et 0,5 = flancs ; panneaux dégradés + liserés
     for (const c of [0, 0.5, 1]) {
       const x = c * W;
@@ -250,7 +262,7 @@ export class Avatar {
       : new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.82, sheen: 0.6, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xffffff), normalMap: knitNormal(), normalScale: new THREE.Vector2(0.35, 0.35) }));
     const mt = a.metal || {};
     const mat = {
-      shirt: (() => { const m = fabric(a.shirt, mt.shirt); if (!mt.shirt) { m.map = jerseyTex(a.accent); } return m; })(),
+      shirt: (() => { const m = fabric(a.shirt, mt.shirt); if (!mt.shirt) { m.map = jerseyTex(a.accent, a.kitStyle || 'tech'); } return m; })(),
       accent: fabric(a.accent, mt.accent),
       shorts: fabric(a.shorts, mt.shorts),
       // peau : léger voile chaud (imite la diffusion sous la peau) ; cheveux : reflets

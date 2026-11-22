@@ -415,3 +415,14 @@ body.cinema #hud { visibility: hidden; }
 .on-match .w { color: var(--accent); font-weight: 800; }
 .on-match em { font-size: 11px; color: var(--dim); font-style: normal; }
 .on-champ { margin-top: 10px; font: 800 24px var(--cond); color: var(--accent); }
+
+/* ------------------------------------------------------------------ saisie */
+.ask { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(4,8,18,0.6); padding: 16px; }
+.ask-box { width: min(380px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.ask-box label { font: 700 20px var(--cond); letter-spacing: .5px; }
+.ask-box input { font: 600 20px var(--sans); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--text); text-transform: none; }
+.ask-box input:focus { outline: 2px solid var(--cyan); }
+.ask-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.ask-btns button { font: 700 16px var(--cond); padding: 8px 16px; border-radius: 9px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--text); cursor: pointer; }
+.ask-btns button.ok { background: var(--accent); color: #111; border-color: transparent; }
+.ask-notice { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 60; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font: 600 15px var(--sans); }

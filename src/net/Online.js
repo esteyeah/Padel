@@ -4,6 +4,7 @@
 //  navigue à la souris, au clavier ou à la manette (haut/bas, A, B).
 // ============================================================================
 import { makeAppearance } from '../entities/Appearance.js';
+import { ask } from '../ui/Ask.js';
 import { DIFFICULTY, PROFILES, flatStats } from '../config.js';
 
 const FORMAT = { '1v1': '1 contre 1', '2v2': '2 contre 2' };
@@ -196,14 +197,14 @@ export class OnlineUI {
     const add = (id, label, run, cls = '') => A.push({ id, label, run, cls });
     const v = this.view;
     if (v === 'connect') {
-      add('name', 'Pseudo', () => { const n = prompt('Votre pseudo en ligne :', this.name || this.getProfile().name || ''); if (n != null) { this.name = n.trim().slice(0, 18); this.rerender(); } }, 'field');
+      add('name', 'Pseudo', async () => { const n = await ask('Votre pseudo en ligne', this.name || this.getProfile().name || '', { max: 18 }); if (n != null) { this.name = n.trim().slice(0, 18); this.rerender(); } }, 'field');
       add('go', 'Se connecter', () => this.connect(), 'primary');
     } else if (v === 'lobby') {
       add('q2', 'Partie rapide · 2 contre 2', () => this.conn.send({ t: 'quick', format: '2v2', cfg: this.getSettings() }), 'primary');
       add('q1', 'Partie rapide · 1 contre 1', () => this.conn.send({ t: 'quick', format: '1v1', cfg: this.getSettings() }));
       add('cr', 'Créer une partie entre amis', () => this.createRoom(true));
       add('cp', 'Créer une partie publique', () => this.createRoom(false));
-      add('jn', 'Rejoindre avec un code', () => { const c = prompt('Code de la partie (5 lettres) :', ''); if (c) this.conn.send({ t: 'join', code: c.trim().toUpperCase() }); });
+      add('jn', 'Rejoindre avec un code', async () => { const c = await ask('Code de la partie (5 lettres)', '', { max: 5 }); if (c) this.conn.send({ t: 'join', code: c.trim().toUpperCase() }); });
       for (const r of this.lobby.rooms) {
         const free = r.slots.filter((s) => !s.uid).length;
         add(`r${r.code}`, `Rejoindre ${esc(r.hostName)} · ${FORMAT[r.cfg.format]} · ${free} place${free > 1 ? 's' : ''}`, () => this.conn.send({ t: 'join', code: r.code }), 'list');

@@ -11,6 +11,7 @@ import { ACTIONS, PRESETS } from '../input/InputManager.js';
 import { DRILLS } from '../core/Drills.js';
 import { characterList } from '../career/Characters.js';
 import { isUnlocked } from '../career/data/shop.js';
+import { ask, notice } from './Ask.js';
 
 const COURT_OPTS = [[0, 'Court central'], [1, 'Court 2'], [2, 'Court 3'], [3, 'Court 4'], [4, 'Court 5']];
 const MULTI = { ceyreste: 5, club: 3, hangar: 4 };
@@ -257,12 +258,11 @@ export class Menu {
     s.confirmBuy = null;
   }
 
-  enterCode() {
-    const code = prompt('Code secret :', '');
+  async enterCode() {
+    const code = await ask('Code secret', '', { placeholder: 'Entrez le code' });
     if (code == null) return;
     const ok = this.onCode?.(code);
-    this._flash = null;
-    alert(ok ? 'Code accepté : tous les terrains et tous les personnages sont débloqués.' : 'Code incorrect.');
+    notice(ok ? 'Code accepté : tous les terrains et tous les personnages sont débloqués.' : 'Code incorrect.');
     this.render();
   }
 
