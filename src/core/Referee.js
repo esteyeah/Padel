@@ -121,7 +121,7 @@ export class Referee {
         if (this.crossed && this.bounces >= 1) {
           // sortie latérale (porte ou par-dessus le grillage) : on peut la rattraper dehors
           if (!S && VENUE_RULES.outside && e.wall === 'side' && e.side === Rcv) { this.outside = e.via; return null; }
-          return this._decide(point(H, e.via === 'door' ? 'Sortie par la porte (por cuatro)' : 'Balle sortie de la piste (por tres)'));
+          return this._decide(point(H, e.via === 'door' ? 'Sortie par la porte' : e.wall === 'back' ? 'Balle sortie par le fond (por cuatro)' : 'Balle sortie par le côté (por tres)'));
         }
         if (S) return this._decide(fault('Service dehors'));
         return this._decide(point(Rcv, 'Dehors'));

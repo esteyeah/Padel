@@ -50,7 +50,7 @@ const VIEW_BTN = 8;          // View / Select / Share : changer de caméra
 const COMBO_KEY = 'KeyU';    // contre-vitre au clavier
 const GAME_KEYS = new Set([
   'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD',
-  'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyC', 'Enter', 'Escape', 'ShiftLeft', 'ShiftRight',
+  'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyO', 'KeyH', 'KeyC', 'Enter', 'Escape', 'ShiftLeft', 'ShiftRight',
 ]);
 const STORAGE_KEY = 'padel-arena.controls';
 const TRIGGER_THRESHOLD = 0.35;
@@ -221,6 +221,11 @@ export class InputManager {
     this.pressed.C = combo && !this._prev.C;
     this.held.C = combo;
     this._prev.C = combo;
+    // smash « par 3 / par 4 » : X et Y ensemble, ou la touche O ; demande un bon timing
+    const kick = (this.held.X && this.held.Y) || k.has('KeyO');
+    this.pressed.D = kick && !this._prev.D;
+    this.held.D = kick;
+    this._prev.D = kick;
 
     // --- navigation menu (toujours A/B de la manette, quelle que soit la configuration)
     const m = this._menuState(pad, mx, my);

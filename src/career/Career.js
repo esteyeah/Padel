@@ -181,6 +181,44 @@ function ambientCutscene(ctx) {
       me(pick(['Bon match à vous aussi.', 'Pareil de notre côté.'])),
     ]);
   }
+  // scènes supplémentaires : supporters, coach, enfant, arbitre, partenaire superstitieux
+  scenes.push([
+    off('Un jeune supporter', pick([
+      `${myName} ! Tu peux me signer ma casquette ? Je fais du padel depuis trois semaines, je veux faire comme toi !`,
+      'C\'est vrai que tu t\'entraînes tous les jours ? Moi ma mère veut pas que je joue après 20 h.',
+    ])),
+    me(pick(['Bien sûr, donne-moi ta casquette.', 'Entraîne-toi bien, et écoute ta mère !', 'Allez, dans dix ans c\'est toi qui signes.'])),
+  ]);
+  scenes.push([
+    off('Le coach, au téléphone', pick([
+      'Rappelle-toi : split-step à chaque frappe adverse. Et respire entre les points.',
+      'Je regarde le match en direct. Pas de smash à 40 % de réussite, hein. Bandeja.',
+      'Si tu perds le premier set, on en reparle à l\'entraînement. Longuement.',
+    ])),
+    me(pick(['Promis coach.', 'Bandeja, compris.', 'Je respire, je respire.'])),
+  ]);
+  scenes.push([
+    pa(pick([
+      'J\'ai mis la même paire de chaussettes qu\'au dernier tournoi. On ne change rien.',
+      'Attends, je vérifie que j\'ai bien mon grip porte-bonheur… c\'est bon.',
+      'Si je fais un geste bizarre entre les points, c\'est normal. C\'est mon rituel.',
+    ])),
+    me(pick(['Tu es complètement superstitieux.', 'Du moment que ça marche…', 'Moi c\'est la bouteille d\'eau à gauche.'])),
+  ]);
+  scenes.push([
+    off('Le juge-arbitre', pick([
+      'Rappel du règlement : point en or à 40-40, et on ne touche pas le filet. Même pour fêter un point.',
+      'Échauffement de cinq minutes. Après, on joue. Pas de « encore un smash pour la route ».',
+    ])),
+    me(pick(['Bien reçu.', 'Pas de souci.'])),
+  ]);
+  if (tier === 'national' || tier === 'pro') scenes.push([
+    off('Un sponsor', pick([
+      `Belle saison, ${myName}. Si vous passez ce tour, on parle d\'un contrat de raquette.`,
+      'Notre marque cherche une nouvelle tête d\'affiche. Montrez-nous ce que vous valez aujourd\'hui.',
+    ])),
+    me(pick(['Je vais faire de mon mieux.', 'On en reparle après le match.'])),
+  ]);
   return pick(scenes);
 }
 

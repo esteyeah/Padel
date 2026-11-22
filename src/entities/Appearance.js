@@ -53,6 +53,8 @@ export const HAIR_STYLES = [
 export const BEARDS = [
   { id: 'none', label: 'Aucune' }, { id: 'stubble', label: 'De 3 jours' }, { id: 'beard', label: 'Barbe' },
   { id: 'full', label: 'Barbe fournie' }, { id: 'goatee', label: 'Bouc' }, { id: 'moustache', label: 'Moustache' },
+  { id: 'pencil', label: 'Moustache fine' }, { id: 'chinstrap', label: 'Collier' }, { id: 'mutton', label: 'Favoris' },
+  { id: 'horseshoe', label: 'Fer à cheval' }, { id: 'vandyke', label: 'Bouc et moustache' }, { id: 'short', label: 'Barbe courte' },
 ];
 export const HEADWEAR_ITEMS = [
   { id: 'none', label: 'Aucun' }, { id: 'band', label: 'Bandeau' }, { id: 'cap', label: 'Casquette' },

@@ -28,16 +28,17 @@ export class BallState {
     this.escaped = false;                // sortie de l'enceinte
     this.stopped = false;
     this.boost = 0;                      // bonus de restitution sur vitre (force du frappeur)
+    this.kick = 0;                       // smash par 3 (1) / par 4 (2) en cours
   }
   copy(o) {
     this.p.copy(o.p); this.v.copy(o.v); this.w.copy(o.w);
-    this.rolling = o.rolling; this.escaped = o.escaped; this.stopped = o.stopped; this.boost = o.boost;
+    this.rolling = o.rolling; this.escaped = o.escaped; this.stopped = o.stopped; this.boost = o.boost; this.kick = o.kick || 0;
     return this;
   }
   clone() { return new BallState().copy(this); }
   reset(p) {
     this.p.copy(p); this.v.set(0, 0, 0); this.w.set(0, 0, 0);
-    this.rolling = false; this.escaped = false; this.stopped = false; this.boost = 0;
+    this.rolling = false; this.escaped = false; this.stopped = false; this.boost = 0; this.kick = 0;
   }
 }
 
@@ -76,7 +77,21 @@ function bounce(s, n, mat, rand) {
     w.add(_tmp);
   }
   v.addScaledVector(n, jn);
-  if (isGlass && Math.abs(n.y) < 0.5) {
+  // smash par 3 / par 4 : le rebond au sol remonte fort vers la vitre
+  if (s.kick && n.y > 0.5) {
+    if (s.kick === 2) { v.y *= 1.35; v.x += Math.sign(v.x || 1) * 6; v.z *= 0.45; }
+    else { v.y = Math.max(v.y * 1.4, 13.2); v.z = Math.sign(v.z || 1) * 7.2; v.x *= 0.5; }
+    s.kick = 0;
+  }
+  const wasKick = s.kick;
+  if (s.kick && isGlass) {
+    // la balle ressort de la vitre en montant : peu de vitesse vers le filet, beaucoup vers le haut
+    const vn2 = v.dot(n);
+    v.addScaledVector(n, -vn2 * 0.7);
+    v.y = Math.max(v.y, 8);
+    s.kick = 0;
+  }
+  if (isGlass && Math.abs(n.y) < 0.5 && !wasKick) {
     // le frottement sur la vitre ne doit pas faire « grimper » la balle : la vitesse verticale
     // ne peut pas dépasser celle d'arrivée, et une balle lente perd aussi en glisse
     const cap = Math.max(vyIn, 0) * 0.92 + 0.15;

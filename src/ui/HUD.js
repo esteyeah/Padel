@@ -114,6 +114,7 @@ export class HUD {
       <div>${k(L.Y)} smash / bandeja</div>
       <div>${k(L.B)} lob</div>
       <div>${k(L.C)} contre-vitre</div>
+      <div>${k(this.input.padType === 'keyboard' ? 'O' : `${L.X}+${L.Y}`)} smash par 3 / par 4 (relâcher au bon moment)</div>
       <div>${k(L.VIEW)} caméra</div>
       <div>${k(L.SPRINT)} sprint</div>
       <div class="dim">Maintenir = puissance · ${k(L.START)} pause</div>`;

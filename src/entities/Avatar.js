@@ -203,7 +203,7 @@ function jerseyTex(accent, style = 'tech') {
     else if (style === 'half') { g.fillRect(W * 0.25, 0, W * 0.5, H); }
     else if (style === 'chevron') { g.beginPath(); for (const off of [0, W / 2]) { g.moveTo(off, 30); g.lineTo(off + W / 4, 60); g.lineTo(off + W / 2, 30); g.lineTo(off + W / 2, 52); g.lineTo(off + W / 4, 82); g.lineTo(off, 52); } g.fill(); }
     else if (style === 'fade') { const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, A); g.fillStyle = gr; g.fillRect(0, 0, W, H); }
-    else if (style === 'pixel') { for (let y = 0; y < H; y += 8) for (let x = 0; x < W; x += 8) if (((x * 7 + y * 13) % 29) < 9 + y / 10) g.fillRect(x, y, 8, 8); }
+    else if (style === 'pixel') { for (let y = 64; y < H; y += 8) for (let x = 0; x < W; x += 8) if (((x * 7 + y * 13) % 29) < (y - 56) / 5) g.fillRect(x, y, 8, 8); }
     else if (style === 'diagonal') { g.save(); g.translate(W / 4, H / 2); g.rotate(-0.6); g.fillRect(-W, -14, W * 2, 28); g.restore(); g.save(); g.translate(W * 0.75, H / 2); g.rotate(-0.6); g.fillRect(-W, -14, W * 2, 28); g.restore(); }
     else if (style === 'shoulders') { g.fillRect(0, 0, W, 26); }
     else if (style === 'retro') { g.fillRect(0, 0, W, 10); for (let x = 6; x < W; x += 64) { g.fillRect(x, 0, 6, H); g.fillRect(x + 12, 0, 3, H); } }
@@ -332,9 +332,9 @@ export class Avatar {
       // écharpe tricolore de maire : de l'épaule droite à la hanche gauche, tout autour du buste
       const tex = canvas(8, 96, (g, W, H) => { ['#0a3d91', '#ffffff', '#d81e2c'].forEach((c, i) => { g.fillStyle = c; g.fillRect(0, (i * H) / 3, W, H / 3); }); });
       const sashMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, side: THREE.DoubleSide });
-      const R0 = 0.19 * B * (1 + BL * 0.22);
+      const R0 = 0.168 * B * (1 + BL * 0.16);
       const sash = new THREE.Mesh(new THREE.CylinderGeometry(R0, R0, 0.075, 40, 1, true), sashMat);
-      sash.scale.set(1.02, 1, 0.82 + BL * 0.2);
+      sash.scale.set(1.0, 1, 0.76 + BL * 0.14);
       sash.position.set(0, -0.04, 0.012);
       sash.rotation.z = -0.68;
       sash.castShadow = true;
@@ -456,13 +456,15 @@ export class Avatar {
     }
     // cheveux : coques ajustées au crâne, plus du volume selon la coiffure
     const hw0 = a.headwear;
-    const covered = hw0 === 'cap' ? Z.cap : hw0 === 'capback' ? (d) => Z.cap({ x: d.x, y: d.y, z: -d.z }) : hw0 === 'bandana' ? Z.scalp : null;
+    const bandZone = (d) => d.y > 0.33 + 0.12 * d.z && d.y < 0.65 + 0.12 * d.z;
+    const covered = hw0 === 'cap' ? Z.cap : hw0 === 'capback' ? (d) => Z.cap({ x: d.x, y: d.y, z: -d.z }) : hw0 === 'bandana' ? bandZone : null;
     const shellRaw = F.shell, addRaw = P.add.bind(P);
     if (covered) {
-      F.shell = (pred, off, o = {}) => shellRaw((d) => pred(d) && !covered(d), Math.min(off, 0.006), { ...o, topBoost: 0, lift: 0 });
+      const isBand = hw0 === 'bandana';
+      F.shell = (pred, off, o = {}) => shellRaw((d) => pred(d) && !covered(d), isBand ? off : Math.min(off, 0.006), isBand ? o : { ...o, topBoost: 0, lift: 0 });
       // volumes ajoutés (mèches, chignon, boucles…) : supprimés s'ils dépassent sous la casquette
       P.add = (bone, geo, m, pp = [0, 0, 0], ...rest) => {
-        if (m === mat.hair && bone === h && geo.type !== 'BufferGeometry' && pp[1] > 0.12 && !(pp[1] < 0.16 && Math.abs(pp[0]) > 0.07)) return;
+        if (hw0 !== 'bandana' && m === mat.hair && bone === h && geo.type !== 'BufferGeometry' && pp[1] > 0.12 && !(pp[1] < 0.16 && Math.abs(pp[0]) > 0.07)) return;
         return addRaw(bone, geo, m, pp, ...rest);
       };
     }
@@ -499,7 +501,7 @@ export class Avatar {
         // mi-long ondulé : volume, ondulations, mèches qui tombent sur les oreilles et le front
         const wave = (d) => 0.005 * Math.sin(Math.atan2(d.x, d.z) * 11 + d.y * 9) + 0.004 * Math.sin(d.y * 23 + d.x * 7) + 0.01 * Math.max(0, -d.y + 0.3) * (1 - Math.max(0, d.z));
         P.add(h, F.shell(Z.surf, 0.009, { topBoost: 0.012, offFn: wave }), mat.hair);
-        for (const sx of [1, -1]) {
+        if (hw0 !== 'bandana') for (const sx of [1, -1]) {
           for (let k = 0; k < 4; k++) {
             const q = F.at(sx * (0.9 - k * 0.06), 0.05 - k * 0.12, 0.15 - k * 0.12);
             P.add(h, new THREE.CapsuleGeometry(0.012, 0.05, 3, 8), mat.hair, [q.x + sx * 0.012, q.y - 0.02, q.z], [0.2 * k, 0, sx * (0.25 + k * 0.08)]);
@@ -531,6 +533,11 @@ export class Avatar {
     if (a.beard === 'goatee') P.add(h, F.shell(Z.goatee, 0.0045), beardM);
     if (a.beard === 'moustache' || a.beard === 'goatee' || a.beard === 'full' || a.beard === 'beard') P.add(h, F.shell(Z.moustache, 0.0045), beardM);
     if (a.beard === 'pencil') P.add(h, F.shell(Z.pencil, 0.0024), beardM);
+    if (a.beard === 'short') P.add(h, F.shell(Z.beard, 0.0032), beardM);
+    if (a.beard === 'chinstrap') P.add(h, F.shell(Z.chinstrap, 0.0045), beardM);
+    if (a.beard === 'mutton') P.add(h, F.shell(Z.mutton, 0.004), beardM);
+    if (a.beard === 'horseshoe') P.add(h, F.shell(Z.horseshoe, 0.005), beardM);
+    if (a.beard === 'vandyke') { P.add(h, F.shell((d) => Z.goatee(d) && Math.abs(d.x) < 0.18, 0.005), beardM); P.add(h, F.shell(Z.moustache, 0.0045), beardM); }
     // accessoires : coques ajustées au crâne (au-dessus des cheveux), visière et écusson
     const hw = a.headwear;
     const capM = a.capColor != null ? mat.capMat : mat.shirt;
@@ -538,7 +545,7 @@ export class Avatar {
     if (hw === 'band' || hw === 'visor') P.add(h, F.shell(Z.band, 0.012, { soft: false, topBoost: 0.004 }), mat.accent);
     if (hw === 'bandana') {
       // bandeau large noué derrière (style Nadal), par-dessus les cheveux
-      P.add(h, F.shell((d) => d.y > 0.36 + 0.12 * d.z && d.y < 0.62 + 0.12 * d.z, 0.02, { soft: false, topBoost: 0.012 }), mat.accent);
+      P.add(h, F.shell((d) => d.y > 0.36 + 0.12 * d.z && d.y < 0.62 + 0.12 * d.z, 0.024, { soft: false, topBoost: 0.016 }), mat.accent);
       for (const sx of [1, -1]) P.add(h, new THREE.ConeGeometry(0.02, 0.09, 8), mat.accent, [sx * 0.02, 0.1, -0.11], [-2.6, 0, sx * 0.3]);
     }
     if (hw === 'cap' || hw === 'capback') {

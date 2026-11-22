@@ -64,6 +64,9 @@ export const ZONES = {
   beard: (d) => d.y < -0.08 && d.z > -0.25 && !(d.y > -0.56 && d.y < -0.3 && Math.abs(d.x) < 0.24 && d.z > 0.8) && d.y > -0.97 + 0.4 * smooth(0.2, -0.3, d.z),
   goatee: (d) => d.z > 0.55 && Math.abs(d.x) < 0.3 && d.y < -0.52 && d.y > -0.95,
   moustache: (d) => d.z > 0.78 && Math.abs(d.x) < 0.3 - (d.y + 0.3) * 0.6 && d.y < -0.25 && d.y > -0.4,
+  chinstrap: (d) => ZONES.beard(d) && (d.y < -0.62 || Math.abs(d.x) > 0.58) && !(d.z > 0.5 && d.y > -0.62 && Math.abs(d.x) < 0.58),
+  mutton: (d) => d.y < 0.12 && d.y > -0.62 && Math.abs(d.x) > 0.6 && d.z > -0.22 && d.z < 0.62,
+  horseshoe: (d) => d.z > 0.62 && ((d.y < -0.25 && d.y > -0.4 && Math.abs(d.x) < 0.3 - (d.y + 0.3) * 0.6) || (Math.abs(d.x) > 0.2 && Math.abs(d.x) < 0.32 && d.y < -0.3 && d.y > -0.78)),
   pencil: (d) => d.z > 0.8 && Math.abs(d.x) < 0.24 && d.y < -0.27 && d.y > -0.36,
   // coupe surfeur : couvre les oreilles et la nuque, frange légère sur le front
   surf: (d) => d.y > 0.5 - 1.15 * smooth(0.82, -0.1, d.z) && !(d.z > 0.5 && d.y < 0.42 && Math.abs(d.x) < 0.62),
@@ -135,11 +138,11 @@ export function makeFace(a) {
       const sc = scalpEdge(d);
       if (sc > 0) tmp.lerp(scalpShade, Math.min(0.9, sc * (['shaved', 'buzz'].includes(a.hairStyle) ? 0.7 : 1)));
     }
-    if (a.beard === 'stubble' || a.beard === 'goatee' || a.beard === 'moustache' || a.beard === 'beard' || a.beard === 'full' || a.beard === 'pencil') {
-      const k = beardEdge(d) * (a.beard === 'stubble' || a.beard === 'beard' || a.beard === 'full' ? 0.75 : 0.3);
+    if (a.beard && a.beard !== 'none') {
+      const k = beardEdge(d) * (['stubble', 'beard', 'full', 'short', 'chinstrap'].includes(a.beard) ? 0.75 : 0.3);
       if (k > 0) tmp.lerp(stubble, k);
     }
-    if (['moustache', 'pencil', 'goatee', 'full', 'beard'].includes(a.beard)) {
+    if (['moustache', 'pencil', 'goatee', 'full', 'beard', 'horseshoe', 'vandyke', 'short'].includes(a.beard)) {
       const m = Math.exp(-(((d.y + 0.33) / 0.045) ** 2)) * Math.exp(-((d.x / 0.24) ** 4)) * smooth(0.8, 0.9, d.z);
       tmp.lerp(hair, Math.min(0.9, m * 0.9));
     }

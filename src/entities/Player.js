@@ -16,7 +16,7 @@ import { PLAYER, COURT, SHOTS, ENERGY, VENUE_RULES, flatStats, skillFor, doorAt,
 import { planShot, planWallShot } from '../physics/ShotSolver.js';
 import { Avatar, SHOULDER_H, ARM_REACH } from './Avatar.js';
 
-export const BUTTONS = ['A', 'X', 'Y', 'B', 'C'];   // C = contre-vitre (A+B ensemble)
+export const BUTTONS = ['A', 'X', 'Y', 'B', 'C', 'D'];   // D = smash par 3 / par 4 (X+Y)   // C = contre-vitre (A+B ensemble)
 
 /**
  * Cible au sol à partir du stick de visée (pour un joueur humain).
@@ -266,6 +266,7 @@ export class Player {
       case 'C': return 'wall';
       case 'X': return this.aim.y < -0.55 ? 'drop' : 'slice';
       case 'B': return 'lob';
+      case 'D': if (h >= 1.6) return 'smash'; a.power = Math.max(a.power, 0.85); return groundOrVolley;
       case 'Y':
         if (h >= 1.45) return a.power >= 0.7 ? 'smash' : 'bandeja';
         a.power = Math.max(a.power, 0.85); // frappe à plat appuyée
@@ -344,6 +345,25 @@ export class Player {
     st.rolling = false;
     // force : une balle "lourde" ressort plus vivement de la vitre
     st.boost = type === 'lob' || type === 'drop' ? 0 : (this.stats.strength - 0.5) * 0.14;
+    st.kick = 0;
+    // smash par 3 / par 4 : il faut relâcher dans la zone verte de la jauge (82 à 95 %) et frapper haut
+    if (a.button === 'D' && type === 'smash' && !fault) {
+      const good = power >= 0.82 && power <= 0.95 && h >= 2.05 && q >= 0.55;
+      if (good) {
+        const door = Math.abs(this.aim.x) > 0.55;            // visée sur le côté : sortie par le côté (par 3), sinon par le fond (par 4)
+        const opp = -this.side;
+        const tgt = { x: door ? Math.sign(this.aim.x || 1) * 3.4 : clamp(this.aim.x * 2, -2, 2), z: opp * (door ? 5.6 : 6.4) };
+        const pl = planShot(st.p, tgt, 'smash', 1, speedMul * 1.18, 0, null);
+        st.v.copy(pl.v); st.w.copy(pl.w).multiplyScalar(0.3);
+        st.kick = door ? 2 : 1;
+        st.boost = 0.32 + (this.stats.strength - 0.5) * 0.2;
+        g.hud?.shotInfo?.(door ? 'SMASH PAR 3 !' : 'SMASH PAR 4 !', this.side);
+      } else {
+        // mauvais timing : smash qui ne ressort pas (ou part au filet si beaucoup trop chargé)
+        if (power > 0.95 && Math.random() < 0.5) { st.v.y -= 4; }
+        g.hud?.shotInfo?.(power > 0.95 ? 'Trop tard !' : power < 0.82 ? 'Trop tôt !' : 'Trop bas !', this.side);
+      }
+    }
     this.drain(ENERGY.hitDrain * (0.5 + power));
 
     // ---- animation

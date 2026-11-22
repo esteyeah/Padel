@@ -470,3 +470,12 @@ padel-sim/
 - 10 nouvelles missions : lobs profonds, par 3, par 4, amorties courtes, volées, retours gagnants, séries de points…
 - Hangar : allées en résine, panneaux PISTE 1 à 4, fanions, fresques.
 - Déploiement automatique (GitHub Actions → Cloudflare).
+
+### 0.47
+- Ceyreste : vrai toit à deux pans sur le club-house, le court 2 devient le court central, bancs/arbre/poubelles déplacés près du club-house, allées sans scintillement, petits buissons de garrigue autour des courts.
+- Personnages : 6 nouvelles barbes (aussi en carrière), coupe de Nadal corrigée (cheveux au-dessus du bandana), écharpe du maire ajustée.
+- Boutique : un premier clic fait essayer l'objet sur le joueur (ou montre le terrain), un second l'achète.
+- Raf : 15 nouvelles répliques, au plus 4 par match, jamais deux fois la même.
+- Nouveau smash « par 3 / par 4 » (X+Y ou touche O) : relâcher quand la jauge indique MAINTENANT ; visée sur le côté = par 3, au centre = par 4.
+- 5 nouvelles scènes en carrière (jeune supporter, coach, partenaire superstitieux, juge-arbitre, sponsor).
+- Hangar : fresques retirées (elles passaient derrière l'écran et les fenêtres).

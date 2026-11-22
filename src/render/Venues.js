@@ -70,7 +70,7 @@ VENUES.beach = {
 /** Courts jouables par lieu (le premier est le court central). Coordonnées dans le décor. */
 export const VENUE_COURTS = {
   // [x, z, rotation, gazon] : trois courts bleus en diagonale, le gris en haut à gauche, le bordeaux en bas à droite
-  ceyreste: [[0, 0], [-13.6, -5.8], [14.1, 6.5], [31.5, 16, Math.PI / 2, { base: '#7a1c26', hue: 355, sat: 58, light: 28 }], [-36, -28, Math.PI / 2, { base: '#45484d', hue: 215, sat: 5, light: 27 }]],
+  ceyreste: [[-13.6, -5.8], [0, 0], [14.1, 6.5], [31.5, 16, Math.PI / 2, { base: '#7a1c26', hue: 355, sat: 58, light: 28 }], [-36, -28, Math.PI / 2, { base: '#45484d', hue: 215, sat: 5, light: 27 }]],
   club: [[0, 0], [-15.5, 0], [17.5, 0]],
   hangar: [[-6.2, -12.5], [6.2, -12.5], [-6.2, 12.5, Math.PI], [6.2, 12.5, Math.PI]],
 };
@@ -558,9 +558,24 @@ function building(out, { x, z, w, d, h, y = 0, wall = 0xd9d4cb, roof = 0x3a3d44,
   if (tiles) {
     const tt = TX.photoTex('clay_roof_tiles_02', 4, 2);
     const roofMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: tt, normalMap: tt.userData.normal, roughness: 0.85 });
-    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.01, d * 0.66, w + 0.9, 4, 1, false, Math.PI / 4).rotateZ(Math.PI / 2).scale(1, 0.42, 1), roofMat);
-    r.position.y = h + d * 0.66 * 0.42 * 0.7;
-    g.add(r);
+    // toit à deux pans posé sur les murs (pignons triangulaires sous le faîtage)
+    roofMat.side = THREE.DoubleSide;
+    const D2 = (d + 0.8) / 2, R = d * 0.26, Ls = Math.hypot(D2, R), ang = Math.atan2(R, D2);
+    for (const sz of [1, -1]) {
+      const sl = new THREE.Mesh(new THREE.PlaneGeometry(w + 0.9, Ls).rotateX(-Math.PI / 2).rotateX(sz * ang), roofMat);
+      sl.position.set(0, h + 0.1 + R / 2, sz * D2 / 2);
+      g.add(sl);
+    }
+    const tri = new THREE.Shape(); tri.moveTo(-d / 2, 0); tri.lineTo(d / 2, 0); tri.lineTo(0, R * (d / 2) / D2); tri.closePath();
+    for (const sx of [1, -1]) {
+      const gb = new THREE.Mesh(new THREE.ShapeGeometry(tri).rotateY(Math.PI / 2), new THREE.MeshStandardMaterial({ color: wall, roughness: 0.92, side: THREE.DoubleSide }));
+      gb.position.set(sx * w / 2, h + 0.1, 0);
+      g.add(gb);
+    }
+    // faîtage
+    const ridge = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, w + 0.95, 8).rotateZ(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xa4553a, roughness: 0.85 }));
+    ridge.position.y = h + 0.1 + R + 0.02;
+    g.add(ridge);
     // génoises sous le toit
     const fascia = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 0.18, d + 0.5), new THREE.MeshStandardMaterial({ color: 0xe9e0cf, roughness: 0.9 }));
     fascia.position.y = h + 0.02;
@@ -788,16 +803,16 @@ function ceyresteDetails(out, renderer, DEPTH) {
   bench(low, PX - 2.8, PZ, Math.PI / 2);
 
   // --- jardin de rochers calcaires blancs et gravier, sur le talus devant la terrasse
-  flat(out, 6, 14, -24.4, 12, 0xd2c6b0, 0.006, TX.groundTex(renderer, 'dirt', 3, 7));
+  flat(out, 3.2, 16, -25.7, 12, 0xd2c6b0, 0.02, TX.groundTex(renderer, 'dirt', 2, 8));
   limestone(out, [[-26.6, 7.5, 0.55], [-26.2, 9.0, 0.7], [-25.8, 10.6, 0.5], [-26.7, 12.1, 0.8], [-25.9, 13.8, 0.6], [-26.4, 15.4, 0.75], [-25.2, 16.6, 0.45], [-24.8, 8.4, 0.4], [-25.0, 14.6, 0.5], [-24.2, 11.6, 0.35],
     [-26.9, 6.2, 0.45], [-25.4, 9.8, 0.3], [-26.0, 17.4, 0.5], [-24.6, 12.9, 0.28], [-25.6, 7.0, 0.32], [-27.0, 10.0, 0.4], [-26.9, 14.3, 0.35]]);
   bushGroup(out, [[-24.6, 10.0, 0.6], [-24.4, 15.8, 0.5]], 0x6f8a3c);
 
   // --- large allée en béton entre le club-house et le premier court bleu
-  flat(out, 5.5, 34, -21.3, 2, 0xc8c3b8, 0.004, TX.groundTex(renderer, 'concrete', 3, 18));
+  flat(out, 2.6, 30, -22.7, 8, 0xc8c3b8, 0.012, TX.groundTex(renderer, 'concrete', 2, 16));
 
   // --- bancs blancs avec les affaires des joueurs, poubelle en bois, mûrier jauni
-  const bA = bench(out.group, -23.6, 12.5, Math.PI / 2 + 0.25);
+  const bA = bench(out.group, -24.3, 20.6, Math.PI / 2 + 0.25);
   const props = new THREE.Group(); bA.add(props);
   props.add(mesh([at(new THREE.CylinderGeometry(0.035, 0.035, 0.24, 10), 0.4, 0.6, 0, 0, 0, Math.PI / 2 - 0.2)], new THREE.MeshStandardMaterial({ color: 0xe8f2ff, roughness: 0.1, transparent: true, opacity: 0.6 })));
   props.add(mesh([at(new THREE.CylinderGeometry(0.045, 0.045, 0.26, 12), -0.1, 0.52, 0.05, 0, 0, Math.PI / 2)], new THREE.MeshStandardMaterial({ color: 0x1e6fd9, roughness: 0.4 })));
@@ -805,14 +820,33 @@ function ceyresteDetails(out, renderer, DEPTH) {
   props.add(mesh([at(new THREE.BoxGeometry(0.08, 0.015, 0.16), 0.75, 0.48, 0.05)], new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.2 })));
   const rk = makeRacketMesh(RACKETS.find((r) => r.id === 'carbon') || RACKETS[0], designById('carbon3k'));
   rk.rotation.set(-Math.PI / 2, 0, 0.4); rk.position.set(0.25, 0.49, 0.03); props.add(rk);
-  bench(out.group, -23.4, 15.2, Math.PI / 2 + 0.1);
-  const bin = new THREE.Group(); bin.position.set(-19.2, 0, 10.5); out.group.add(bin);
+  bench(out.group, -24.1, 23.4, Math.PI / 2 + 0.1);
+  const bin = new THREE.Group(); bin.position.set(-21.6, 0, 22.4); out.group.add(bin);
   const staves = [];
   for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; staves.push(at(new THREE.BoxGeometry(0.1, 0.85, 0.03), Math.cos(a) * 0.28, 0.43, Math.sin(a) * 0.28, 0, -a + Math.PI / 2)); }
   bin.add(mesh(staves, new THREE.MeshStandardMaterial({ color: 0x8a4f2c, roughness: 0.85 }), { shadow: true }));
   bin.add(mesh([at(new THREE.TorusGeometry(0.29, 0.015, 6, 20), 0, 0.82, 0, Math.PI / 2), at(new THREE.TorusGeometry(0.29, 0.015, 6, 20), 0, 0.1, 0, Math.PI / 2)], new THREE.MeshStandardMaterial({ color: 0x555a60, metalness: 0.7 })));
-  out.group.add(mesh([at(new THREE.BoxGeometry(0.7, 1.05, 0.7), -19.3, 0.53, 12.0)], new THREE.MeshStandardMaterial({ color: 0x1e5aa8, roughness: 0.55 }), { shadow: true }));
-  treeInstances(out, 'autumn', [[-24.9, 13.6, 0.75]]);
+  out.group.add(mesh([at(new THREE.BoxGeometry(0.7, 1.05, 0.7), -21.6, 0.53, 23.9)], new THREE.MeshStandardMaterial({ color: 0x1e5aa8, roughness: 0.55 }), { shadow: true }));
+  treeInstances(out, 'autumn', [[-25.5, 22.2, 0.75]]);
+
+  // --- petits buissons un peu partout à l'extérieur des courts (garrigue : lentisques, romarin, cistes)
+  {
+    const courts = [[-13.6, -5.8], [0, 0], [14.1, 6.5], [31.5, 16, 1], [-36, -28, 1]];
+    const blocked = (x, z) => courts.some(([cx, cz, r]) => (r ? Math.abs(x - cx) < 13 && Math.abs(z - cz) < 8 : Math.abs(x - cx) < 8 && Math.abs(z - cz) < 13))
+      || (x < -27 && z > -17 && z < 28) || (x > -27.5 && x < -20 && z > 4 && z < 26) || (Math.abs(x + 6.8) < 2.5 && Math.abs(z + 2.8) < 16) || (Math.abs(x - 7.1) < 2.5 && Math.abs(z - 3.2) < 16);
+    let seed = 5;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const dark = [], light = [], grey = [];
+    for (let i = 0; i < 400 && dark.length + light.length + grey.length < 70; i++) {
+      const x = -30 + rnd() * 75, z = -32 + rnd() * 62;
+      if (blocked(x, z)) continue;
+      const pt = [x, z, 0.35 + rnd() * 0.5];
+      (i % 3 === 0 ? light : i % 3 === 1 ? dark : grey).push(pt);
+    }
+    if (dark.length) bushGroup(out, dark, 0x3f6b30);
+    if (light.length) bushGroup(out, light, 0x7f9a45);
+    if (grey.length) bushGroup(out, grey, 0x8a9a7a);
+  }
 
   // --- tableau de score à volets accroché au grillage du court bleu le plus proche
   const sb = canvasTex(256, 192, (g) => {
@@ -898,8 +932,8 @@ function decorCeyreste(out, renderer) {
   tennisCourt(out, renderer, -36, 46, 'clay');
 
   // allées en béton entre les courts
-  flat(out, 4, 30, -6.8, -2.8, 0x8f8a80, 0.002);
-  flat(out, 4, 30, 7.1, 3.2, 0x8f8a80, 0.002);
+  flat(out, 3, 30, -6.8, -2.8, 0x8f8a80, 0.009);
+  flat(out, 3, 30, 7.1, 3.2, 0x8f8a80, 0.009);
 
   // --- cabane en bois (devant à gauche)
   const cab = building(out, { x: -14.6, z: 17.5, w: 4.2, d: 3.4, h: 2.6, wall: 0xffffff, roof: 0x4a3324, wood: true, rotY: 0.05 });
@@ -1386,18 +1420,6 @@ function decorHangar(out, renderer) {
     }
   }
   flags.forEach((list, k) => out.group.add(mesh(list, new THREE.MeshStandardMaterial({ color: flagCols[k], roughness: 0.8, side: THREE.DoubleSide }))));
-  // --- fresque graphique sur le pignon ouest (au-dessus de l'entrée)
-  const mural = canvasTex(1024, 256, (g, Wd, Ht) => {
-    g.fillStyle = '#20242b'; g.fillRect(0, 0, Wd, Ht);
-    const cols = ['#ff9800', '#1e88e5', '#ffd400', '#e53935', '#43a047'];
-    for (let i = 0; i < 9; i++) { g.fillStyle = cols[i % cols.length]; g.globalAlpha = 0.85; g.beginPath(); g.moveTo(i * 130 - 60, Ht); g.lineTo(i * 130 + 40, 0); g.lineTo(i * 130 + 110, 0); g.lineTo(i * 130 + 10, Ht); g.fill(); }
-    g.globalAlpha = 1; g.fillStyle = '#ffffff'; g.font = 'bold 130px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center';
-    g.lineWidth = 12; g.strokeStyle = '#111'; g.strokeText('HANGAR PADEL', Wd / 2, 175); g.fillText('HANGAR PADEL', Wd / 2, 175);
-  });
-  for (const zz of [-Z + 0.05, Z - 0.05]) {
-    const mm = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5), new THREE.MeshStandardMaterial({ map: mural, roughness: 0.8 }));
-    mm.position.set(0, 4.9, zz); mm.rotation.y = zz < 0 ? 0 : Math.PI; out.group.add(mm);
-  }
 }
 
 /** Chaise d'arbitre (au niveau du filet) et table des commentateurs avec caméra TV. */

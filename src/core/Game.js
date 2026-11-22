@@ -117,6 +117,7 @@ export class Game {
     this.lastShot = null;
     this.time = 0; this.acc = 0; this.paused = false;
     this.rallyHits = 0;
+    this._said = {};
     this.tally = { points: [0, 0], longestRally: 0 };
     // statistiques du joueur humain (missions)
     this.stats = { winners: {}, aces: 0, doubleFaults: 0, netWinners: 0, glassWinners: 0, porTres: 0, porCuatro: 0, porTresOnly: 0, door: 0, deepLobs: 0, drops: 0, volleysIn: 0, outsideWinners: 0, returnsWon: 0, serveGames: 0, breaks: 0, firstServesIn: 0, streak: 0, bestStreak: 0, wallShots: 0, wallSuccess: 0, outsideReturns: 0, maxRallyWon: 0, pointsWon: 0, pointsLost: 0 };
@@ -654,9 +655,18 @@ export class Game {
       const aceAgainst = d.winner !== p.side && this.lastShot?.type === 'serve' && this.rallyHits <= 1 && !/faute/i.test(d.reason);
       if (aceAgainst && lines.ace) pool = lines.ace;
       else if (d.winner === p.side && shooter === p && great) pool = lines.great;
-      else if (d.winner === p.side && Math.random() < 0.18) pool = lines.won;
-      else if (d.winner !== p.side && Math.random() < 0.22) pool = lines.lost;
-      if (pool?.length) { this.hud.speech(p.name, pool[Math.floor(Math.random() * pool.length)], p.side); return; }
+      else if (d.winner === p.side && Math.random() < 0.12) pool = lines.won;
+      else if (d.winner !== p.side && Math.random() < 0.15) pool = lines.lost;
+      if (!pool?.length) continue;
+      // au plus 4 répliques par joueur et par match, jamais deux fois la même, et pas deux points de suite
+      const said = (this._said ??= {})[p.name] ??= { n: 0, used: new Set(), last: -9 };
+      if (said.n >= 4 || this.tally.points[0] + this.tally.points[1] - said.last < 3) continue;
+      const fresh = pool.filter((t) => !said.used.has(t));
+      if (!fresh.length) continue;
+      const line = fresh[Math.floor(Math.random() * fresh.length)];
+      said.used.add(line); said.n++; said.last = this.tally.points[0] + this.tally.points[1];
+      this.hud.speech(p.name, line, p.side);
+      return;
     }
   }
 
@@ -965,6 +975,7 @@ export class Game {
     const b = h.armed.button;
     if (h.armed.shotType === 'serve') return 'serve';
     if (b === 'C') return 'wall';
+    if (b === 'D') return 'smash';
     if (b === 'B') return 'lob';
     if (b === 'X') return h.aim.y < -0.55 ? 'drop' : 'slice';
     if (b === 'Y') return 'smash';
@@ -976,6 +987,7 @@ export class Game {
     if (h.armed.shotType === 'serve') return 'SERVICE';
     if (h.isOutside()) return 'RENVOI EN LOB';
     if (b === 'C') return 'CONTRE-VITRE';
+    if (b === 'D') { const p = h.armed.power; return p < 0.82 ? 'PAR 3 / PAR 4 · attendez…' : p <= 0.95 ? 'PAR 3 / PAR 4 · MAINTENANT !' : 'PAR 3 / PAR 4 · trop tard'; }
     if (b === 'B') return 'LOB';
     if (b === 'X') return h.aim.y < -0.55 ? 'AMORTIE' : 'COUPÉ';
     if (b === 'Y') return h.armed.power >= 0.7 ? 'SMASH' : 'BANDEJA';

@@ -24,8 +24,8 @@ export const MISSIONS = [
   { id: 'nodf', text: () => 'gagner le match sans double faute', target: T(1, 1, 1, 1), metric: (s) => (s.won && s.doubleFaults === 0 ? 1 : 0), reward: 'shop' },
   // missions plus spécifiques
   { id: 'deeplob', text: (n) => `réussir ${n} lobs qui retombent entre la ligne de service et la vitre du fond`, target: T(3, 5, 8, 10), metric: (s) => s.deepLobs || 0, reward: 'shop' },
-  { id: 'por4', text: () => 'réussir un « par 4 » (smash qui ressort par la porte)', target: T(1, 1, 1, 1), metric: (s) => s.porCuatro || 0, reward: 'sp', needs: 'power' },
-  { id: 'por3', text: () => 'réussir un « par 3 » (smash qui ressort par-dessus les vitres)', target: T(1, 1, 1, 1), metric: (s) => s.porTresOnly || 0, reward: 'sp', needs: 'power' },
+  { id: 'por4', text: () => 'réussir un « par 4 » (smash qui ressort par-dessus le fond)', target: T(1, 1, 1, 1), metric: (s) => s.porCuatro || 0, reward: 'sp', needs: 'power' },
+  { id: 'por3', text: () => 'réussir un « par 3 » (smash qui ressort par le côté)', target: T(1, 1, 1, 1), metric: (s) => s.porTresOnly || 0, reward: 'sp', needs: 'power' },
   { id: 'drop', text: (n) => `réussir ${n} amortie${n > 1 ? 's' : ''} qui retombe${n > 1 ? 'nt' : ''} à moins de 3 m du filet`, target: T(1, 2, 3, 4), metric: (s) => s.drops || 0, reward: 'shop' },
   { id: 'volleys', text: (n) => `passer ${n} volées dans le terrain adverse`, target: T(6, 10, 14, 18), metric: (s) => s.volleysIn || 0, reward: 'sp' },
   { id: 'outside', text: () => 'gagner un point après être sorti du terrain pour la rattraper', target: T(1, 1, 1, 1), metric: (s) => s.outsideWinners || 0, reward: 'sp' },

@@ -93,7 +93,7 @@ function simulate(seed, skillBonus = 0, log = false) {
   c.enter('quartier');
   const o = c.matchOptions();
   check('Match amateur en super tie-break, au tennis municipal', o.matchTiebreak === 10 && o.venue === 'municipal' && !!o.mission && typeof o.mission.metric === 'function', o.mission.text);
-  const stats = { winners: { smash: 5, lob: 5, volley: 5, bandeja: 5 }, aces: 5, doubleFaults: 0, netWinners: 9, glassWinners: 9, porTres: 2, wallShots: 3, wallSuccess: 3, outsideReturns: 0, maxRallyWon: 20, pointsWon: 10, pointsLost: 2, won: true, gamesLost: 0 };
+  const stats = { winners: { smash: 5, lob: 5, volley: 5, bandeja: 5 }, aces: 5, doubleFaults: 0, netWinners: 9, glassWinners: 9, porTres: 2, wallShots: 3, wallSuccess: 3, outsideReturns: 0, maxRallyWon: 20, pointsWon: 10, pointsLost: 2, won: true, gamesLost: 0, porCuatro: 1, porTresOnly: 1, door: 1, deepLobs: 20, drops: 9, volleysIn: 30, outsideWinners: 2, returnsWon: 20, bestStreak: 10 };
   const sum = c.reportMatch({ won: true, score: '10-4', stats });
   check('Mission réussie récompensée', sum.mission?.done && sum.shop > 0, `${sum.mission?.text} -> ${sum.mission?.reward} ${sum.mission?.amount}, boutique +${sum.shop}`);
   c.setFormat('amateur', 'set4');

@@ -110,13 +110,15 @@ export class CareerUI {
   hide() { this.visible = false; this.el.classList.add('hidden'); }
 
   show(screen, params = null) {
-    const wasEditor = this.screen === 'editor';
+    const wasEditor = this.screen === 'editor' || this.screen === 'shop';
     this.screen = screen;
+    this.shopSel = null;
     this.params = params;
     this.focusKey = null;
     this.visible = true;
     this.el.classList.remove('hidden');
-    this.el.classList.toggle('editor', screen === 'editor');
+    this.el.classList.toggle('editor', screen === 'editor' || screen === 'shop');
+    if (screen === 'shop') this.shopPreview(null);
     if (screen === 'editor') this.preview();
     else if (wasEditor) this.game.setShowcase(null);
     this.render();
@@ -299,6 +301,10 @@ export class CareerUI {
         break;
       }
       case 'buy': {
+        // premier clic : on essaie l'objet sur le joueur ; second clic : achat
+        const it = SHOP_ITEMS.find((i) => i.id === arg);
+        if (this.shopSel !== arg) { this.shopSel = arg; this.shopPreview(it); this.focusKey = el?.dataset.key; this.render(); break; }
+        this.shopSel = null;
         const r = c.buy(arg);
         this.flash = r.ok ? `Acheté : ${this.itemLabel(SHOP_ITEMS.find((i) => i.id === arg))}. Équipez-le dans « Apparence ».` : r.error;
         this.focusKey = el?.dataset.key;
@@ -672,6 +678,19 @@ export class CareerUI {
     return it.label;
   }
 
+  /** Aperçu de la boutique : le joueur porte l'objet sélectionné (ou le terrain s'affiche derrière). */
+  shopPreview(it) {
+    const c = this.career;
+    if (!c) return;
+    if (it?.cat === 'venue') { this.game.setShowcase(null, true); this.r3d.arena.setVenue(it.ref, 0); this.r3d.arena.setAmbiance('day'); return; }
+    const look = { ...c.lookFor() };
+    const field = { color: 'primary', headwear: 'headwear', racket: 'racket', design: 'racketDesign', kit: 'kitStyle', bag: 'bag' }[it?.cat];
+    if (field) look[field] = it.ref;
+    const app = { ...resolveLook(look), name: c.playerNpc().short, hand: c.s.profile.hand === 'L' ? -1 : 1 };
+    this.game.setShowcase(app);
+    if (it?.cat === 'racket' || it?.cat === 'design') { const sc = this.game.showcase; if (sc) sc.t = 0; }
+  }
+
   screen_shop() {
     const c = this.career;
     const flash = this.flash ? `<p class="c-flash">${esc(this.flash)}</p>` : '';
@@ -681,10 +700,11 @@ export class CareerUI {
       const own = c.owns(it.id), afford = (it.eur ? c.s.money : c.s.shopPts) >= it.price;
       const sw = it.hex != null ? `<i class="sw big ${it.metal ? 'metal' : ''}" style="background:${hex(it.hex)}"></i>` : '';
       const desc = it.cat === 'venue' ? VENUES[it.ref].desc : it.desc || '';
-      return `<button class="c-card shop ${own ? 'owned' : afford ? '' : 'locked'}" data-nav data-key="i-${it.id}" ${own ? '' : `data-act="buy" data-arg="${it.id}"`}>
+      const sel = this.shopSel === it.id;
+      return `<button class="c-card shop ${own ? 'owned' : afford ? '' : 'locked'}${sel ? ' sel' : ''}" data-nav data-key="i-${it.id}" ${own ? '' : `data-act="buy" data-arg="${it.id}"`}>
         <span class="row1">${sw}<b>${esc(this.itemLabel(it))}</b></span>
         ${desc ? `<span class="meta">${esc(desc)}</span>` : ''}
-        <span class="price">${own ? 'Acquis' : it.price === 0 ? 'Gratuit' : it.eur ? `${fr(it.price)} €` : `${fr(it.price)} points`}</span>
+        <span class="price">${own ? 'Acquis' : sel ? `Confirmer l'achat · ${it.eur ? `${fr(it.price)} €` : `${fr(it.price)} points`}` : it.price === 0 ? 'Gratuit' : it.eur ? `${fr(it.price)} €` : `${fr(it.price)} points`}</span>
       </button>`;
     }).join('');
     return `
