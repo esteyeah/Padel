@@ -8,6 +8,7 @@
 //  Chaque écran est une méthode `screen_xxx()` qui renvoie du HTML ; les
 //  actions sont déclarées par data-act / data-arg et traitées dans `act()`.
 // ============================================================================
+import { RACKET_DESIGNS } from '../entities/Racket.js';
 import { STAFF, CLUB, DECOS, clubTournament } from '../career/Business.js';
 import { unread, taunt } from '../career/Story.js';
 import { Career, DEFAULT_LOOK } from '../career/Career.js';
@@ -50,6 +51,7 @@ const LOOK_FIELDS = [
   ['shoeColor', 'Chaussures', colorOpts, 'color'],
   ['skirt', 'Bas', [[false, 'Short'], [true, 'Jupe']]],
   ['racket', 'Raquette', RACKETS.map((r) => [r.id, r.label, r.frame]), 'racket'],
+  ['racketDesign', 'Design de raquette', RACKET_DESIGNS.map((d) => [d.id, d.label, d.face ?? 0xffd400]), 'design'],
   ['bag', 'Sac', BAGS.map((b) => [b.id, b.label, b.main]), 'bag'],
 ];
 const PROFILE_FIELDS = [

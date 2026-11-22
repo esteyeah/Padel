@@ -20,7 +20,7 @@ import { MAYOR_LOOK, GROWTH, grownCelebs, CHATTER } from './data/roster.js';
 import { PRO_PAIRS, CELEBRITIES, STYLES, COACH, genericNpc, makeNpc } from './data/roster.js';
 import { createTournament, playerMatch, reportPlayerResult, roundName, totalRounds, winProbability } from './Tournament.js';
 import { pickMission, liveMission, missionDone } from './data/missions.js';
-import { SHOP_ITEMS, FREE_ITEMS, SHOP_REWARDS, TEST_UNLOCK_ALL_VENUES, itemById } from './data/shop.js';
+import { SHOP_ITEMS, FREE_ITEMS, SHOP_REWARDS, TEST_UNLOCK_ALL_VENUES, itemById, isUnlocked } from './data/shop.js';
 import { DRILLS, DRILL_IDS } from '../core/Drills.js';
 import { makeAppearance, resolveLook, rackById, bagById, DEFAULT_LOOK as LOOK0, KITS, rng } from '../entities/Appearance.js';
 import { botDiffFromRating } from '../config.js';
@@ -407,7 +407,7 @@ export class Career {
   // ------------------------------------------------------------------ entraînement
   /** Un seul atelier par semaine, et pas pendant un tournoi. */
   /** Personnages jouables en exhibition. */
-  hasChar(id) { this.s.chars ??= []; return this.s.chars.includes(id); }
+  hasChar(id) { this.s.chars ??= []; return this.s.chars.includes(id) || isUnlocked(); }
   buyChar(id) {
     const c = findCharacter(id);
     if (!c || c.mission) return { ok: false, error: 'Ce personnage se débloque par une mission.' };
@@ -526,7 +526,7 @@ export class Career {
   setFormat(tier, id) { if (FORMAT_CHOICES[tier]?.includes(id)) { this.s.settings.formats[tier] = id; this.save(); } }
 
   // ------------------------------------------------------------------ boutique
-  owns(id) { return this.s.owned.includes(id) || (TEST_UNLOCK_ALL_VENUES && id.startsWith('venue:')); }
+  owns(id) { const it = itemById(id); return this.s.owned.includes(id) || (it && it.price === 0) || ((TEST_UNLOCK_ALL_VENUES || isUnlocked()) && id.startsWith('venue:')); }
   buy(id) {
     const it = itemById(id);
     if (!it || this.owns(id)) return { ok: false, error: 'Déjà acheté.' };
@@ -547,7 +547,7 @@ export class Career {
     const ok = (cat, ref, fallback) => (this.owns(`${cat}:${ref}`) ? ref : fallback);
     L.primary = ok('color', L.primary, 'blue'); L.secondary = ok('color', L.secondary, 'yellow');
     L.shortsColor = ok('color', L.shortsColor, 'navy'); L.shoeColor = ok('color', L.shoeColor, 'white');
-    L.headwear = ok('headwear', L.headwear, 'band'); L.racket = ok('racket', L.racket, 'classic'); L.bag = ok('bag', L.bag, 'none');
+    L.headwear = ok('headwear', L.headwear, 'band'); L.racket = ok('racket', L.racket, 'classic'); L.racketDesign = ok('design', L.racketDesign || 'model', 'model'); L.bag = ok('bag', L.bag, 'none');
     return L;
   }
   ownedVenues() { return SHOP_ITEMS.filter((i) => i.cat === 'venue' && this.owns(i.id)).map((i) => i.ref); }

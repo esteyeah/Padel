@@ -19,7 +19,8 @@ import { foliage, leafMat } from './Foliage.js';
 import { rocks } from './Rocks.js';
 import { hedge } from './Foliage.js';
 import { Avatar } from '../entities/Avatar.js';
-import { makeAppearance } from '../entities/Appearance.js';
+import { makeAppearance, RACKETS } from '../entities/Appearance.js';
+import { makeRacketMesh, designById } from '../entities/Racket.js';
 import {
   buildSurroundings, canvasTex, grassTex, pavingTex, hedgeTex, at, mesh, scaleUV, Crowd, palmTemplate, neighborCourt as neighborCourtBase,
   frondTex, trunkTex, skylineTex,
@@ -1138,11 +1139,34 @@ function decorHangar(out, renderer) {
     const host = new Avatar({ ...makeAppearance('blue', 3141, { name: '' }), headwear: null }); host.racket.visible = false;
     host.root.position.set(x + 1.6, 0, 4.3); host.root.rotation.y = Math.PI / 2; out.group.add(host.root);
     out.ambient.push({ t: 0, update(dt) { this.t += dt; host.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: Math.PI / 2 + Math.sin(this.t * 0.4) * 0.5, look: 0, ready: false, armed: null, swing: null }); } });
-    // présentoir de raquettes
-    const rack = [];
-    for (let k = 0; k < 6; k++) rack.push(at(new THREE.CylinderGeometry(0.14, 0.14, 0.03, 18), x + 0.15, 1.3 + (k % 2) * 0.45, -4.4 + Math.floor(k / 2) * 0.5, 0, 0, Math.PI / 2));
-    out.group.add(mesh(rack, new THREE.MeshStandardMaterial({ color: 0xffd400, roughness: 0.4 })));
-    sign(out, renderer, 'LOCATION RAQUETTES', [['#3a0c0c', '#7a1616'], '#ffffff', '#ffffff'], 1.8, x + 0.12, 2.2, -3.9, Math.PI / 2);
+    // pro shop : mur de raquettes en vente (vrais modèles et designs de la boutique), étiquettes de prix
+    {
+      const wall = new THREE.Group(); wall.position.set(x + 0.06, 0, -4.1); wall.rotation.y = Math.PI / 2; out.group.add(wall);
+      wall.add(mesh([at(new THREE.BoxGeometry(2.9, 1.9, 0.05), 0, 1.55, 0)], new THREE.MeshStandardMaterial({ color: 0x1b1d22, roughness: 0.7 }), { shadow: true }));
+      wall.add(mesh([at(new THREE.BoxGeometry(2.95, 0.05, 0.12), 0, 0.6, 0.05), at(new THREE.BoxGeometry(2.95, 0.05, 0.12), 0, 2.5, 0.05)], new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.8, roughness: 0.3 })));
+      const picks = [['tour', 'model'], ['storm', 'model'], ['viper', 'model'], ['carbon', 'flame'], ['power', 'galaxy'], ['touch', 'provence'], ['smash', 'bolt'], ['gold', 'model']];
+      const prices = { classic: 0, carbon: 450, power: 450, touch: 450, smash: 600, viper: 700, tour: 1200, storm: 900, gold: 15000 };
+      picks.forEach(([rid, did], i) => {
+        const r = RACKETS.find((q) => q.id === rid) || RACKETS[0];
+        const holder = new THREE.Group();
+        holder.position.set(-1.22 + (i % 4) * 0.81, i < 4 ? 2.05 : 1.15, 0.06);
+        const rk = makeRacketMesh(r, designById(did));
+        rk.rotation.set(0, 0, -Math.PI / 2);
+        rk.position.y = -0.08;
+        rk.scale.setScalar(1.05);
+        holder.add(rk);
+        const d = designById(did);
+        const tag = canvasTex(256, 96, (g) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, 256, 96); g.fillStyle = '#111'; g.font = 'bold 30px sans-serif'; g.fillText(r.label, 10, 38); g.fillStyle = '#666'; g.font = '22px sans-serif'; g.fillText(d.id === 'model' ? 'Design d\'origine' : d.label, 10, 66); g.fillStyle = '#c62828'; g.font = 'bold 30px sans-serif'; g.textAlign = 'right'; g.fillText(`${(prices[rid] || 0) + (d.price || 0)} €`, 246, 88); });
+        const tg = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.16), new THREE.MeshStandardMaterial({ map: tag, roughness: 0.6 }));
+        tg.position.set(0, -0.24, 0.03);
+        holder.add(tg);
+        wall.add(holder);
+      });
+      // spots du présentoir
+      const spot = new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0xfff3d6, emissiveIntensity: 2 });
+      wall.add(mesh([-1.1, -0.37, 0.37, 1.1].map((sx) => at(new THREE.CylinderGeometry(0.05, 0.07, 0.08, 10), sx, 2.62, 0.18)), spot));
+    }
+    sign(out, renderer, 'PRO SHOP · RAQUETTES', [['#0d1b2a', '#1b3a5c'], '#ffd400', '#ffd400'], 2.4, x + 0.12, 2.85, -4.1, Math.PI / 2);
   }
   // --- toilettes et vestiaires (pignon est), distributeur de boissons
   {

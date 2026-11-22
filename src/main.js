@@ -9,7 +9,7 @@ import { HUD } from './ui/HUD.js';
 import { Menu } from './ui/Menu.js';
 import { CareerUI } from './ui/CareerUI.js';
 import { Career } from './career/Career.js';
-import { TEST_UNLOCK_ALL_VENUES, SHOP_ITEMS } from './career/data/shop.js';
+import { TEST_UNLOCK_ALL_VENUES, SHOP_ITEMS, isUnlocked, tryUnlockCode } from './career/data/shop.js';
 import { VENUES } from './render/Venues.js';
 import { bagById } from './entities/Appearance.js';
 import { Sfx } from './audio/Sfx.js';
@@ -112,13 +112,14 @@ const online = new OnlineUI({
   abortMatch: (msg) => { hud.banner('MATCH INTERROMPU', msg || '', 2.5); setTimeout(() => { if (game.opts?.net) game.leaveOnline(); }, 2500); },
 });
 menu.online = online;
+menu.onCode = (code) => { const ok = tryUnlockCode(code); if (ok) refreshVenues(); return ok; };
 
 let storage = null;
 try { storage = window.localStorage; storage.getItem('padel-arena.career'); } catch { storage = null; }
 const career = new CareerUI({ input, game, r3d, sfx, storage, onExit: () => { refreshVenues(); menu.show(); } });
 function refreshVenues() {
   const c = Career.load(storage);
-  const owned = (c ? c.ownedVenues() : TEST_UNLOCK_ALL_VENUES ? Object.keys(VENUES) : ['club', 'municipal']).filter((v) => v !== 'myclub');
+  const owned = (c ? c.ownedVenues() : (TEST_UNLOCK_ALL_VENUES || isUnlocked()) ? Object.keys(VENUES) : ['club', 'municipal']).filter((v) => v !== 'myclub');
   if (c?.s.club) owned.push('myclub');
   const nm = (v) => (v === 'myclub' ? c.s.club.name : VENUES[v].label);
   const price = (v) => SHOP_ITEMS.find((i) => i.id === `venue:${v}`)?.price;

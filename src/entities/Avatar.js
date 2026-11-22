@@ -21,6 +21,7 @@ import { makeFace, ZONES } from './Face.js';
 import { buildSkinnedBody } from './BodyMesh.js';
 import { solveArm, aimRacket, armPose } from './ArmIK.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { racketTexture } from './Racket.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = (t) => t * t * (3 - 2 * t);
@@ -31,33 +32,6 @@ export const SHOULDER_H = 1.46;   // hauteur d'épaule (taille 1.0)
 export const ARM_REACH = 0.86;    // épaule -> centre du tamis
 
 // ------------------------------------------------------------------ textures
-function racketTexture(color, pattern = 'arc', faceColor = null) {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d');
-  const grd = g.createLinearGradient(0, 0, 128, 128);
-  grd.addColorStop(0, '#2a2d33'); grd.addColorStop(1, '#0e0f12');
-  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
-  const hex = (c) => `#${c.toString(16).padStart(6, '0')}`;
-  if (faceColor != null) { g.fillStyle = hex(faceColor); g.globalAlpha = 0.85; g.fillRect(0, 0, 128, 128); g.globalAlpha = 1; }
-  g.strokeStyle = hex(color);
-  g.fillStyle = hex(color);
-  g.lineWidth = 9;
-  if (pattern === 'stripes') { for (let i = -2; i < 4; i++) { g.beginPath(); g.moveTo(i * 40, 128); g.lineTo(i * 40 + 90, 0); g.stroke(); } }
-  else if (pattern === 'star') { g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 18 : 42, a = (i / 10) * Math.PI * 2 - Math.PI / 2; g.lineTo(64 + Math.cos(a) * r, 64 + Math.sin(a) * r); } g.closePath(); g.fill(); }
-  else if (pattern === 'split') { g.fillRect(0, 0, 64, 128); }
-  else { g.beginPath(); g.moveTo(10, 100); g.quadraticCurveTo(64, 40, 118, 100); g.stroke(); }
-  g.fillStyle = 'rgba(0,0,0,0.85)';
-  for (let y = 18; y < 112; y += 11) {
-    for (let x = 18; x < 112; x += 11) {
-      if (Math.hypot(x - 64, y - 64) < 44) { g.beginPath(); g.arc(x + ((y / 11) % 2) * 5, y, 2.6, 0, Math.PI * 2); g.fill(); }
-    }
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
 function backPrintTexture(name, number, color) {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 256;
@@ -295,8 +269,8 @@ export class Avatar {
       shoeAccent: M(a.shoeAccent, 0.5),
       sock: M(0xf5f5f5, 0.9),
       grip: M(0xf0f0f0, 0.9),
-      frame: M(a.racket, 0.35, { metalness: 0.2 }),
-      face: M(0xffffff, 0.45, { map: racketTexture(a.racketFace ?? a.racket, a.racketPattern, a.racketBase ?? null) }),
+      frame: new THREE.MeshPhysicalMaterial({ color: a.racket, roughness: 0.32, metalness: a.racketMetal ? 0.8 : 0.15, clearcoat: 0.8, clearcoatRoughness: 0.2 }),
+      face: new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.25, map: racketTexture(a.racket, a.racketPattern, a.racketFace ?? a.racket, a.racketBase ?? null, a.racketAccent ?? null, a.racketLabel || '') }),
     };
     this.mat = mat;
     const P = new Parts();

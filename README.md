@@ -450,3 +450,9 @@ padel-sim/
 - Ceyreste : la fête se fait parfois avec une sono (DJ et colonnes d'enceintes) qui passe les musiques NCS.
 - Musiques réencodées en meilleure qualité (32 kHz, 48 kb/s) ; filtres « enceinte » plus ouverts.
 - Exhibition : choix du lieu puis du court dans une grille, comme pour les personnages, avec aperçu du décor.
+
+### 0.44
+- Le maire de Ceyreste devient un joueur : il ne joue qu'aux tournois de Ceyreste (carrière) ; le battre le débloque comme personnage.
+- Les terrains s'achètent en points boutique ; code secret (Paramètres > Code secret) pour tout débloquer.
+- Raquettes : 3 nouveaux modèles, 12 designs de tamis achetables à part, texture haute définition (logo, trous, vernis).
+- Hangar : vrai Pro Shop avec les raquettes de la boutique et leurs prix.

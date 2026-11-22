@@ -66,11 +66,11 @@ function buildField(tpl, count, rand, reserved = []) {
 
   // célébrités du palier, associées entre elles ou à un joueur fictif de niveau proche
   const CELEBRITIES = grownCelebs();
-  const pool = shuffle(CELEBRITIES.filter((c) => c.tiers.includes(tpl.tier) && c.ovr >= lo - 8 && c.ovr <= hi + 6), rand)
+  const pool = shuffle(CELEBRITIES.filter((c) => c.tiers.includes(tpl.tier) && (!c.venues || c.venues.includes(tpl.venue)) && c.ovr >= lo - 8 && c.ovr <= hi + 6), rand)
     .filter(() => rand() < 0.65)
     .slice(0, Math.max(1, Math.floor(count / 3)));
   // les habitués (Raf Tomatis…) s'inscrivent à tous les tournois de leur palier
-  for (const c of CELEBRITIES) if (c.regular && c.tiers.includes(tpl.tier) && !pool.includes(c)) pool.unshift(c);
+  for (const c of CELEBRITIES) if (c.regular && c.tiers.includes(tpl.tier) && (!c.venues || c.venues.includes(tpl.venue)) && !pool.includes(c)) pool.unshift(c);
   // un duo habituel (ex. Domingo et Xari) s'inscrit ensemble
   for (const c of [...pool]) {
     if (!c.pairWith || !pool.includes(c)) continue;

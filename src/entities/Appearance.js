@@ -1,4 +1,5 @@
 // ============================================================================
+import { designById } from './Racket.js';
 //  Apparence des joueurs : catalogue (couleurs, carrures, coiffures, barbes,
 //  couvre-chefs, raquettes, sacs), tenues d'équipe des bots, et conversion
 //  d'un "look" (identifiants choisis dans l'éditeur / la boutique) en
@@ -64,7 +65,10 @@ export const RACKETS = [
   { id: 'power', label: 'Power Diamond', frame: 0x1565c0, face: 0x4fc3f7, base: 0x0f1c2e, pattern: 'split', bonus: { strength: 2 } },
   { id: 'touch', label: 'Soft Touch', frame: 0xf2f4f7, face: 0x00bfa5, base: 0xf2f4f7, pattern: 'arc', bonus: { lob: 2 } },
   { id: 'smash', label: 'Smash Pro', frame: 0xc62828, face: 0xffd400, base: 0x1a1a1d, pattern: 'star', bonus: { smash: 2 } },
-  { id: 'gold', label: 'Gold Edition', frame: 0xd4a72c, face: 0xd4a72c, base: 0x17100b, pattern: 'star', bonus: { drive: 1, smash: 1, strength: 1 } },
+  { id: 'viper', label: 'Viper Hybrid', frame: 0x00c853, face: 0x00e676, base: 0x0b1f14, accent: 0x111111, pattern: 'hex', bonus: { drive: 1, lob: 1 } },
+  { id: 'tour', label: 'Tour Carbon 18K', frame: 0x111316, face: 0xff6d00, base: 0x15171b, accent: 0x9aa0a8, pattern: 'weave', bonus: { drive: 2, smash: 1 } },
+  { id: 'storm', label: 'Storm Attack', frame: 0x283593, face: 0xffeb3b, base: 0x0b1530, accent: 0x40c4ff, pattern: 'bolt', bonus: { smash: 2, strength: 1 } },
+  { id: 'gold', label: 'Gold Edition', frame: 0xd4a72c, face: 0xd4a72c, base: 0x17100b, pattern: 'goldleaf', accent: 0xfff3c4, metal: true, bonus: { drive: 1, smash: 1, strength: 1 } },
 ];
 export const BAGS = [
   { id: 'none', label: 'Aucun' },
@@ -91,7 +95,7 @@ export const KITS = {
 export const DEFAULT_LOOK = {
   female: false, height: 1.0, buildId: 'normal', skin: SKIN_TONES[3], hair: HAIR_COLORS[1], hairStyle: 'short', beard: 'none',
   headwear: 'band', skirt: false, primary: 'blue', secondary: 'yellow', shortsColor: 'navy', shoeColor: 'white',
-  racket: 'classic', bag: 'none', number: 10,
+  racket: 'classic', racketDesign: 'model', bag: 'none', number: 10,
 };
 
 /** Détails propres à un personnage (maillot de club, tatouages, montre…). */
@@ -110,7 +114,8 @@ export function resolveLook(look) {
   return {
     shirt: L.shirtHex ?? p.hex, accent: L.accentHex ?? s.hex, shorts: L.shortsHex ?? sh.hex, shoes: shoe.hex, shoeAccent: s.hex,
     metal: { shirt: p.metal, accent: s.metal, shorts: sh.metal },
-    racket: r.frame, racketFace: r.face, racketBase: r.base, racketPattern: r.pattern,
+    racket: r.frame, racketLabel: r.label, racketMetal: !!r.metal,
+    ...(() => { const d = designById(L.racketDesign); return d.id === 'model' ? { racketFace: r.face, racketBase: r.base, racketPattern: r.pattern, racketAccent: r.accent } : { racketFace: d.face, racketBase: d.base, racketPattern: d.pattern, racketAccent: d.accent }; })(),
     skin: L.skin, hair: L.hair, hairStyle: L.hairStyle, beard: L.beard, headwear: L.headwear === 'none' ? null : L.headwear,
     female: L.female, skirt: L.female && L.skirt, height: L.height, build: b.build, belly: b.belly, muscle: b.muscle || 0, number: L.number,
     ...extras(L),

@@ -137,7 +137,8 @@ export const PRO_PAIRS = [
 
 // ------------------------------------------------------------------ célébrités
 // tiers : paliers où la célébrité peut apparaître dans un tableau.
-const celeb = (name, ovr, style, tiers, o = {}) => ({ ...makeNpc(name, ovr, style, { ...o, kind: 'celebrity' }), tiers });
+// venues : lieux où la célébrité joue (aucun = partout).
+const celeb = (name, ovr, style, tiers, o = {}) => ({ ...makeNpc(name, ovr, style, { ...o, kind: 'celebrity' }), tiers, venues: o.venues || null });
 
 // look : traits approximatifs (taille, carrure, teint, coiffure, barbe, accessoire), sans
 // recherche de ressemblance fidèle. pairWith : partenaire habituel (ils s'inscrivent ensemble).
@@ -171,6 +172,8 @@ export const CELEBRITIES = [
     ],
     look: { skin: 0xcf9670, hair: 0x1e140d, eye: 0x3b2616, hairStyle: 'fade', beard: 'none', buildId: 'normal', height: 0.99, headwear: 'cap', capColor: 0xa99d86, capPatch: true, jersey: 'tee', shirtHex: 0xf6f6f3, accentHex: 0xdedede, shortsHex: 0xb9a68a, tattoo: true, watch: true , stance: { crouch: 0.9, lean: 0.02, bounce: 1.4, stride: 1.25, tempo: 1.05, back: 1.4, finish: 1.45, twist: 1.35, sway: 0.06, racketH: 0.1 } },
   }),
+  // le maire de Ceyreste ne joue que chez lui, à Ceyreste (il s'inscrit à tous les tournois de la commune)
+  celeb('Le Maire de Ceyreste', 44, 'lobber', ['amateur', 'regional'], { short: 'Maire', venues: ['ceyreste'], regular: true, tweaks: { speed: -8, stamina: -10, lob: 8, drive: 2 }, taunts: ['Le Maire de Ceyreste : « Ici, c\'est chez moi. Et chez moi, on lobe. »', 'Le Maire de Ceyreste : « J\'ai voté le budget du court. Je connais chaque rebond. »'], note: 'Joue uniquement à Ceyreste. Lent mais malin : il lobe tout, et le public est avec lui.', look: { skin: 0xe3b292, hair: 0x5a4030, eye: 0x6f8fa8, hairStyle: 'shaved', beard: 'goatee', buildId: 'heavy', height: 1.0, headwear: 'none', jersey: 'om', shirtHex: 0x4fd3d6, accentHex: 0x1f5fd6, shortsHex: 0x5cc8cc, sash: true, nose: 1.1, chin: 1.15, stance: { crouch: 0.6, lean: -0.04, bounce: 0.5, stride: 0.85, tempo: 0.85, back: 0.9, finish: 1.1, twist: 0.8 } } }),
   celeb('Jean Deuxbé', 41, 'allround', ['amateur', 'regional'], { hand: 'L', note: 'Le collègue : régulier, jamais avare d\'un lob.', tweaks: { lob: 4 }, look: { skin: 0xd7a07c, hair: 0x2a1a10, eye: 0x5a3b22, hairStyle: 'fade', beard: 'moustache', buildId: 'fine', height: 1.04, headwear: 'none', jersey: 'bastia', shirtHex: 0xe8433f, accentHex: 0xf4f4f4, shortsHex: 0x1b2f8f, watch: true , stance: { crouch: 1.05, lean: 0.06, bounce: 0.8, stride: 0.95, back: 0.9, finish: 1.2, twist: 0.95 } } }),
 
   // --- niveau intermédiaire / avancé
