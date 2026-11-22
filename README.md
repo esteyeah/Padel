@@ -479,3 +479,7 @@ padel-sim/
 - Nouveau smash « par 3 / par 4 » (X+Y ou touche O) : relâcher quand la jauge indique MAINTENANT ; visée sur le côté = par 3, au centre = par 4.
 - 5 nouvelles scènes en carrière (jeune supporter, coach, partenaire superstitieux, juge-arbitre, sponsor).
 - Hangar : fresques retirées (elles passaient derrière l'écran et les fenêtres).
+
+### 0.48
+- Ceyreste : murets en trop retirés entre le terrain gris et le court central ; bancs, mûrier et poubelles devant la porte du court central, au niveau du filet (comme sur la photo) ; tableau de score lisible du bon côté.
+- Nouveau lieu « Tennis de La Ciotat » (d'après les photos) : 4 courts de padel couleur terre battue, structures noires, tonnelles bleu marine, tribune en gradins et escalier jusqu'au club-house (terrasse sous auvent), courts de tennis autour, parking avec voitures, pins, palmiers, lauriers-roses et agaves. Tournoi régional « Open de La Ciotat », lieu achetable (450 points) en exhibition.

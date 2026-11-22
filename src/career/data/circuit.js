@@ -37,6 +37,7 @@ export const TOURNAMENTS = [
   { id: 'departemental', venue: 'municipal', tier: 'regional', name: 'Open départemental', draw: 8, points: 90, prize: 800, fee: 40, ovrShift: 0.25 },
   { id: 'grandprix', venue: 'ceyreste', tier: 'regional', name: 'Grand Prix régional', draw: 8, points: 150, prize: 1500, fee: 60, ovrShift: 0.6 },
   { id: 'hangaropen', venue: 'hangar', tier: 'regional', name: 'Open du Hangar', draw: 8, points: 120, prize: 1200, fee: 50, ovrShift: 0.45 },
+  { id: 'laciotatopen', venue: 'laciotat', tier: 'regional', name: 'Open de La Ciotat', draw: 8, points: 140, prize: 1400, fee: 55, ovrShift: 0.55 },
   { id: 'mastersreg', venue: 'club', tier: 'regional', name: 'Masters régional', draw: 8, points: 220, prize: 3000, fee: 80, ovrShift: 0.9, every: 3 },
   // --- national
   { id: 'opennat', venue: 'national', tier: 'national', name: 'Open national', draw: 8, points: 400, prize: 8000, fee: 150, ovrShift: 0.3 },

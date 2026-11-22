@@ -13,7 +13,7 @@ const HEADWEAR_PRICE = { none: 0, band: 0, cap: 40, capback: 50, visor: 45, band
 const RACKET_PRICE = { classic: 0, carbon: 450, power: 450, touch: 450, smash: 600, viper: 700, tour: 1200, storm: 900, gold: 15000 };
 const BAG_PRICE = { none: 0, blue: 90, black: 90, white: 120, pink: 120, gold: 6000 };
 // Terrains (et personnages, voir Characters.js) : payés en points boutique.
-const VENUE_PRICE = { municipal: 0, club: 0, ceyreste: 350, national: 800, beach: 1000, hangar: 500, pro: 1800 };
+const VENUE_PRICE = { municipal: 0, club: 0, ceyreste: 350, laciotat: 450, national: 800, beach: 1000, hangar: 500, pro: 1800 };
 
 export const SHOP_CATEGORIES = [
   { id: 'color', label: 'Couleurs de tenue' },
@@ -35,7 +35,7 @@ export const SHOP_ITEMS = [
   ...KIT_STYLES.map((k) => ({ id: `kit:${k.id}`, cat: 'kit', ref: k.id, label: k.label, price: k.price, eur: true, desc: 'Coupe de maillot, aux couleurs de votre tenue' })),
   ...RACKET_DESIGNS.map((d) => ({ id: `design:${d.id}`, cat: 'design', ref: d.id, label: d.label, hex: d.face ?? 0xffd400, price: d.price, eur: true, desc: d.id === 'model' ? 'Le design livré avec la raquette' : 'Se pose sur n\'importe quelle raquette (sans bonus)' })),
   ...BAGS.map((b) => ({ id: `bag:${b.id}`, cat: 'bag', ref: b.id, label: b.label, hex: b.main, price: BAG_PRICE[b.id] ?? 100, eur: true })),
-  ...['municipal', 'club', 'ceyreste', 'hangar', 'national', 'beach', 'pro'].map((v) => ({ id: `venue:${v}`, cat: 'venue', ref: v, price: VENUE_PRICE[v] })),
+  ...['municipal', 'club', 'ceyreste', 'laciotat', 'hangar', 'national', 'beach', 'pro'].map((v) => ({ id: `venue:${v}`, cat: 'venue', ref: v, price: VENUE_PRICE[v] })),
 ];
 
 // Les terrains se paient en points boutique. TEST_UNLOCK_ALL_VENUES reste à false ;

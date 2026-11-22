@@ -648,7 +648,7 @@ export class Career {
     return {
       mode: 'career', format: '2v2', sets: t.sets, gamesPerSet: t.gamesPerSet, golden: t.golden, matchTiebreak: t.matchTiebreak || 0,
       club: t.venue === 'myclub' ? this.s.club : null,
-      venue: t.venue || 'club', court: (t.court ??= Math.floor(this.rand()() * ({ ceyreste: 5, club: 3, hangar: 4 }[t.venue] || 1))), bag: bagById(look.bag), mission: liveMission(t.mission),
+      venue: t.venue || 'club', court: (t.court ??= Math.floor(this.rand()() * ({ ceyreste: 5, club: 3, hangar: 4, laciotat: 4 }[t.venue] || 1))), bag: bagById(look.bag), mission: liveMission(t.mission),
       ambiance: t.venue === 'beach' ? ((t.week % 3) ? 'day' : 'sunset') : t.venue === 'pro' || t.venue === 'national' ? 'night' : ['day', 'sunset', 'night'][(t.week + tierIndex(t.tier)) % 3],
       title: nm.round.toUpperCase(), subtitle: t.name,
       replays: t.tier === 'national' || t.tier === 'pro',

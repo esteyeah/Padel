@@ -14,7 +14,7 @@ import { isUnlocked } from '../career/data/shop.js';
 import { ask, notice } from './Ask.js';
 
 const COURT_OPTS = [[0, 'Court central'], [1, 'Court 2'], [2, 'Court 3'], [3, 'Court 4'], [4, 'Court 5']];
-const MULTI = { ceyreste: 5, club: 3, hangar: 4 };
+const MULTI = { ceyreste: 5, club: 3, hangar: 4, laciotat: 4 };
 
 const EXHIBITION = [
   { key: 'venue', label: 'Terrain', options: [['club', 'Padel Arena Club']], when: () => false },
