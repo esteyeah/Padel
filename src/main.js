@@ -60,6 +60,11 @@ const menu = new Menu({
         Object.assign(opts, { playerAppearance: sp.appearance, playerName: ch.npc.short, playerHand: sp.hand, playerStats: sp.stats });
       }
     }
+    // partenaire / adversaires choisis en exhibition
+    if (opts.mode === 'quick') {
+      const pk = (id, kit, lane) => { const ch = id && id !== 'bot' && findCharacter(id); return ch ? npcSpec(ch.npc, kit, lane) : null; };
+      opts.pick = { mate: pk(opts.mate, 'blue', 1), opps: [pk(opts.opp1, 'red', 1), pk(opts.opp2, 'red', -1)] };
+    }
     game.start(opts);
   },
   onAmbiance: (a) => r3d.arena.setAmbiance(a),

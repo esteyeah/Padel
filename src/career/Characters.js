@@ -6,7 +6,7 @@
 //   - Jean Deuxbé, Raf Tomatis, Timéo Boulhol, Camille Roy : débloqués par une
 //     mission de carrière (les battre en tournoi).
 // ============================================================================
-import { PRO_PAIRS, CELEBRITIES } from './data/roster.js';
+import { PRO_PAIRS, CELEBRITIES, COACH } from './data/roster.js';
 
 /** Personnages débloqués par une mission : id -> texte de la mission. */
 export const MISSION_CHARS = {
@@ -16,6 +16,8 @@ export const MISSION_CHARS = {
   'camille-roy': 'Battre Camille Roy en tournoi (carrière)',
   'eliott-hanras': 'Battre Eliott Hanras en tournoi (carrière)',
   'nathan-subrero': 'Battre Nathan Subrero en tournoi (carrière)',
+  'louka': 'Rencontrer Louka en Aventure',
+  'coach-romeo': 'S\'entraîner avec Roméo en Aventure',
   'le-maire-de-ceyreste': 'Battre le maire en tournoi à Ceyreste (carrière)',
 };
 
@@ -33,7 +35,8 @@ export function characterList() {
     seen.add(npc.id);
     out.push({ id: npc.id, npc, cat, mission: MISSION_CHARS[npc.id] || null, price: MISSION_CHARS[npc.id] ? 0 : priceFor(npc) });
   };
-  for (const id of Object.keys(MISSION_CHARS)) { const n = CELEBRITIES.find((c) => c.id === id); if (n) add(n, 'Circuit amateur'); }
+  for (const id of Object.keys(MISSION_CHARS)) { const n = CELEBRITIES.find((c) => c.id === id); if (n && !n.tiersHidden) add(n, 'Circuit amateur'); }
+  add(COACH, 'Circuit amateur');
   [...CELEBRITIES].sort((a, b) => b.ovr - a.ovr).forEach((n) => add(n, 'Personnalités'));
   [...pros].sort((a, b) => b.ovr - a.ovr).forEach((n) => add(n, 'Joueurs pros'));
   return out;

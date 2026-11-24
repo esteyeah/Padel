@@ -527,3 +527,8 @@ padel-sim/
 - Chapitre 3 « Le retour de Louka » : rendre ou non sa place ; entraînement à cinq avec classement (Eliott dernier de peu, il part et devient rival) ; tournoi de Ceyreste (habitués de la buvette, dont Gégé qui titube ; tour 2 contre le rival ; finale contre les collègues avec une balle litigieuse en plein match) ; cérémonie avec le maire (discours humble ou arrogant, applaudir ou non) ; verre à la buvette.
 - Coach Roméo : chignon et moustache. Louka d'après la photo (cheveux bouclés foncés, fine moustache, n° 91).
 - Cheveux bouclés serrés (Tapia, Payet n'est plus chauve), Riner plus colossal. Atelier lob : seuls les vrais lobs comptent.
+
+### 0.57
+- Aventure : plus de tie-break contre Jean au chapitre 1 ; discussions hors du court (entre deux courts, bord de court, buvette) ; on se voit au bord du court quand on regarde le match des amis ; Louka montré au club-house au lieu d'être raconté ; Camille à gauche, Timéo à droite ; Gégé arrive bière à la main, tombe une ou deux fois et rate presque tout ; si Eliott devient rival, il joue avec son père Philippe Hanras.
+- Roméo et Louka jouables ; Nathan Subrero à 67 ; Jean et Raf d'après les photos (Jean : banane châtain et fine moustache ; Raf : coupe rasée).
+- Exhibition : choix du partenaire et des adversaires parmi tous les personnages.

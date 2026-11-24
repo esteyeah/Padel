@@ -21,7 +21,10 @@ const EXHIBITION = [
   { key: 'court', label: 'Court', options: COURT_OPTS, when: () => false },
   { key: 'format', label: 'Format', options: [['2v2', '2 contre 2'], ['1v1', '1 contre 1']] },
   { key: 'lane', label: 'Votre côté', options: [[-1, 'Gauche (revers)'], [1, 'Droite (drive)']], when: (v) => v.format === '2v2' },
-  { key: 'partner', label: 'Partenaire', options: [['varied', 'Varié'], ['attacker', 'Attaquant au filet'], ['baseline', 'Fond de court']], when: (v) => v.format === '2v2' },
+  { key: 'mate', label: 'Partenaire', options: [['bot', 'Bot']], when: (v) => v.format === '2v2' },
+  { key: 'partner', label: 'Style du bot partenaire', options: [['varied', 'Varié'], ['attacker', 'Attaquant au filet'], ['baseline', 'Fond de court']], when: (v) => v.format === '2v2' && v.mate === 'bot' },
+  { key: 'opp1', label: 'Adversaire 1', options: [['bot', 'Bot']] },
+  { key: 'opp2', label: 'Adversaire 2', options: [['bot', 'Bot']], when: (v) => v.format === '2v2' },
   { key: 'profile', label: 'Adversaires', options: [['varied', 'Varié'], ['baseline', 'Fond de court'], ['attacker', 'Attaquants au filet']] },
 ];
 
@@ -97,6 +100,9 @@ export class Menu {
         ],
       },
     };
+    // partenaire et adversaires : tous les personnages du jeu
+    const people = [['bot', 'Bot'], ...characterList().map((c) => [c.id, `${c.npc.name} (${c.npc.ovr})`])];
+    for (const r of this.screens.exhibition.rows) if (['mate', 'opp1', 'opp2'].includes(r.key)) r.options = people;
     for (const s of Object.values(this.screens)) s.sel = 0;
     this.syncPreset();
     this.open('home');

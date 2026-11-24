@@ -159,6 +159,14 @@ export class Game {
         return { id: ac.id, avatar, side: ac.side, pos: avatar.root.position, name: ac.id };
       });
     }
+    // spectateurs au bord du court (aventure : on regarde le match de ses amis)
+    for (const sp of this.spectators || []) this.scene.remove(sp.root);
+    this.spectators = (o.spectators || []).map((ap, i) => {
+      const av = new Avatar({ ...ap }); av.racket.visible = false;
+      av.root.position.set(-(COURT.halfW + 1.4), 0, -1 + i * 1.1); this.scene.add(av.root);
+      return av;
+    });
+    o.onStarted?.(this);
     if (this.cutscene) { this.nextLine(); document.body.classList.add('cinema'); }
     // match en ligne : l'hôte simule et diffuse, l'invité affiche ce qu'il reçoit
     if (o.net) this.netLink = o.net.role === 'host' ? new NetHost(this, o.net) : new NetClient(this, o.net);
@@ -210,6 +218,9 @@ export class Game {
     const near = [spec(1, humanLane, true, nearProfile)];
     if (doubles) near.push(spec(1, -humanLane, false, nearProfile));
     const far = doubles ? [spec(-1, 1, false, o.profile), spec(-1, -1, false, o.profile)] : [spec(-1, 0, false, o.profile)];
+    // exhibition : partenaire et adversaires choisis parmi les personnages
+    if (o.pick?.mate && doubles) near[1] = { ...o.pick.mate, lane: -humanLane };
+    (o.pick?.opps || []).forEach((sp, i) => { if (sp && far[i]) far[i] = { ...sp, lane: far[i].lane }; });
     return { near, far };
   }
 
@@ -745,7 +756,7 @@ export class Game {
   // =========================================================================
   step(dt) {
     this.time += dt;
-    for (const p of this.players) p.update(dt, p.controller.getIntent(dt), this);
+    for (const p of this.players) { if (p._fall > 0) { p.controller.getIntent(dt); p.vel.set(0, 0, 0); continue; } p.update(dt, p.controller.getIntent(dt), this); }
     if (this.doubles) this.separateTeammates();
 
     if (this.ball.held) { if (this.server && this.state !== 'drill') this.ball.holdAt(this.server.handPosition(this._v)); }
@@ -1112,6 +1123,19 @@ export class Game {
 
   render(dt) {
     for (const p of this.players) p.updateVisual(dt, this);
+    for (const sp of this.spectators || []) sp.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: Math.PI / 2, look: Math.atan2(this.ball.state.p.x, this.ball.state.p.z) * 0.3, ready: false, armed: null, swing: null });
+    // joueur éméché : tombe une ou deux fois pendant le match
+    for (const p of this.players) {
+      if (!this.opts.drunk?.includes(p.name)) continue;
+      if (!p._fall && (p._falls || 0) < 2 && this.state === 'rally' && Math.random() < dt * 0.06) { p._fall = 2.2; p._falls = (p._falls || 0) + 1; this.hud.shotInfo(`${p.name} EST TOMBÉ !`, p.side); }
+      if (p._fall > 0) {
+        p._fall -= dt;
+        const k = Math.min(1, (2.2 - p._fall) * 4, p._fall * 2);
+        p.avatar.root.rotation.x = -1.35 * k * p.side; p.avatar.root.position.y = -0.1 * k;
+        p.vel.set(0, 0, 0);
+        if (p._fall <= 0) { p._fall = 0; p.avatar.root.rotation.x = 0; p.avatar.root.position.y = 0; }
+      }
+    }
     this.ball.updateVisual(dt);
     const h = this.human;
 

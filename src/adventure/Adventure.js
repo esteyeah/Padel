@@ -4,6 +4,11 @@
 // ============================================================================
 import { STEPS, PEOPLE, START_REL, CHAPTERS, chapterOf } from './Story.js';
 import { DRILLS } from '../core/Drills.js';
+import { VENUE_COURTS } from '../render/Venues.js';
+import * as THREE from 'three';
+// lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
+const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4] } };
+const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
 import { CELEBRITIES, COACH, genericNpc, makeNpc } from '../career/data/roster.js';
 import { npcSpec, drillCutscene } from '../career/Career.js';
 import { resolveLook, DEFAULT_LOOK } from '../entities/Appearance.js';
@@ -15,12 +20,13 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const celeb = (id) => CELEBRITIES.find((c) => c.id === id);
 const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka' };
 const EXTRA = {
+  philippe: makeNpc('Philippe Hanras', 34, 'defender', { short: 'HANRAS', look: { skin: 0xe8bf9c, hair: 0x8a8580, hairStyle: 'short', beard: 'short', buildId: 'fine', height: 1.13, headwear: 'none' } }),
   gege: makeNpc('Gégé Pastis', 22, 'allround', { short: 'GÉGÉ', look: { skin: 0xe0a88a, hair: 0x9a9a9a, hairStyle: 'receding', beard: 'full', buildId: 'heavy', height: 0.97, headwear: 'none' } }),
   momo: makeNpc('Momo Rosé', 26, 'lobber', { short: 'MOMO', look: { skin: 0xc68a5e, hair: 0x2a1a10, hairStyle: 'bald', beard: 'moustache', buildId: 'heavy', height: 1.0, headwear: 'cap' } }),
   opp: makeNpc('Adversaire', 30, 'allround', { short: 'ADVERSAIRE' }),
   ref: makeNpc('Juge-arbitre', 30, 'allround', { short: 'ARBITRE', look: { skin: 0xd9a47c, hair: 0x555555, hairStyle: 'short', beard: 'none', buildId: 'normal', headwear: 'none', shirtHex: 0x111111, accentHex: 0x111111, shortsHex: 0x111111 } }),
 };
-const LABEL = { eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
+const LABEL = { philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
 
 export class AdventureUI {
@@ -120,7 +126,7 @@ export class AdventureUI {
     });
     const conv1 = (L) => {
       const label = L.who === 'me' ? this.short : LABEL[L.who] || L.who;
-      const base = { label, text: L.text, sheet: L.sheet };
+      const base = { label: L.label || label, text: L.text, sheet: L.sheet };
       if (L.who === 'me') return { side: 1, ...base };
       if (L.who === other) return { name: otherSpec.name, ...base };
       if (extras.includes(L.who)) return { actor: L.who, ...base };
@@ -144,6 +150,7 @@ export class AdventureUI {
     this.startGame({
       mode: 'career', sceneOnly: true, format: '1v1', sets: 1, matchTiebreak: 7, venue: st.venue || 'municipal', ambiance: st.ambiance || 'day',
       lineup: { near: [{ ...meSpec, lane: 0 }], far: [{ ...otherSpec, lane: 0 }] }, cutscene: conv, actors, party: false,
+      onStarted: (g) => this.stage(g, st),
       onSceneEnd: () => { this.goto(chosenNext || val(st.next, c), true); const t = STEPS[this.s.step]?.type; if (t !== 'scene' && t !== 'choice') this.show(); },
     });
   }
@@ -170,20 +177,22 @@ export class AdventureUI {
       if (st.weak?.includes(id)) sp = { ...sp, stats: flatStats(0.12), bot: { ...sp.bot, diff: { ...sp.bot.diff, level: 0.1, speedMul: 0.72, reaction: 0.5, planError: 0.6, margin: 1.2 } } };
       // demi-finale relevée ; raquettes sabotées par Raf : adversaires diminués
       if (side < 0 && st.hard) sp = { ...sp, bot: { ...sp.bot, diff: { ...sp.bot.diff, level: Math.min(0.95, (sp.bot.diff.level || 0.5) + 0.2), reaction: Math.max(0.1, (sp.bot.diff.reaction || 0.25) - 0.06) } } };
-      if (st.drunk?.includes(id)) sp = { ...sp, appearance: { ...sp.appearance, stance: { ...(sp.appearance.stance || {}), sway: 0.22, lean: 0.14, bounce: 0.15, tempo: 0.7, stride: 0.7 } }, bot: { ...sp.bot, diff: { ...sp.bot.diff, speedMul: 0.7, planError: 0.7, reaction: 0.55 } } };
+      if (st.drunk?.includes(id)) sp = { ...sp, appearance: { ...sp.appearance, stance: { ...(sp.appearance.stance || {}), sway: 0.22, lean: 0.14, bounce: 0.15, tempo: 0.7, stride: 0.7 } }, stats: Object.fromEntries(Object.entries(sp.stats).map(([k, v]) => [k, k === 'power' ? v : 0.05])), bot: { ...sp.bot, diff: { ...sp.bot.diff, level: 0.04, speedMul: 0.6, planError: 1.2, reaction: 0.8, margin: 1.4 } } };
       if (side < 0 && this.s.flags.sabotage && st.hard) sp = { ...sp, stats: Object.fromEntries(Object.entries(sp.stats).map(([k, v]) => [k, typeof v === 'number' && k !== 'power' ? v * 0.8 : v])) };
       return sp;
     };
     const lineup = { near: near.map((id, i) => mk(id, i, 'blue', 1)), far: far.map((id, i) => mk(id, i, 'red', -1)) };
     if (st.type === 'watch') {
       lineup.near = lineup.near.map((p) => ({ ...p, human: false }));
-      this.startGame({ mode: 'demo', format: '2v2', sets: 1, matchTiebreak: 10, venue: st.venue || 'ceyreste', ambiance: 'day', title: st.title || 'MATCH', subtitle: 'Vous regardez depuis le bord du court · A pour passer', lineup, watchFor: 40, startPoints: st.start, favor: 1, replays: false, party: false, onEnd: back });
+      this.startGame({ mode: 'demo', format: '2v2', sets: 1, matchTiebreak: 10, venue: st.venue || 'ceyreste', ambiance: 'day', title: st.title || 'MATCH', subtitle: 'Vous regardez depuis le bord du court · A pour passer', lineup, watchFor: 40, startPoints: st.start, favor: 1, replays: false, party: false, onEnd: back,
+        spectators: [this.me(0).appearance, ...(c.partner && !near.includes(c.partner) ? [this.spec(c.partner, 'blue', 0).appearance] : [])] });
       return;
     }
     this.startGame({
       mode: 'career', format: st.format, sets: 1, gamesPerSet: 6, golden: true, matchTiebreak: st.mt || 10, venue: st.venue, ambiance: st.ambiance,
       title: st.title || val(st.label, c).toUpperCase(), subtitle: st.subtitle || 'Entraînement', replays: false,
       rig: st.rig === 'lose', rigWin: st.rig === 'win', lineup, party: false, onEnd: back, onQuit: () => this.show(),
+      drunk: (st.drunk || []).map((id) => this.spec(id, 'red', 0).name),
       midEvent: st.mid ? { at: st.mid.at, lines: () => this.midLines(st.mid) } : null,
     });
   }
@@ -203,6 +212,24 @@ export class AdventureUI {
     this.goto(next, true);
     const t = STEPS[this.s.step]?.type;
     if (t !== 'scene' && t !== 'choice') this.show();
+  }
+
+  /** Place les personnages hors du court (entre deux courts, à la buvette…) et ajoute les accessoires. */
+  stage(g, st) {
+    const sp = st.spot && SPOTS[st.venue]?.[st.spot];
+    const props = st.props || {};
+    const all = [...g.players.map((p) => ({ av: p.avatar, p, id: p === g.players[0] ? 'me' : null })), ...(g.actors || []).map((a) => ({ av: a.avatar, a, id: a.id }))];
+    if (g.players[1]) { const o = val(st.cast, this.ctx).find((x) => x !== 'me'); all[1].id = o; }
+    if (sp) {
+      const [cx, cz] = toWorld(st.venue, sp);
+      g.players.forEach((p, i) => { p.pos.set(cx + (i ? 0.25 : -0.25), 0, cz + (i ? -1.1 : 1.1)); });
+      (g.actors || []).forEach((a, i) => { const ang = -1.2 + (i / Math.max(1, g.actors.length - 1)) * 2.4; a.pos.set(cx + Math.sin(ang) * 1.9, 0, cz + Math.cos(ang) * 0.4); });
+    }
+    for (const it of all) if (props[it.id] === 'beer') {
+      const beer = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.17, 12), new THREE.MeshStandardMaterial({ color: 0xd99a1c, roughness: 0.15, transparent: true, opacity: 0.85 }));
+      beer.position.set(0, -0.3, 0.02); it.av.lElbow?.add(beer);
+      it.av.racket.visible = false;
+    }
   }
 
   /** Situation de fair-play en plein match : choix dans une courte cinématique, effet sur le score. */

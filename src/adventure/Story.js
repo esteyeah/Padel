@@ -70,7 +70,7 @@ const CH1 = {
       { label: 'Franchement, c\'était facile.', effects: { coach: -4, raf: 3 }, after: [{ who: 'raf', text: '*ricane* Facile ! Trois services sur dix dans la zone.' }, { who: 'coach', text: 'On verra si le lob est aussi « facile ».' }], next: 'drill2' },
     ],
   },
-  drill2: { type: 'drill', drill: 'lob', label: 'Exercice 2 : le lob', intro: 'Je monte au filet et je n\'en bouge plus. Lobe-moi (touche lob), bien haut, bien profond.', next: 'pre_m1' },
+  drill2: { type: 'drill', drill: 'lob', label: 'Exercice 2 : le lob', intro: 'Je monte au filet et je n\'en bouge plus. Lobe-moi (touche lob), bien haut, bien profond.', next: 'pre_m2' },
   pre_m1: {
     type: 'scene', venue: 'municipal', ambiance: 'sunset', cast: ['me', 'jean', 'coach'],
     lines: [
@@ -223,7 +223,7 @@ const CH2 = {
     next: 'ceremony',
   },
   watch_pre: {
-    type: 'scene', venue: 'laciotat', ambiance: 'day', cast: (c) => ['me', c.partner],
+    type: 'scene', venue: 'laciotat', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner],
     lines: (c) => [{ who: c.partner, text: `Demi-finale ! Viens, ${pair(c.friends)} jouent leur quart. Ça doit en être à la fin.` }],
     choice: {
       who: 'narr', text: (c) => `Vous arrivez au bord du court en fin de match. ${pair(c.friends)} mènent 7-6. Que fais-tu ?`,
@@ -277,7 +277,7 @@ const CH2 = {
   },
   semi: { type: 'match', label: 'Demi-finale contre tes amis', format: '2v2', mt: 10, venue: 'laciotat', ambiance: 'day', near: (c) => ['me', c.partner], far: (c) => c.friends, hard: true, title: 'DEMI-FINALE', subtitle: 'Open de La Ciotat', win: 'final_pre', lose: 'semi_lost' },
   semi_lost: {
-    type: 'scene', venue: 'laciotat', ambiance: 'day', cast: (c) => ['me', c.partner, ...c.friends],
+    type: 'scene', venue: 'laciotat', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner, ...c.friends],
     effects: (c) => (c.partner === 'raf' ? { raf: -8 } : {}),
     lines: (c) => [
       { who: c.friends[0], text: c.f.cheer === 'disturb' ? 'Ça, c\'est pour les sifflets !' : 'Quel match ! Vous nous avez fait peur.' },
@@ -294,9 +294,9 @@ const CH2 = {
     ],
     next: 'final',
   },
-  final: { type: 'match', label: 'Finale contre Camille et Timéo', format: '2v2', mt: 10, venue: 'laciotat', ambiance: 'sunset', near: (c) => ['me', c.partner], far: ['camille', 'timeo'], rig: 'lose', title: 'FINALE', subtitle: 'Open de La Ciotat', set: { finalist: true }, win: 'ceremony', lose: 'ceremony' },
+  final: { type: 'match', label: 'Finale contre Camille et Timéo', format: '2v2', mt: 10, venue: 'laciotat', ambiance: 'sunset', near: (c) => ['me', c.partner], far: ['timeo', 'camille'], rig: 'lose', title: 'FINALE', subtitle: 'Open de La Ciotat', set: { finalist: true }, win: 'ceremony', lose: 'ceremony' },
   ceremony: {
-    type: 'scene', venue: 'laciotat', ambiance: 'sunset', cast: (c) => ['me', c.partner, 'payet', 'camille', 'timeo'],
+    type: 'scene', venue: 'laciotat', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner, 'payet', 'camille', 'timeo'],
     lines: (c) => [
       { who: 'payet', text: 'Bonsoir La Ciotat ! C\'est un plaisir de remettre les trophées de l\'Open. Les vainqueurs : Camille Roy et Timéo Boulhol !' },
       { who: 'camille', text: 'Merci Dimitri ! Et bravo aux finalistes, c\'était sérieux.' },
@@ -306,7 +306,7 @@ const CH2 = {
     next: 'clubhouse',
   },
   clubhouse: {
-    type: 'scene', venue: 'laciotat', ambiance: 'night', cast: (c) => ['me', c.partner, ...c.friends, 'coach'],
+    type: 'scene', venue: 'laciotat', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner, ...c.friends, 'coach', 'louka'],
     lines: (c) => {
       const usBetter = !!c.f.finalist, met = !c.f.out;
       const [t0, t1] = c.friends;
@@ -321,7 +321,7 @@ const CH2 = {
       if (c.f.denounced) L.push({ who: 'raf', text: '*garde ses distances et ne trinque pas avec toi*' });
       if (c.f.cheer === 'disturb') L.push({ who: c.friends.includes('jean') ? 'jean' : t0, text: 'Et la prochaine fois, garde tes sifflets pour l\'équipe adverse.' });
       L.push({ who: 'coach', text: c.s.rep >= 10 ? 'Je suis fier de l\'attitude de tout le monde aujourd\'hui.' : c.s.rep <= -10 ? 'Le padel, c\'est aussi une question de comportement. Certains ici devraient y réfléchir.' : 'Bonne journée. Lundi, on se remet au travail.' });
-      L.push({ who: 'narr', text: 'Au fond de la salle, un jeune homme avec une attelle à la cheville vous observe en silence. Louka.' });
+      L.push({ who: 'louka', label: '???', text: '*Un jeune homme, une attelle à la cheville, vous fixe en silence depuis la table du fond. Il repose son verre et s\'en va.*' });
       return L;
     },
     set: { metLouka: true },
@@ -394,9 +394,9 @@ const CH3 = {
     next: 'c3_cey',
   },
   c3_cey: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'day', cast: (c) => ['me', c.partner3, 'gege', 'momo'],
+    type: 'scene', venue: 'ceyreste', ambiance: 'day', spot: 'between', props: { gege: 'beer' }, cast: (c) => ['me', c.partner3, 'gege', 'momo'],
     lines: (c) => [
-      { who: 'narr', text: 'Samedi, Ceyreste. Premier tour contre deux habitués de la buvette.' },
+      { who: 'gege', text: '*arrive en titubant, une bière à la main* Salut les champions !' },
       { who: 'gege', text: 'Hé ! C\'est vous les jeunes ? Momo et moi on joue depuis… *hic* … depuis ce matin.' },
       { who: 'momo', text: 'Excusez Gégé, il a fêté son anniversaire. Hier. Et ce matin.' },
       { who: c.partner3, text: 'Euh… on y va doucement ?' },
@@ -405,15 +405,15 @@ const CH3 = {
   },
   c3_r1: { type: 'match', label: 'Tour 1 contre Gégé et Momo', format: '2v2', mt: 10, venue: 'ceyreste', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['gege', 'momo'], rig: 'win', drunk: ['gege'], title: '1ER TOUR', subtitle: 'Tournoi de Ceyreste', win: 'c3_r2_pre', lose: 'c3_r2_pre' },
   c3_r2_pre: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'day', cast: (c) => ['me', c.partner3, c.rival3],
+    type: 'scene', venue: 'ceyreste', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner3, c.rival3, ...(c.rival3 === 'eliott' ? ['philippe'] : [])],
     lines: (c) => [
-      { who: 'gege', text: '*s\'est assis sur la glacière* Bien joué les jeunes… *hic*' },
-      { who: c.rival3, text: c.rival3 === 'eliott' ? 'Tiens, tiens. Mon nouveau partenaire et moi, on joue le tour suivant. Contre vous.' : 'Deuxième tour : toi contre moi. Enfin.' },
+      { who: c.rival3, text: c.rival3 === 'eliott' ? 'Tiens, tiens. Je te présente mon nouveau partenaire : mon père. On joue le tour suivant. Contre vous.' : 'Deuxième tour : toi contre moi. Enfin.' },
+      ...(c.rival3 === 'eliott' ? [{ who: 'philippe', text: 'Philippe Hanras. Enchanté. Eliott m\'a beaucoup parlé de vous… Pas toujours en bien.' }] : []),
       { who: c.partner3, text: 'Ça va chauffer.' },
     ],
     next: 'c3_r2',
   },
-  c3_r2: { type: 'match', label: (c) => `Tour 2 contre ${NAME[c.rival3]} et son partenaire`, format: '2v2', mt: 10, venue: 'ceyreste', ambiance: 'day', near: (c) => ['me', c.partner3], far: (c) => [c.rival3, 'random'], randomOvr: 30, title: 'DEMI-FINALE', subtitle: 'Tournoi de Ceyreste', win: 'c3_r2_win', lose: 'c3_r2_lose' },
+  c3_r2: { type: 'match', label: (c) => `Tour 2 contre ${NAME[c.rival3]} et son partenaire`, format: '2v2', mt: 10, venue: 'ceyreste', ambiance: 'day', near: (c) => ['me', c.partner3], far: (c) => [c.rival3, c.rival3 === 'eliott' ? 'philippe' : 'random'], randomOvr: 30, title: 'DEMI-FINALE', subtitle: 'Tournoi de Ceyreste', win: 'c3_r2_win', lose: 'c3_r2_lose' },
   c3_r2_win: {
     type: 'scene', venue: 'ceyreste', ambiance: 'day', cast: (c) => ['me', c.rival3], effects: (c) => ({ [c.rival3]: -5 }),
     lines: (c) => [{ who: c.rival3, text: c.rival3 === 'eliott' ? 'Pfff. La prochaine fois. J\'ai un nouveau revers, je te préviens.' : 'Ça ne compte pas. Ma cheville. La prochaine fois.' }],
@@ -454,7 +454,7 @@ const CH3 = {
     win: 'c3_ceremony_win', lose: 'c3_ceremony_lose',
   },
   c3_ceremony_win: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', cast: (c) => ['me', c.partner3, 'mayor', ...c.mates3],
+    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, 'mayor', ...c.mates3],
     lines: (c) => [{ who: 'mayor', text: 'Mesdames et messieurs, les vainqueurs du tournoi de Ceyreste ! Un petit discours ?' }],
     choice: {
       who: 'mayor', text: 'Le micro est à toi.',
@@ -466,7 +466,7 @@ const CH3 = {
     set: { wonCey: true },
   },
   c3_ceremony_lose: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', cast: (c) => ['me', c.partner3, 'mayor', ...c.mates3],
+    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, 'mayor', ...c.mates3],
     lines: (c) => [{ who: 'mayor', text: `Les vainqueurs du tournoi de Ceyreste : ${pair(c.mates3)} ! Applaudissez-les bien fort !` }],
     choice: {
       who: 'narr', text: (c) => `${pair(c.mates3)} lèvent la coupe. Tout le monde applaudit.`,
@@ -477,13 +477,13 @@ const CH3 = {
     },
   },
   c3_drink: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'night', cast: (c) => ['me', c.partner3, ...c.mates3, 'coach'],
+    type: 'scene', venue: 'ceyreste', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner3, ...c.mates3, 'coach', c.rival3],
     lines: (c) => [
       { who: 'coach', text: 'À la buvette ! Ce soir, c\'est Ceyreste qui régale.' },
       c.f.wonCey ? { who: c.mates3[0], text: c.f.arrogant ? 'Tu peux garder ta coupe ET ton discours.' : 'Bravo encore. La revanche à l\'entraînement jeudi !' }
         : { who: c.mates3[0], text: c.f.sulked ? 'Pas un applaudissement… sympa.' : 'À la nôtre ! Et à la revanche !' },
       c.f.cheatedFinal ? { who: c.mates3[1], text: 'Et la balle sur la ligne… on sait tous les deux qu\'elle était bonne.' } : { who: c.mates3[1], text: 'Belle finale, vraiment.' },
-      { who: 'narr', text: c.f.rivalEliott ? 'Au loin, Eliott range sa raquette. Il ne te regarde pas.' : 'Au loin, Louka discute avec un coach que tu ne connais pas.' },
+      c.f.rivalEliott ? { who: 'eliott', text: '*range sa raquette dans son sac, à l\'écart, sans un regard pour toi*' } : { who: 'louka', text: '*discute à l\'écart avec un coach inconnu, et te jette un regard noir*' },
     ],
     next: 'ch3_end',
   },
