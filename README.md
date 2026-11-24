@@ -574,3 +574,6 @@ padel-sim/
 
 ### 0.67
 - Cinématiques de l'Aventure : les personnages sont enfin placés hors du court (ils étaient replacés sur le terrain par erreur) ; le maire parle devant le minibus ; l'hôtesse vous accueille et vous conduit en marchant jusqu'à la loge VIP ; Léa vous aborde au bord de l'eau, pose la main sur votre bras, plus de dialogues.
+
+### 0.68
+- Aventure : vérification de tous les lieux de scène ; les verres se prennent à la buvette (terrasse du club-house à La Ciotat et à Ceyreste, bar à champagne du Riviera, comptoir du Hangar devant Flavien), jamais sur un court ; lieux hors court corrigés au Centre national et au stade du Mondial.

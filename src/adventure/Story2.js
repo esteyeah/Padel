@@ -106,7 +106,7 @@ export const CH9 = {
   },
   c9_match: { type: 'match', label: 'Tournoi d\'honneur : la finale', format: '2v2', mt: 10, venue: 'ceyreste', ambiance: 'sunset', near: (c) => ['me', c.h9[0]], far: (c) => [c.h9[1], c.h9[2]], randomOvr: 40, title: 'TOURNOI D\'HONNEUR', subtitle: 'Ceyreste', win: 'c9_party', lose: 'c9_party' },
   c9_party: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'night', spot: 'talk', cast: (c) => ['me', 'mayor', ...c.guests9.slice(0, 5)],
+    type: 'scene', venue: 'ceyreste', ambiance: 'night', spot: 'bar', cast: (c) => ['me', 'mayor', ...c.guests9.slice(0, 5)],
     lines: (c) => {
       const say = {
         eliott: 'Et dire que tout a commencé par un coup de fil… Je t\'ai écrit une chanson. Elle s\'appelle « Mon meilleur ami ».',

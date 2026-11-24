@@ -8,7 +8,16 @@ import { DRILLS } from '../core/Drills.js';
 import { VENUE_COURTS } from '../render/Venues.js';
 import * as THREE from 'three';
 // lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
-const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0], shore: [3, -32] }, hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [0, -21.5] }, national: { between: [14, 0], talk: [14, 4] }, pro: { between: [12, 0], talk: [12, 4] }, prestige: { between: [-13, 0], talk: [-26, 26], loge: [0, -19.7, 3.45], entrance: [-7, -24] } };
+const SPOTS = {
+  laciotat: { between: [0, -12], talk: [0, 3], bar: [33.9, 1.5, 3.2] },                 // bar : terrasse du club-house, en haut des gradins
+  ceyreste: { between: [-21.5, -3], talk: [-23.5, 18], bar: [-31.8, 21.5, -0.88] },     // bar : terrasse du club-house en contrebas
+  municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6], bar: [-8.5, 7] },
+  beach: { talk: [-9, 14], between: [-9, 0], shore: [3, -32], bar: [-9, 14] },
+  hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [-2.2, -22.9] },
+  national: { between: [20, 14], talk: [20, 14], bar: [20, 14] },
+  pro: { between: [0, 24], talk: [0, 24], bar: [0, 24] },
+  prestige: { between: [-13, 0], talk: [-26, 26], loge: [0, -19.7, 3.45], entrance: [-7, -24], bar: [-26, 28.6] },
+};
 const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
 import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS, ADV_NPCS } from '../career/data/roster.js';
 import { unlockAdv } from '../career/data/shop.js';

@@ -314,7 +314,7 @@ const CH2 = {
     next: 'clubhouse',
   },
   clubhouse: {
-    type: 'scene', venue: 'laciotat', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner, ...c.friends, 'coach', 'louka'],
+    type: 'scene', venue: 'laciotat', ambiance: 'night', spot: 'bar', cast: (c) => ['me', c.partner, ...c.friends, 'coach', 'louka'],
     lines: (c) => {
       const usBetter = !!c.f.finalist, met = !c.f.out;
       const [t0, t1] = c.friends;
@@ -489,7 +489,7 @@ const CH3 = {
     },
   },
   c3_drink: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner3, ...c.mates3, 'coach', c.rival3],
+    type: 'scene', venue: 'ceyreste', ambiance: 'night', spot: 'bar', cast: (c) => ['me', c.partner3, ...c.mates3, 'coach', c.rival3],
     lines: (c) => [
       { who: 'coach', text: 'À la buvette ! Ce soir, c\'est Ceyreste qui régale.' },
       c.f.wonCey ? { who: c.mates3[0], text: c.f.arrogant ? 'Tu peux garder ta coupe ET ton discours.' : 'Bravo encore. La revanche à l\'entraînement jeudi !' }
@@ -670,7 +670,7 @@ const CH4 = {
     },
   },
   c4_end_scene: {
-    type: 'scene', venue: 'prestige', ambiance: 'night', spot: 'talk', cast: (c) => ['me', 'ruffier', 'mayor', c.partner3],
+    type: 'scene', venue: 'prestige', ambiance: 'night', spot: 'bar', cast: (c) => ['me', 'ruffier', 'mayor', c.partner3],
     lines: (c) => {
       const L = [{ who: 'ruffier', text: 'Belle journée. Tiens, ma carte. Si un jour tu veux t\'entraîner avec des gens sérieux, appelle-moi.' }];
       if (c.f.contactNasri) L.push({ who: 'narr', text: 'Dans ton téléphone : Stéphane Ruffier, Samir Nasri.' });
@@ -925,7 +925,7 @@ const CH6 = {
     },
   },
   c6_apero: {
-    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, ...c.mates3, 'mayor'],
+    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', spot: 'bar', cast: (c) => ['me', c.partner3, ...c.mates3, 'mayor'],
     lines: [
       { who: 'mayor', text: 'À nos champions de Ceyreste ! Ils n\'ont pas le national, mais ils ont la buvette !' },
       { who: 'narr', text: 'Tu raccroches les tournois, mais pas la raquette. Les apéros au club, eux, ne s\'arrêtent jamais.' },
