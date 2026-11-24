@@ -42,10 +42,12 @@ export const TOURNAMENTS = [
   // --- national
   { id: 'opennat', venue: 'national', tier: 'national', name: 'Open national', draw: 8, points: 400, prize: 8000, fee: 150, ovrShift: 0.3 },
   { id: 'superseries', venue: 'beach', tier: 'national', name: 'Super Série nationale', draw: 8, points: 550, prize: 14000, fee: 200, ovrShift: 0.6 },
+  { id: 'rivieramasters', venue: 'prestige', tier: 'national', name: 'Riviera Masters', draw: 16, points: 650, prize: 22000, fee: 250, ovrShift: 0.7, every: 3 },
   { id: 'championnat', venue: 'pro', tier: 'national', name: 'Championnat national', draw: 16, points: 700, prize: 25000, fee: 250, ovrShift: 0.85, every: 4 },
   // --- circuit mondial
   { id: 'challenger', venue: 'national', tier: 'pro', name: 'Challenger mondial', draw: 8, points: 600, prize: 40000, fee: 500, ovrShift: 0.1 },
   { id: 'open', venue: 'pro', tier: 'pro', name: 'Open mondial', draw: 16, points: 1200, prize: 100000, fee: 800, ovrShift: 0.5 },
+  { id: 'rivieragp', venue: 'prestige', tier: 'pro', name: 'Grand Prix de la Riviera', draw: 16, points: 1500, prize: 150000, fee: 900, ovrShift: 0.65, every: 3 },
   { id: 'major', venue: 'pro', tier: 'pro', name: 'Major', draw: 16, points: 2400, prize: 250000, fee: 1000, ovrShift: 0.85, every: 4 },
   { id: 'finals', venue: 'pro', tier: 'pro', name: 'Masters de fin de saison', draw: 8, points: 2000, prize: 300000, fee: 0, ovrShift: 1, minRank: 16, onlyWeek: 20 },
 ];

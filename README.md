@@ -487,3 +487,10 @@ padel-sim/
 ### 0.49
 - Tennis de La Ciotat : le court de tennis vert du bout passe de l'autre côté ; à sa place, le parking surélevé sur une restanque de terre (pierres sèches, buissons) ; beaucoup plus de verdure autour du club-house, surtout sur sa droite.
 - Concerts : 2 % de chances d'un orchestre et 8 % d'un DJ (Ceyreste) en temps normal ; bien plus dans les gros tournois (selon le niveau du tournoi, et encore plus en demi-finale et en finale).
+
+### 0.50
+- Orchestre refait : estrade avec jupe rouge et marches, toit en toile rayée, fond de scène « BAL DU PADEL », guirlande d'ampoules, enceintes et projecteurs ; quatre musiciens en tenue assortie (accordéon, guitare, batterie complète, chanteur au micro).
+- Tennis de La Ciotat : court central et court 2 échangés, tribune éloignée du court central.
+- Hangar : le toit ne couvrait qu'une moitié de la salle (on voyait le ciel au-dessus de la buvette) ; pignon est visible de l'intérieur ; vrai sas d'entrée vitré avec bandeau lumineux, paillasson et plantes.
+- Nouveau lieu « Riviera Padel Palace » : complexe de luxe, court central entouré de tribunes, loge VIP vitrée, écrans géants, lounge vitré, quatre courts annexes sous des voiles d'ombrage, bassins, palmiers, drapeaux. Tournois « Riviera Masters » (national) et « Grand Prix de la Riviera » (mondial) ; demi-finales et finales sur le court central.
+- Centre national : court n° 2 derrière la tribune latérale, avec ses propres gradins.

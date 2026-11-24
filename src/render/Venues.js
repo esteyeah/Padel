@@ -41,6 +41,12 @@ export const VENUES = {
     panoramic: true, blades: 0x2a6cd6, doors: true, outside: true, lamps: 'swan', crowd: 0.2, ambiance: 'day',
     ads: [],
   },
+  prestige: {
+    label: 'Riviera Padel Palace', desc: 'Un grand complexe de luxe pour les tournois prestigieux : court central entouré de tribunes, loge VIP vitrée, quatre courts annexes sous les palmiers.',
+    turf: { base: '#14507f', hue: 206, sat: 66, light: 30 }, apron: 0xe9e4da, frame: 0xf2efe8, wire: 0xd8d2c4,
+    panoramic: true, blades: 0xd4a72c, doors: true, outside: true, lamps: 'tower', crowd: 0.95, ambiance: 'night',
+    ads: [['RIVIERA PADEL PALACE', ['#0d1b2a', '#1b263b'], '#ffffff', '#d4a72c'], ['GRAND PRIX', ['#1a1408', '#3a2c0c'], '#f5e6b0', '#d4a72c'], ['CHAMPAGNE · LOUNGE', ['#0d1b2a', '#14273d'], '#ffffff', '#d4a72c']],
+  },
   laciotat: {
     label: 'Tennis de La Ciotat', desc: 'Quatre courts de padel couleur terre battue au cœur d\'un club de tennis : tonnelles, tribune en gradins jusqu\'au club-house, pins et parking.',
     turf: { base: '#c8643f', hue: 16, sat: 55, light: 48 }, apron: 0xb9a48a, frame: 0x1c1d20, wire: 0x2a2b2f,
@@ -76,7 +82,9 @@ VENUES.beach = {
 /** Courts jouables par lieu (le premier est le court central). Coordonnées dans le décor. */
 export const VENUE_COURTS = {
   // [x, z, rotation, gazon] : trois courts bleus en diagonale, le gris en haut à gauche, le bordeaux en bas à droite
-  laciotat: [[-6.9, -12], [6.9, -12], [-6.9, 12, Math.PI], [6.9, 12, Math.PI]],
+  national: [[0, 0], [28, 0]],
+  prestige: [[0, 0], [-26, -12.5], [-26, 12.5], [26, -12.5], [26, 12.5]],
+  laciotat: [[6.9, -12], [-6.9, -12], [-6.9, 12, Math.PI], [6.9, 12, Math.PI]],
   ceyreste: [[-13.6, -5.8], [0, 0], [14.1, 6.5], [31.5, 16, Math.PI / 2, { base: '#7a1c26', hue: 355, sat: 58, light: 28 }], [-36, -28, Math.PI / 2, { base: '#45484d', hue: 215, sat: 5, light: 27 }]],
   club: [[0, 0], [-15.5, 0], [17.5, 0]],
   hangar: [[-6.2, -12.5], [6.2, -12.5], [-6.2, 12.5, Math.PI], [6.2, 12.5, Math.PI]],
@@ -868,6 +876,77 @@ function ceyresteDetails(out, renderer, DEPTH) {
 }
 
 /**
+ * Riviera Padel Palace : complexe de luxe. Esplanade en pierre claire, court central encadré
+ * de tribunes sur ses quatre côtés (loge VIP vitrée au-dessus d'une tribune), écrans géants,
+ * pavillon-lounge vitré, allées bordées de palmiers et de bassins, voiles d'ombrage blanches
+ * au-dessus des quatre courts annexes, drapeaux.
+ */
+function decorPrestige(out, renderer) {
+  ground(out, renderer, 0x6f8f5a);
+  flat(out, 90, 70, 0, 0, 0xf1ece2, 0.002, TX.groundTex(renderer, 'paving', 30, 24));
+  // tribunes du court central : deux grandes latérales, deux en fond de court
+  for (const sx of [-1, 1]) stand(out, { x: sx * (HW + 2.4), z: 0, along: 'z', away: sx, length: 22, rows: 10, fill: 0.9, seatColor: 0x14273d, concrete: 0xe6e1d6 });
+  for (const sz of [-1, 1]) stand(out, { x: 0, z: sz * (HL + 2.4), along: 'x', away: sz, length: 13, rows: 7, fill: 0.88, seatColor: sz < 0 ? 0xb8962e : 0x14273d, concrete: 0xe6e1d6 });
+  // loge VIP vitrée au-dessus de la tribune de fond
+  const vipZ = -(HL + 2.4 + 7 * 0.85 + 1.4), gold = new THREE.MeshStandardMaterial({ color: 0xd4a72c, metalness: 0.9, roughness: 0.25 });
+  out.group.add(mesh([at(new THREE.BoxGeometry(14, 0.3, 3), 0, 3.3, vipZ), at(new THREE.BoxGeometry(14, 0.25, 3.2), 0, 6.2, vipZ)], new THREE.MeshStandardMaterial({ color: 0xf2efe8, roughness: 0.5 }), { shadow: true }));
+  out.group.add(mesh([at(new THREE.BoxGeometry(14, 2.6, 0.06), 0, 4.75, vipZ + 1.45)], new THREE.MeshStandardMaterial({ color: 0x9cc7d8, roughness: 0.05, metalness: 0.6, transparent: true, opacity: 0.45 })));
+  out.group.add(mesh([at(new THREE.BoxGeometry(14.2, 0.08, 0.08), 0, 6.05, vipZ + 1.5), at(new THREE.BoxGeometry(14.2, 0.08, 0.08), 0, 3.5, vipZ + 1.5)], gold));
+  for (let i = 0; i < 10; i++) out.crowdSeats.push({ x: -5.6 + i * 1.25, y: 3.47, z: vipZ + 0.6, ry: Math.PI });
+  sign(out, renderer, 'LOGE VIP', [['#0d1b2a', '#1b263b'], '#d4a72c', '#d4a72c'], 4, 0, 6.8, vipZ + 1.5, 0);
+  // écrans géants dans les angles
+  const scr = new THREE.MeshStandardMaterial({ color: 0x0b1020, emissive: 0x6fd3ff, emissiveIntensity: 0.3 });
+  out.emissive.push(scr);
+  for (const [x, z, ry] of [[-13, -17, 0.6], [13, 17, Math.PI + 0.6]]) {
+    out.group.add(mesh([at(new THREE.BoxGeometry(6.4, 3.6, 0.3), x, 8.6, z, 0, ry)], scr));
+    out.group.add(mesh([at(new THREE.BoxGeometry(0.35, 7, 0.35), x, 3.5, z)], new THREE.MeshStandardMaterial({ color: 0x1b1d22, metalness: 0.5 })));
+  }
+  // pavillon-lounge vitré à toit plat (côté ouest), terrasse et parasols blancs
+  const lx = -26, lz = -32;
+  out.group.add(mesh([at(new THREE.BoxGeometry(22, 4, 9), lx, 2, lz)], new THREE.MeshStandardMaterial({ color: 0x9cc7d8, roughness: 0.05, metalness: 0.6, transparent: true, opacity: 0.55 }), { shadow: true }));
+  out.group.add(mesh([at(new THREE.BoxGeometry(24, 0.5, 11), lx, 4.25, lz)], new THREE.MeshStandardMaterial({ color: 0xf2efe8, roughness: 0.5 }), { shadow: true }));
+  out.group.add(mesh([at(new THREE.BoxGeometry(24.1, 0.1, 11.1), lx, 4.02, lz)], gold));
+  sign(out, renderer, 'CLUB HOUSE · LOUNGE', [['#0d1b2a', '#1b263b'], '#ffffff', '#d4a72c'], 7, lx, 4.9, lz + 5.6, 0);
+  const umb = [], poles = [];
+  for (let i = 0; i < 5; i++) { const ux = lx - 8 + i * 4, uz = lz + 8; umb.push(at(new THREE.ConeGeometry(1.4, 0.5, 12), ux, 2.4, uz)); poles.push(at(new THREE.CylinderGeometry(0.03, 0.03, 2.3, 6), ux, 1.15, uz)); for (const dz of [-0.7, 0.7]) if (Math.random() < 0.7) out.crowdSeats.push({ x: ux, y: 0.03, z: uz + dz, ry: dz > 0 ? Math.PI : 0 }); }
+  out.group.add(mesh(umb, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 }), { shadow: true }), mesh(poles, gold));
+  // voiles d'ombrage tendues au-dessus des courts annexes
+  const sail = new THREE.MeshStandardMaterial({ color: 0xfbfaf6, roughness: 0.8, side: THREE.DoubleSide });
+  for (const [cx, cz] of [[-26, -12.5], [-26, 12.5], [26, -12.5], [26, 12.5]]) {
+    for (const k of [-1, 1]) {
+      const tri = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute([cx - 6.5, 7.5, cz + k * 11, cx + 6.5, 6.6, cz + k * 11, cx, 8.4, cz + k * 2], 3));
+      tri.computeVertexNormals();
+      out.group.add(mesh([tri], sail, { shadow: true }));
+    }
+    out.group.add(mesh([[-6.5, 7.5], [6.5, 6.6]].flatMap(([dx, h]) => [-1, 1].map((k) => at(new THREE.CylinderGeometry(0.08, 0.1, h, 8), cx + dx, h / 2, cz + k * 11))), new THREE.MeshStandardMaterial({ color: 0xe8e2d0, metalness: 0.4, roughness: 0.4 })));
+  }
+  // bassins et allée de palmiers, drapeaux
+  const water = new THREE.MeshStandardMaterial({ color: 0x2f8fb8, roughness: 0.05, metalness: 0.3 });
+  for (const sx of [-1, 1]) {
+    out.group.add(mesh([at(new THREE.BoxGeometry(2.4, 0.4, 26), sx * 14.5 + sx * 2.2, 0.2, 0)], new THREE.MeshStandardMaterial({ color: 0xe6e1d6, roughness: 0.6 }), { shadow: true }));
+    out.group.add(mesh([at(new THREE.PlaneGeometry(2.0, 25.6), sx * 16.7, 0.36, 0, -Math.PI / 2)], water));
+  }
+  const palm = palmTemplate();
+  const pts = [];
+  for (let z = -30; z <= 30; z += 7.5) for (const x of [-39.5, 39.5]) pts.push([x, z]);
+  for (const x of [-14, 14]) pts.push([x, -28], [x, 28]);
+  const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
+  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
+  const M = new THREE.Matrix4();
+  pts.forEach(([x, z], i) => { M.makeTranslation(x, 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
+  out.group.add(trunks, crowns);
+  const flagCols = [0x14273d, 0xd4a72c, 0xffffff];
+  for (let i = 0; i < 9; i++) {
+    const fx = -16 + i * 4, fz = 36;
+    out.group.add(mesh([at(new THREE.CylinderGeometry(0.05, 0.06, 8, 8), fx, 4, fz)], new THREE.MeshStandardMaterial({ color: 0xd8dce2, metalness: 0.8, roughness: 0.3 })));
+    out.group.add(mesh([at(new THREE.PlaneGeometry(1.6, 1.0), fx + 0.82, 7.3, fz)], new THREE.MeshStandardMaterial({ color: flagCols[i % 3], roughness: 0.7, side: THREE.DoubleSide })));
+  }
+  bushGroup(out, [[-20, -24, 1.2], [20, -24, 1.2], [-20, 24, 1.2], [20, 24, 1.2], [-34, 0, 1.4], [34, 0, 1.4]], 0x3f6b30);
+  city(out, 0.7);
+  horizon(out, { r0: 70, r1: 110, kinds: ['pine', 'plane', 'cypress'], n: 50 });
+}
+
+/**
  * Tennis de La Ciotat (d'après les photos) : 4 courts de padel en carré, sol couleur terre battue,
  * structures noires et bâches sombres ; allées en béton avec deux tonnelles bleu marine ;
  * côté est, une tribune en gradins gris monte jusqu'au club-house (terrasse sous auvent beige),
@@ -879,7 +958,7 @@ function decorLaCiotat(out, renderer) {
   // sol : terre sèche et herbe rase autour, béton gris-vert entre les courts
   const dirt = TX.groundTex(renderer, 'dirt', 40);
   flat(out, 300, 300, 0, 0, 0xf2e2c8, -0.03, dirt);
-  flat(out, 31, 52, 0, 0, 0xa8ad9f, -0.015, TX.groundTex(renderer, 'concrete', 10, 18));
+  flat(out, 36.4, 52, 0, 0, 0xa8ad9f, -0.015, TX.groundTex(renderer, 'concrete', 10, 18));
   flat(out, 3.4, 48, 0, 0, 0x8e9a8a, -0.008);
   flat(out, 30, 3.4, 0, 0, 0x8e9a8a, -0.007);
 
@@ -898,14 +977,14 @@ function decorLaCiotat(out, renderer) {
   // bancs blancs le long des allées
   const white = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 });
   const benchGeo = [];
-  for (const [bx, bz] of [[-13.3, -4], [-13.3, 4], [13.3, -22], [-13.3, -22], [-13.3, 22]]) {
+  for (const [bx, bz] of [[-13.3, -4], [-13.3, 4], [14.2, -22], [-13.3, -22], [-13.3, 22]]) {
     benchGeo.push(at(new THREE.BoxGeometry(0.5, 0.06, 1.8), bx, 0.45, bz), at(new THREE.BoxGeometry(0.08, 0.45, 1.8), bx - 0.22, 0.7, bz));
     for (const sz of [-0.8, 0.8]) benchGeo.push(at(new THREE.BoxGeometry(0.45, 0.45, 0.06), bx, 0.22, bz + sz));
   }
   out.group.add(mesh(benchGeo, white, { shadow: true }));
 
   // --- tribune en gradins (est) qui monte à la plateforme du club-house, et escalier à rampe
-  const TX0 = 15.2, steps = 7, run = 0.95, rise = UP / steps;
+  const TX0 = 18.2, steps = 7, run = 0.95, rise = UP / steps;   // tribune un peu éloignée du court central
   const conc = new THREE.MeshStandardMaterial({ color: 0x9ea3a8, roughness: 0.9 });
   const tread = new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 0.85 });
   const st = [], tr = [];
@@ -1016,11 +1095,11 @@ function decorLaCiotat(out, renderer) {
   out.group.add(mesh(agY, new THREE.MeshStandardMaterial({ color: 0xa7b46a, roughness: 0.7 }), { shadow: true }));
   // palmiers près de la tribune
   const palm = palmTemplate();
-  const pts = [[14.2, 12.5], [22, 12.5], [21, -16.5]];
+  const pts = [[16.4, 12.5], [26.5, 12.5], [26.5, -16.5]];
   const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
   const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
   const M = new THREE.Matrix4();
-  pts.forEach(([x, z], i) => { M.makeScale(0.7, 0.7, 0.7).setPosition(x, x > 18 ? UP : 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
+  pts.forEach(([x, z], i) => { M.makeScale(0.7, 0.7, 0.7).setPosition(x, x > plat0 ? UP : 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
   out.group.add(trunks, crowns);
   horizon(out, { r0: 75, r1: 120, kinds: ['pine', 'pine', 'cypress'], n: 50 });
 }
@@ -1153,7 +1232,12 @@ function decorNational(out, renderer) {
   out.group.add(mesh([at(new THREE.BoxGeometry(6, 3.4, 0.3), 0, 8.4, -(HL + 10.5))], screen));
   out.group.add(mesh([at(new THREE.BoxGeometry(0.3, 6.5, 0.3), 0, 3.25, -(HL + 10.7))], new THREE.MeshStandardMaterial({ color: 0x23262c })));
   const palm = palmTemplate();
-  const pts = [[-20, -16], [20, -16], [-22, 10], [22, 10], [-14, 18], [14, 18]];
+  // court annexe derrière la tribune latérale droite, avec ses propres gradins
+  stand(out, { x: 28, z: -(HL + 2.2), along: 'x', away: -1, length: 13, rows: 5, fill: 0.6, seatColor: 0x1565c0 });
+  stand(out, { x: 28 + HW + 3.0, z: 0, along: 'z', away: 1, length: 16, rows: 4, fill: 0.55, seatColor: 0xc62828 });
+  flat(out, 14, 26, 28, 0, 0x9a9590, 0.004, TX.groundTex(renderer, 'paving', 7, 13));
+  sign(out, renderer, 'COURT N° 2', [['#0b2a5b', '#1565c0'], '#ffffff', '#ffd400'], 4, 28, 4.6, -(HL + 6.6), 0);
+  const pts = [[-20, -16], [19.5, -17], [-22, 10], [19.5, 15], [-14, 18], [36, 17]];
   const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
   const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
   const M = new THREE.Matrix4();
@@ -1372,11 +1456,12 @@ function decorHangar(out, renderer) {
     const g = new THREE.ShapeGeometry(shape, 24);
     const uv = g.attributes.uv, pp = g.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pp.getX(i) / 1.2, pp.getY(i) / 8);
     const m = new THREE.Mesh(g, toleMat(1, 1));
+    m.material = m.material.clone(); m.material.side = THREE.DoubleSide;   // le pignon est doit se voir de l'intérieur
     m.rotation.y = Math.PI / 2; m.position.set(sx > 0 ? X1 : X0, 0, 0);
     out.group.add(m);
   }
   // toit cintré (demi-cylindre) avec verrières, et arcs métalliques
-  const roofGeo = new THREE.CylinderGeometry(Z, Z, W, 48, 1, true, -Math.PI / 2, Math.PI).rotateZ(Math.PI / 2).scale(1, K, 1);
+  const roofGeo = new THREE.CylinderGeometry(Z, Z, W, 48, 1, true, 0, Math.PI).rotateZ(Math.PI / 2).scale(1, K, 1);   // demi-cylindre du dessus (y ≥ 0)
   const roof = new THREE.Mesh(roofGeo, toleMat(W / 1.2, 6));
   roof.material.side = THREE.BackSide;                        // tôle vue de l'extérieur
   roof.position.set(cx, H, 0);
@@ -1467,6 +1552,27 @@ function decorHangar(out, renderer) {
     out.group.add(mesh([at(new THREE.PlaneGeometry(3, 2.6), x + 0.02, 1.3, 0, 0, Math.PI / 2)], glass));
     out.group.add(mesh([at(new THREE.BoxGeometry(0.12, 2.8, 0.12), x + 0.06, 1.4, -1.55), at(new THREE.BoxGeometry(0.12, 2.8, 0.12), x + 0.06, 1.4, 1.55), at(new THREE.BoxGeometry(0.12, 0.12, 3.2), x + 0.06, 2.8, 0), at(new THREE.BoxGeometry(0.08, 2.6, 0.06), x + 0.06, 1.3, 0)], frame));
     sign(out, renderer, 'ENTRÉE · ACCUEIL', [['#1b2f5a', '#264a8a'], '#ffffff', '#ffd400'], 3.2, x + 0.12, 3.35, 0, Math.PI / 2);
+    // sas d'entrée vitré qui avance dans la salle (la porte n'est plus plaquée contre la tôle)
+    {
+      const D = 2.6, Wd = 3.6, Hh = 2.9;
+      const vglass = new THREE.MeshStandardMaterial({ color: 0xd6eef4, roughness: 0.05, metalness: 0.25, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
+      out.group.add(mesh([at(new THREE.PlaneGeometry(D, Hh), x + D / 2, Hh / 2, -Wd / 2), at(new THREE.PlaneGeometry(D, Hh), x + D / 2, Hh / 2, Wd / 2)], vglass));
+      out.group.add(mesh([at(new THREE.PlaneGeometry(Wd, Hh - 0.1), x + D, (Hh - 0.1) / 2, 0, 0, Math.PI / 2)], vglass));
+      const fr = [];
+      for (const zz of [-Wd / 2, Wd / 2]) { fr.push(at(new THREE.BoxGeometry(0.08, Hh, 0.08), x + D, Hh / 2, zz), at(new THREE.BoxGeometry(D, 0.08, 0.08), x + D / 2, Hh, zz)); }
+      fr.push(at(new THREE.BoxGeometry(0.08, 0.08, Wd), x + D, Hh, 0), at(new THREE.BoxGeometry(0.05, Hh - 0.1, 0.05), x + D, (Hh - 0.1) / 2, 0));
+      out.group.add(mesh(fr, frame));
+      out.group.add(mesh([at(new THREE.BoxGeometry(D + 0.2, 0.12, Wd + 0.2), x + D / 2, Hh + 0.06, 0)], new THREE.MeshStandardMaterial({ color: 0x2c3138, metalness: 0.5, roughness: 0.4 }), { shadow: true }));
+      // bandeau lumineux au-dessus du sas, paillasson, plantes de part et d'autre
+      const lit = canvasTex(512, 96, (g) => { g.fillStyle = '#111418'; g.fillRect(0, 0, 512, 96); g.fillStyle = '#ffffff'; g.font = 'bold 56px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center'; g.fillText('BIENVENUE AU HANGAR', 256, 66); });
+      const lm = new THREE.MeshStandardMaterial({ map: lit, emissive: 0xffffff, emissiveMap: lit, emissiveIntensity: 0.7, roughness: 0.5 });
+      out.group.add(mesh([at(new THREE.PlaneGeometry(3.4, 0.5), x + D + 0.07, Hh + 0.42, 0, 0, Math.PI / 2)], lm));
+      flat(out, 1.6, 2.4, x + D + 1.0, 0, 0x2a2a2e, 0.015);
+      for (const zz of [-Wd / 2 - 0.6, Wd / 2 + 0.6]) {
+        out.group.add(mesh([at(new THREE.CylinderGeometry(0.3, 0.24, 0.55, 14), x + D + 0.3, 0.28, zz)], new THREE.MeshStandardMaterial({ color: 0x3a3f46, roughness: 0.7 }), { shadow: true }));
+        out.group.add(hedge(0.55, 1.0, 0.55, x + D + 0.3, 1.05, zz, 0x3d6b2c));
+      }
+    }
     const wood = new THREE.MeshStandardMaterial({ color: 0x9a6a3f, roughness: 0.8 });
     out.group.add(mesh([at(new THREE.BoxGeometry(0.8, 1.1, 2.6), x + 2.4, 0.55, 4.3), at(new THREE.BoxGeometry(1, 0.06, 2.8), x + 2.4, 1.13, 4.3)], wood, { shadow: true }));
     out.group.add(mesh([at(new THREE.BoxGeometry(0.4, 0.3, 0.05), x + 2.4, 1.32, 4.0, 0, Math.PI / 2 - 0.3)], new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x4fc3f7, emissiveIntensity: 0.4 })));
@@ -1651,58 +1757,115 @@ function decorBeach(out, renderer) {
 // ------------------------------------------------------------------ fête de village
 /** Musiciens qui se balancent, accordéon qui s'ouvre et se ferme. */
 class Band {
+  // orchestre de fête : estrade couverte (toile rayée), guirlande d'ampoules, enceintes, projecteurs ;
+  // accordéoniste, guitariste, batteur (grosse caisse, caisse claire, cymbale) et chanteur au micro
   constructor(parent, x, y, z, rotY) {
     this.g = new THREE.Group();
     this.g.position.set(x, y, z); this.g.rotation.y = rotY;
     parent.add(this.g);
     this.members = [];
-    const kits = ['red', 'white', 'black'];
-    const roles = ['accordion', 'drum', 'singer'];
-    roles.forEach((role, i) => {
-      const av = new Avatar({ ...makeAppearance(kits[i], 4242 + i * 13), name: '' });
+    const wood = new THREE.MeshStandardMaterial({ color: 0x7a4f2c, roughness: 0.85 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.6 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.9, roughness: 0.25 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xd4a72c, metalness: 0.85, roughness: 0.3 });
+    // estrade en planches, jupe de tissu rouge, deux marches
+    const H = 0.45;
+    this.g.add(mesh([at(new THREE.BoxGeometry(5.2, H, 2.8), 0, H / 2, -0.2)], wood, { shadow: true }));
+    const skirt = canvasTex(256, 32, (c, W, Hh) => { for (let i = 0; i < 16; i++) { c.fillStyle = i % 2 ? '#b71c1c' : '#8e1414'; c.fillRect(i * 16, 0, 16, Hh); } });
+    this.g.add(mesh([at(new THREE.PlaneGeometry(5.2, H), 0, H / 2, 1.21)], new THREE.MeshStandardMaterial({ map: skirt, roughness: 0.9 })));
+    this.g.add(mesh([at(new THREE.BoxGeometry(1.2, 0.15, 0.35), 0, 0.075, 1.45), at(new THREE.BoxGeometry(1.2, 0.3, 0.35), 0, 0.15, 1.3)], wood, { shadow: true }));
+    // toit en toile rayée rouge et blanc sur quatre mâts, fond de scène
+    const stripes = canvasTex(128, 64, (c, W, Hh) => { for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#ffffff' : '#d32f2f'; c.fillRect(i * 16, 0, 16, Hh); } });
+    const tent = new THREE.MeshStandardMaterial({ map: stripes, roughness: 0.85, side: THREE.DoubleSide });
+    this.g.add(mesh([at(new THREE.PlaneGeometry(5.6, 3.0), 0, 3.25, -0.2, -Math.PI / 2 + 0.12)], tent, { shadow: true }));
+    const val = canvasTex(256, 32, (c, W, Hh) => { for (let i = 0; i < 16; i++) { c.fillStyle = i % 2 ? '#ffffff' : '#d32f2f'; c.beginPath(); c.moveTo(i * 16, 0); c.lineTo(i * 16 + 16, 0); c.lineTo(i * 16 + 8, Hh); c.fill(); } });
+    this.g.add(mesh([at(new THREE.PlaneGeometry(5.6, 0.32), 0, 2.95, 1.3)], new THREE.MeshStandardMaterial({ map: val, transparent: true, alphaTest: 0.3, side: THREE.DoubleSide })));
+    this.g.add(mesh([-2.6, 2.6].flatMap((sx) => [-1.5, 1.2].map((sz) => at(new THREE.CylinderGeometry(0.04, 0.05, 3.1, 8), sx, 1.55, sz))), metal));
+    const back = canvasTex(512, 256, (c, W, Hh) => {
+      const gr = c.createLinearGradient(0, 0, 0, Hh); gr.addColorStop(0, '#1b2a5a'); gr.addColorStop(1, '#0d1430'); c.fillStyle = gr; c.fillRect(0, 0, W, Hh);
+      c.fillStyle = '#f2c94c'; for (let i = 0; i < 60; i++) { c.globalAlpha = Math.random(); c.beginPath(); c.arc(Math.random() * W, Math.random() * Hh * 0.6, 1.5, 0, 7); c.fill(); }
+      c.globalAlpha = 1; c.font = 'bold 54px "Barlow Condensed", Arial, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffffff'; c.fillText('BAL DU PADEL', W / 2, Hh * 0.62);
+      c.font = '28px "Barlow Condensed", Arial, sans-serif'; c.fillStyle = '#f2c94c'; c.fillText('★  ORCHESTRE  ★', W / 2, Hh * 0.82);
+    });
+    this.g.add(mesh([at(new THREE.PlaneGeometry(5.2, 2.6), 0, 1.75, -1.55)], new THREE.MeshStandardMaterial({ map: back, roughness: 0.8 })));
+    // guirlande d'ampoules sous l'avancée du toit
+    const bulbs = [];
+    for (let i = 0; i <= 18; i++) { const t = i / 18; bulbs.push(at(new THREE.SphereGeometry(0.045, 8, 6), -2.6 + 5.2 * t, 2.8 - Math.sin(Math.PI * t) * 0.25, 1.25)); }
+    this.g.add(mesh(bulbs, new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffc46b, emissiveIntensity: 2.2 })));
+    // enceintes sur pieds de part et d'autre, projecteurs
+    for (const sx of [-1, 1]) {
+      this.g.add(mesh([at(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 6), sx * 3.1, 0.7, 0.8), at(new THREE.BoxGeometry(0.45, 0.7, 0.4), sx * 3.1, 1.75, 0.8)], dark, { shadow: true }));
+      this.g.add(mesh([at(new THREE.CylinderGeometry(0.13, 0.09, 0.04, 16).rotateX(Math.PI / 2), sx * 3.1, 1.65, 1.01)], new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.3 })));
+      this.g.add(mesh([at(new THREE.CylinderGeometry(0.1, 0.13, 0.22, 10), sx * 2.3, 3.0, 1.1, 0.9, 0, 0)], new THREE.MeshStandardMaterial({ color: 0x222222, emissive: 0xfff0c8, emissiveIntensity: 1.5 })));
+    }
+    // musiciens : tenue assortie (chemise blanche, gilet / foulard rouge)
+    const outfit = (seed, over = {}) => ({ ...makeAppearance('white', seed, { name: '', ...over }), headwear: null, accent: 0xc62828, shorts: 0x1a1a1d });
+    const roles = [['accordion', -1.8, 0], ['guitar', -0.6, 0.15], ['drum', 0.9, -0.7], ['singer', 1.9, 0.3]];
+    roles.forEach(([role, mx, mz], i) => {
+      const av = new Avatar(outfit(4242 + i * 13));
       av.racket.visible = false;
-      av.root.position.set((i - 1) * 1.1, 0.35, 0);
+      av.root.position.set(mx, H, mz);
       this.g.add(av.root);
       let inst = null;
       if (role === 'accordion') {
         inst = new THREE.Group();
-        const box = new THREE.MeshStandardMaterial({ color: 0xb71c1c, roughness: 0.4 });
-        const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.32, 0.22), box), r = l.clone();
-        const bel = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 0.2), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 }));
+        const box = new THREE.MeshStandardMaterial({ color: 0xb71c1c, roughness: 0.35, metalness: 0.1 });
+        const keys = new THREE.MeshStandardMaterial({ color: 0xf5f5f0, roughness: 0.4 });
+        const l = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.34, 0.24), box), r = l.clone();
+        const kb = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.3, 0.06), keys); kb.position.set(0.06, 0, 0.1); r.add(kb);
+        const bel = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.32, 0.22), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7 }));
+        for (let k = 0; k < 6; k++) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.33, 0.225), gold); f.position.x = -0.09 + k * 0.036; bel.add(f); }
         l.position.x = -0.16; r.position.x = 0.16;
         inst.add(l, r, bel);
-        inst.position.set(0, 0.05, 0.2);
+        inst.position.set(0, 0.0, 0.2);
         av.chest.add(inst);
         inst.userData = { bel, l, r };
+      } else if (role === 'guitar') {
+        const g = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.08, 18).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xa0612c, roughness: 0.4 }));
+        const hole = new THREE.Mesh(new THREE.CircleGeometry(0.05, 14), dark); hole.position.z = 0.041;
+        const neck = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.025), new THREE.MeshStandardMaterial({ color: 0x3b2414, roughness: 0.6 })); neck.position.set(0, 0.36, 0);
+        body.add(hole); g.add(body, neck);
+        g.rotation.z = -1.1; g.position.set(0.02, -0.12, 0.17);
+        av.chest.add(g);
       } else if (role === 'drum') {
-        const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.35, 16), new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.5 }));
-        drum.position.set((i - 1) * 1.1, 0.95, 0.5);
-        this.g.add(drum);
+        const kit = new THREE.Group(); kit.position.set(mx, H, mz + 0.6); this.g.add(kit);
+        const shell = new THREE.MeshStandardMaterial({ color: 0x8e1414, roughness: 0.35, metalness: 0.2 });
+        const head = new THREE.MeshStandardMaterial({ color: 0xf2efe6, roughness: 0.5 });
+        kit.add(mesh([at(new THREE.CylinderGeometry(0.3, 0.3, 0.28, 20).rotateX(Math.PI / 2), 0, 0.3, 0)], shell, { shadow: true }));
+        kit.add(mesh([at(new THREE.CircleGeometry(0.28, 20), 0, 0.3, 0.145)], head));
+        kit.add(mesh([at(new THREE.CylinderGeometry(0.17, 0.17, 0.12, 18), 0.45, 0.68, -0.05)], shell));
+        kit.add(mesh([at(new THREE.CylinderGeometry(0.165, 0.165, 0.01, 18), 0.45, 0.745, -0.05)], head));
+        kit.add(mesh([at(new THREE.CylinderGeometry(0.018, 0.018, 0.62, 6), 0.45, 0.31, -0.05), at(new THREE.CylinderGeometry(0.015, 0.015, 1.15, 6), -0.5, 0.58, -0.1)], metal));
+        const cym = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.008, 22), gold); cym.position.set(-0.5, 1.16, -0.1); cym.rotation.x = 0.2; kit.add(cym);
+        inst = { cym };
+      } else if (role === 'singer') {
+        this.g.add(mesh([at(new THREE.CylinderGeometry(0.012, 0.012, 1.45, 6), mx, H + 0.72, mz + 0.42), at(new THREE.CylinderGeometry(0.16, 0.16, 0.02, 12), mx, H + 0.01, mz + 0.42)], metal));
+        this.g.add(mesh([at(new THREE.SphereGeometry(0.035, 10, 8), mx, H + 1.48, mz + 0.38)], dark));
       }
       this.members.push({ av, role, inst, phase: i * 1.3 });
     });
-    // petite estrade
-    const stage = new THREE.Mesh(new THREE.BoxGeometry(4, 0.35, 2.2), new THREE.MeshStandardMaterial({ color: 0x6b4426, roughness: 0.9 }));
-    stage.position.y = 0.175; stage.receiveShadow = true;
-    this.g.add(stage);
     this.t = 0;
   }
   update(dt) {
     this.t += dt;
+    const beat = this.t * 2.9;
     for (const m of this.members) {
-      const k = Math.sin(this.t * 2.9 + m.phase);
-      m.av.root.rotation.z = k * 0.05;
-      m.av.root.position.y = 0.35 + Math.abs(k) * 0.03;
-      const pose = m.role === 'singer'
-        ? { armed: { kind: 'over', charge: 0.2 + 0.2 * Math.abs(k) } }
-        : m.role === 'drum' ? { swing: { kind: 'over', style: 'drive', t: (this.t * 1.4 + m.phase) % 0.34, dur: 0.34, contactRz: 0.4, contactH: 1 } } : {};
-      m.av.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: 0, look: 0, ready: false, armed: null, swing: null, ...pose });
-      if (m.inst) {
-        const o = 1 + Math.sin(this.t * 2.9) * 0.45;
+      const k = Math.sin(beat + m.phase);
+      m.av.root.rotation.z = k * 0.04;
+      m.av.root.position.y = 0.45 + Math.max(0, k) * 0.025;
+      // pas de geste de raquette : mains au niveau de l'instrument (pose d'attente, buste qui balance)
+      const pose = m.role === 'drum'
+        ? { swing: { kind: 'fore', style: 'drive', t: (this.t * 2.9 + m.phase) % 0.34 * 0.4, dur: 0.34, contactRz: 0.2, contactH: 0.95 } }
+        : {};
+      m.av.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: m.role === 'singer' ? Math.sin(this.t * 0.6) * 0.3 : 0, look: Math.sin(this.t * 0.8 + m.phase) * 0.4, ready: false, armed: null, swing: null, ...pose });
+      if (m.role === 'accordion' && m.inst) {
+        const o = 1 + Math.sin(beat) * 0.45;
         m.inst.userData.bel.scale.x = o;
         m.inst.userData.l.position.x = -0.08 - 0.1 * o;
         m.inst.userData.r.position.x = 0.08 + 0.1 * o;
       }
+      if (m.role === 'drum' && m.inst) m.inst.cym.rotation.z = Math.sin(this.t * 11) * 0.06;
     }
   }
 }
@@ -2030,6 +2193,7 @@ export function buildVenue(id, ctx, courtIdx = 0, club = null) {
     case 'municipal': decorMunicipal(d, ctx.renderer); break;
     case 'ceyreste': decorCeyreste(d, ctx.renderer); break;
     case 'laciotat': decorLaCiotat(d, ctx.renderer); break;
+    case 'prestige': decorPrestige(d, ctx.renderer); break;
     case 'national': decorNational(d, ctx.renderer); break;
     case 'pro': decorStadium(d, ctx.renderer); break;
     case 'beach': decorBeach(d, ctx.renderer); break;
