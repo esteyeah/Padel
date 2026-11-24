@@ -550,3 +550,11 @@ padel-sim/
 ### 0.62
 - Aventure complète jusqu'au chapitre 9 : Hanouna te fait une mauvaise réputation à la télé si tu l'as trahi ; selfie avec une supportrice à la plage ; Flavien le barman du Hangar offre sa tournée et son numéro ; finale du régional contre Nathan Subrero et Roméo (si tu l'as trahi) ou Chico ; chapitre 7 national (Zlatan et Zidane, Ruffier et Payet, article de La Provence selon ton parcours) ; chapitre 8 Mondial (choix du partenaire : partenaire de toujours, Roméo, Nasri ou Benjamin Tison ; demi-finale contre tes amis : les laisser gagner ou jouer le jeu ; finale contre Tapia et Coello) ; chapitre 9 tournoi d'honneur (invitations acceptées ou refusées selon tes relations, match, soirée finale).
 - Galerie des fins (8 fins) dans le menu Aventure.
+
+### 0.63
+- Personnages de l'Aventure jouables en exhibition (Flavien, Chico, Benjamin Tison, Philippe Hanras, Gégé, Momo, Léa), débloqués en finissant leur chapitre (ou avec le code secret).
+- Fin de chaque chapitre : déblocages selon le parcours (terrains et personnages : La Ciotat, Payet/Camille/Timéo si finale, Ceyreste et le maire si victoire, Riviera si finale, Nasri/Hanouna selon les contacts, Hangar, Centre national, stade du Mondial si champion…), affichés à l'écran de fin.
+- Plage : Léa, en maillot de bain, vient te draguer : refuser, ou tenter ta chance (elle devient ta copine… ou c'est la copine de Timéo et tu arrives affaibli en demi-finale).
+- Supportrices plus féminines (silhouette fine, poitrine et hanches marquées).
+- Les 1 000 € de Hanouna sont crédités dans la boutique de la carrière.
+- Exhibition : partenaire et adversaires choisis dans une grille (nom, catégorie, note), avec aperçu du joueur.

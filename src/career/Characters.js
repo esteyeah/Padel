@@ -6,7 +6,7 @@
 //   - Jean Deuxbé, Raf Tomatis, Timéo Boulhol, Camille Roy : débloqués par une
 //     mission de carrière (les battre en tournoi).
 // ============================================================================
-import { PRO_PAIRS, CELEBRITIES, COACH } from './data/roster.js';
+import { PRO_PAIRS, CELEBRITIES, COACH, ADV_NPCS } from './data/roster.js';
 
 /** Personnages débloqués par une mission : id -> texte de la mission. */
 export const MISSION_CHARS = {
@@ -37,6 +37,10 @@ export function characterList() {
   };
   for (const id of Object.keys(MISSION_CHARS)) { const n = CELEBRITIES.find((c) => c.id === id); if (n && !n.tiersHidden) add(n, 'Circuit amateur'); }
   add(COACH, 'Circuit amateur');
+  for (const [k, ch] of [['flavien', 6], ['chico', 6], ['tison', 8], ['philippe', 3], ['gege', 3], ['momo', 3], ['beachgirl', 5]]) {
+    const n = ADV_NPCS[k]; if (!n || seen.has(n.id)) continue;
+    seen.add(n.id); out.push({ id: n.id, npc: n, cat: 'Aventure', mission: `Finir le chapitre ${ch} de l'Aventure`, price: 0 });
+  }
   [...CELEBRITIES].sort((a, b) => b.ovr - a.ovr).forEach((n) => add(n, 'Personnalités'));
   [...pros].sort((a, b) => b.ovr - a.ovr).forEach((n) => add(n, 'Joueurs pros'));
   return out;

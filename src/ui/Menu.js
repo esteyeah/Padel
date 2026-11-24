@@ -10,7 +10,7 @@
 import { ACTIONS, PRESETS } from '../input/InputManager.js';
 import { DRILLS } from '../core/Drills.js';
 import { characterList } from '../career/Characters.js';
-import { isUnlocked } from '../career/data/shop.js';
+import { isUnlocked, advUnlocks } from '../career/data/shop.js';
 import { ask, notice } from './Ask.js';
 
 const COURT_OPTS = [[0, 'Court central'], [1, 'Court 2'], [2, 'Court 3'], [3, 'Court 4'], [4, 'Court 5']];
@@ -21,10 +21,10 @@ const EXHIBITION = [
   { key: 'court', label: 'Court', options: COURT_OPTS, when: () => false },
   { key: 'format', label: 'Format', options: [['2v2', '2 contre 2'], ['1v1', '1 contre 1']] },
   { key: 'lane', label: 'Votre côté', options: [[-1, 'Gauche (revers)'], [1, 'Droite (drive)']], when: (v) => v.format === '2v2' },
-  { key: 'mate', label: 'Partenaire', options: [['bot', 'Bot']], when: (v) => v.format === '2v2' },
+  { key: 'mate', label: 'Partenaire', options: [['bot', 'Bot']], when: () => false },
   { key: 'partner', label: 'Style du bot partenaire', options: [['varied', 'Varié'], ['attacker', 'Attaquant au filet'], ['baseline', 'Fond de court']], when: (v) => v.format === '2v2' && v.mate === 'bot' },
-  { key: 'opp1', label: 'Adversaire 1', options: [['bot', 'Bot']] },
-  { key: 'opp2', label: 'Adversaire 2', options: [['bot', 'Bot']], when: (v) => v.format === '2v2' },
+  { key: 'opp1', label: 'Adversaire 1', options: [['bot', 'Bot']], when: () => false },
+  { key: 'opp2', label: 'Adversaire 2', options: [['bot', 'Bot']], when: () => false },
   { key: 'profile', label: 'Adversaires', options: [['varied', 'Varié'], ['baseline', 'Fond de court'], ['attacker', 'Attaquants au filet']] },
 ];
 
@@ -76,6 +76,9 @@ export class Menu {
         rows: [
           { type: 'action', label: 'Personnage', valueFn: () => this.charLabel(), run: () => this.open('character') },
           { type: 'action', label: 'Lieu et court', valueFn: () => this.venueLabel(), run: () => this.open('venue') },
+          { type: 'action', label: 'Partenaire', valueFn: () => this.pickLabel('mate'), run: () => this.openPick('mate'), when: (v) => v.format === '2v2' },
+          { type: 'action', label: 'Adversaire 1', valueFn: () => this.pickLabel('opp1'), run: () => this.openPick('opp1') },
+          { type: 'action', label: 'Adversaire 2', valueFn: () => this.pickLabel('opp2'), run: () => this.openPick('opp2'), when: (v) => v.format === '2v2' },
           ...EXHIBITION.map(choice),
           { type: 'action', label: 'Paramètres de la partie', valueFn: () => this.matchLabel(), run: () => this.open('match') },
           { type: 'play', label: 'JOUER' },
@@ -87,6 +90,7 @@ export class Menu {
       adventure: { title: 'Aventure', back: 'home', custom: true, rows: [] },
       venue: { title: 'Lieu', back: 'exhibition', grid: 'venue', rows: [] },
       court: { title: 'Court', back: 'venue', grid: 'court', rows: [] },
+      pick: { title: 'Choisir un joueur', back: 'exhibition', grid: 'pick', rows: [] },
       training: {
         title: 'Entraînement', back: 'home', lead: 'Ateliers libres : rien n\'est enregistré. En carrière, ils font progresser votre joueur.',
         rows: Object.entries(DRILLS).map(([id, d]) => ({ type: 'action', label: d.label, value: d.icon, run: () => { this.hide(); this.onTraining?.(id); } })),
@@ -257,7 +261,7 @@ export class Menu {
     const items = [{ id: 'standard', name: 'Joueur standard', cat: 'Libre', ovr: 62, free: true }];
     if (c) items.push({ id: 'career', name: c.s.profile.name, cat: 'Ma carrière', ovr: c.ovr, free: true });
     for (const ch of characterList()) {
-      const owned = c ? c.hasChar(ch.id) : isUnlocked();
+      const owned = c ? c.hasChar(ch.id) : (isUnlocked() || advUnlocks().includes(`char:${ch.id}`));
       items.push({ id: ch.id, name: ch.npc.name, cat: ch.cat, ovr: ch.npc.ovr, hand: ch.npc.hand, free: owned, mission: ch.mission, price: ch.price });
     }
     s.items = items;
@@ -275,6 +279,23 @@ export class Menu {
   }
 
   // ------------------------------------------------------------------ lieux (grille comme les personnages)
+  pickLabel(key) {
+    const r = this.screens.exhibition.rows.find((x) => x.key === key);
+    return r.options[r.index][1];
+  }
+
+  openPick(key) {
+    this.pickKey = key;
+    const s = this.screens.pick, r = this.screens.exhibition.rows.find((x) => x.key === key);
+    s.title = { mate: 'Ton partenaire', opp1: 'Adversaire 1', opp2: 'Adversaire 2' }[key];
+    s.items = [{ id: 'bot', name: 'Bot', cat: 'Joueur généré', sub: 'Niveau selon la difficulté', free: true },
+      ...characterList().map((c) => ({ id: c.id, name: c.npc.name, cat: c.cat, sub: `Note ${c.npc.ovr}${c.npc.hand === 'L' ? ' · gaucher' : ''}`, free: true }))];
+    s.sel = Math.max(0, s.items.findIndex((x) => x.id === r.options[r.index][0]));
+    s.msg = null;
+    this.cur = 'pick';
+    this.render();
+  }
+
   venueLabel() {
     const v = this.vals(this.screens.exhibition);
     const r = this.screens.exhibition.rows.find((x) => x.key === 'venue');
@@ -306,14 +327,14 @@ export class Menu {
 
   renderPlaceGrid(s) {
     let html = `<div class="m-head"><button class="m-back" data-back>‹</button><span>${s.title}</span></div>
-      <p class="m-lead">${s.grid === 'venue' ? 'Le décor derrière le menu change quand vous survolez un lieu.' : 'Choisissez le court sur lequel jouer.'}</p>`;
+      <p class="m-lead">${s.grid === 'pick' ? 'Survolez un joueur pour le voir. A : choisir.' : s.grid === 'venue' ? 'Le décor derrière le menu change quand vous survolez un lieu.' : 'Choisissez le court sur lequel jouer.'}</p>`;
     if (s.msg) html += `<p class="m-lead warn">${s.msg}</p>`;
     html += '<div class="m-chars">';
     let cat = null;
     const curV = this.vals(this.screens.exhibition);
     s.items.forEach((it, i) => {
       if (it.cat !== cat) { cat = it.cat; html += `<div class="m-cat">${cat}</div>`; }
-      const cur = s.grid === 'venue' ? it.id === curV.venue : it.id === curV.court;
+      const cur = s.grid === 'pick' ? it.id === curV[this.pickKey] : s.grid === 'venue' ? it.id === curV.venue : it.id === curV.court;
       const lock = it.free ? '' : `<i class="lock">${it.price ? it.price + ' pts' : 'Boutique'}</i>`;
       html += `<button class="m-char${i === s.sel ? ' sel' : ''}${it.free ? '' : ' locked'}${cur ? ' cur' : ''}" data-i="${i}"><b>${it.name}</b><span>${it.sub}</span>${lock}</button>`;
     });
@@ -333,15 +354,21 @@ export class Menu {
 
   focusPlace(s) {
     const it = s.items[s.sel];
+    if (s.grid === 'pick') { this.onPreview(it.id === 'bot' ? null : it.id); this.render(); return; }
     if (s.grid === 'venue') this.onVenue(it.id, 0, this.vals(this.screens.match).ambiance);
     else this.onVenue(this.vals(this.screens.exhibition).venue, it.id, this.vals(this.screens.match).ambiance);
     this.render();
   }
 
-  leavePlace(s) { this.applyBackground(); this.open(s.back); }
+  leavePlace(s) { if (s.grid === 'pick') this.onPreview(null); this.applyBackground(); this.open(s.back); }
 
   pickPlace(s) {
     const it = s.items[s.sel];
+    if (s.grid === 'pick') {
+      const r = this.screens.exhibition.rows.find((x) => x.key === this.pickKey);
+      r.index = Math.max(0, r.options.findIndex((o) => o[0] === it.id));
+      this.onPreview(null); this.applyBackground(); this.open('exhibition'); return;
+    }
     if (!it.free) { s.msg = `${it.name} se débloque dans la boutique de carrière${it.price ? ` (${it.price} points)` : ''}.`; this.render(); return; }
     if (s.grid === 'venue') { this.setPlace(it.id); this.open(MULTI[it.id] ? 'court' : 'exhibition'); }
     else { this.setPlace(null, it.id); this.open('exhibition'); }

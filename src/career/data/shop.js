@@ -44,6 +44,14 @@ export const SHOP_ITEMS = [
 export const TEST_UNLOCK_ALL_VENUES = false;
 const UNLOCK_KEY = 'padel-arena.unlock';
 export const UNLOCK_CODE = 'CEYRESTE13';
+// déblocages gagnés dans l'Aventure (personnages « char:id » et terrains « venue:id »), communs à toutes les sauvegardes
+const ADV_KEY = 'padel-arena.advUnlocks';
+export function advUnlocks() { try { return JSON.parse(localStorage.getItem(ADV_KEY) || '[]'); } catch { return []; } }
+export function unlockAdv(ids) {
+  const cur = advUnlocks(), added = ids.filter((x) => !cur.includes(x));
+  if (added.length) try { localStorage.setItem(ADV_KEY, JSON.stringify([...cur, ...added])); } catch { /* ignoré */ }
+  return added;
+}
 export function isUnlocked() { try { return localStorage.getItem(UNLOCK_KEY) === '1'; } catch { return false; } }
 export function tryUnlockCode(code) {
   if (String(code || '').trim().toUpperCase() !== UNLOCK_CODE) return false;

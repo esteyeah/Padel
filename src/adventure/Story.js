@@ -688,7 +688,36 @@ const CH5 = {
       ],
     },
   },
-  c5_r1: { type: 'match', label: 'Tour 1', format: '2v2', mt: 10, venue: 'beach', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['random', 'random'], randomOvr: 34, title: '1ER TOUR', subtitle: 'Padel Beach Arena', win: 'c5_mid', lose: 'c5_worse' },
+  c5_r1: { type: 'match', label: 'Tour 1', format: '2v2', mt: 10, venue: 'beach', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['random', 'random'], randomOvr: 34, title: '1ER TOUR', subtitle: 'Padel Beach Arena', win: 'c5_flirt', lose: 'c5_worse' },
+  c5_flirt: {
+    type: 'scene', venue: 'beach', ambiance: 'day', spot: 'talk', cast: ['me', 'lea'],
+    lines: [{ who: 'lea', text: '*en maillot de bain, lunettes de soleil sur la tête* Joli match… Tu joues souvent ici ? Moi c\'est Léa.' }],
+    choice: {
+      who: 'lea', text: 'On se retrouve au bar après ton prochain match ?',
+      options: [
+        { label: '« Désolé, je suis concentré sur le tournoi. »', after: [{ who: 'lea', text: 'Dommage… Bonne chance alors.' }], next: 'c5_mid' },
+        { label: 'Tenter ta chance', next: 'c5_flirt_roll' },
+      ],
+    },
+  },
+  c5_flirt_roll: { type: 'branch', to: () => (Math.random() < 0.5 ? 'c5_flirt_ok' : 'c5_flirt_trap') },
+  c5_flirt_ok: {
+    type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'talk', cast: ['me', 'lea'], set: { girlfriend: true },
+    lines: [
+      { who: 'lea', text: 'Tu es drôle, toi. On se revoit après le tournoi ? Je te laisse mon numéro.' },
+      { who: 'narr', text: 'Quelques semaines plus tard, Léa est devenue ta copine. Elle sera dans les tribunes à chacun de tes matchs.' },
+    ],
+    next: 'c5_mid',
+  },
+  c5_flirt_trap: {
+    type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'talk', cast: ['me', 'lea', 'timeo'], set: { weakened: true },
+    lines: [
+      { who: 'lea', text: 'Allez, encore un verre… et puis un autre. Tu ne vas pas me laisser boire seule ?' },
+      { who: 'timeo', text: 'Ah, tu as rencontré ma copine ? Merci de l\'avoir occupée. Et bonne chance pour la demi… tu as l\'air un peu fatigué.' },
+      { who: 'narr', text: 'Tu as les jambes lourdes et la tête qui tourne. Le piège était parfait.' },
+    ],
+    next: 'c5_mid',
+  },
   c5_mid: {
     type: 'scene', venue: 'beach', ambiance: 'day', cast: (c) => ['me', c.partner3, ...c.mates3],
     lines: (c) => [

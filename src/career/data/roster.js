@@ -314,3 +314,19 @@ export const CHATTER = {
     lost: ['Aïe ! Bon, je vous laisse celui-là, je suis généreux.', 'Ce n\'était pas une faute, c\'était de l\'art moderne.', 'Pas grave, je vais faire des pompes.'],
   },
 };
+
+// Personnages de l'Aventure (aussi jouables en exhibition une fois débloqués)
+export const ADV_NPCS = {
+  philippe: makeNpc('Philippe Hanras', 34, 'defender', { short: 'HANRAS', look: { skin: 0xe8bf9c, hair: 0x8a8580, hairStyle: 'short', beard: 'short', buildId: 'fine', height: 1.13, headwear: 'none' } }),
+  gege: makeNpc('Gégé Pastis', 22, 'allround', { short: 'GÉGÉ', look: { skin: 0xe0a88a, hair: 0x9a9a9a, hairStyle: 'receding', beard: 'full', buildId: 'heavy', height: 0.97, headwear: 'none' } }),
+  momo: makeNpc('Momo Rosé', 26, 'lobber', { short: 'MOMO', look: { skin: 0xc68a5e, hair: 0x2a1a10, hairStyle: 'bald', beard: 'moustache', buildId: 'heavy', height: 1.0, headwear: 'cap' } }),
+  opp: makeNpc('Adversaire', 30, 'allround', { short: 'ADVERSAIRE' }),
+  journalist: makeNpc('Journaliste', 20, 'allround', { short: 'PRESSE', look: { skin: 0xe8bf9c, hair: 0x6e4e30, hairStyle: 'long', beard: 'none', buildId: 'fine', headwear: 'none', shirtHex: 0x2a2f3a, accentHex: 0x2a2f3a, shortsHex: 0x1a1a1a } }),
+  veteran: makeNpc('Marco Ferri', 30, 'allround', { short: 'FERRI', look: { skin: 0xd9a47c, hair: 0xb0b0b0, hairStyle: 'receding', beard: 'beard', buildId: 'heavy', headwear: 'none' } }),
+  flavien: makeNpc('Flavien', 30, 'allround', { short: 'FLAVIEN', look: { skin: 0xe6b894, hair: 0x15100c, hairStyle: 'curly', beard: 'stubble', buildId: 'stocky', height: 1.0, headwear: 'none', shirtHex: 0x1c1d22, accentHex: 0xff9800, shortsHex: 0x15161a } }),
+  chico: makeNpc('Chico', 58, 'attacker', { short: 'CHICO', look: { skin: 0xf2d2b3, hair: 0xe8cf7a, hairStyle: 'short', beard: 'none', buildId: 'fine', height: 0.93, headwear: 'none', stance: { bounce: 1.9, tempo: 1.4, crouch: 1.3 } } }),
+  tison: makeNpc('Benjamin Tison', 84, 'smasher', { short: 'TISON', look: { skin: 0xe6b894, hair: 0x2a1a10, hairStyle: 'short', beard: 'stubble', buildId: 'athletic', height: 1.06, headwear: 'none', shirtHex: 0x1d2f6f, accentHex: 0xffffff, shortsHex: 0x1d2f6f } }),
+  fan: makeNpc('Supporter', 10, 'allround', { short: 'FAN', look: { skin: 0xe6b894, hair: 0x6e4e30, hairStyle: 'ponytail', beard: 'none', buildId: 'fine', height: 0.95, headwear: 'cap', female: true, curvy: 1, shirtHex: 0xec407a, accentHex: 0xec407a, shortsHex: 0x1a1a1a } }),
+  ref: makeNpc('Juge-arbitre', 30, 'allround', { short: 'ARBITRE', look: { skin: 0xd9a47c, hair: 0x555555, hairStyle: 'short', beard: 'none', buildId: 'normal', headwear: 'none', shirtHex: 0x111111, accentHex: 0x111111, shortsHex: 0x111111 } }),
+};
+ADV_NPCS.beachgirl = makeNpc('Léa', 10, 'allround', { short: 'LÉA', look: { skin: 0xd9a47c, hair: 0x2a1a10, hairStyle: 'long', beard: 'none', buildId: 'fine', height: 0.96, headwear: 'none', female: true, curvy: 1.2, shirtHex: 0xff5252, accentHex: 0xff5252, shortsHex: 0xff5252 } });

@@ -10,30 +10,30 @@ import * as THREE from 'three';
 // lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
 const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0] }, hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [0, -21.5] }, national: { between: [14, 0], talk: [14, 4] }, pro: { between: [12, 0], talk: [12, 4] }, prestige: { between: [-13, 0], talk: [-26, 26] } };
 const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
-import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS } from '../career/data/roster.js';
+import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS, ADV_NPCS } from '../career/data/roster.js';
+import { unlockAdv } from '../career/data/shop.js';
 import { npcSpec, drillCutscene } from '../career/Career.js';
 import { resolveLook, DEFAULT_LOOK } from '../entities/Appearance.js';
 import { flatStats } from '../config.js';
 import { ask } from '../ui/Ask.js';
 
+// déblocages à la fin de chaque chapitre (selon le parcours) : [id, libellé]
+const UNLOCKS = {
+  1: (c) => [['char:coach-romeo', 'Roméo (personnage)'], [`char:${{ eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis' }[c.partner]}`, `${{ eliott: 'Eliott', jean: 'Jean', raf: 'Raf' }[c.partner]} (personnage)`]],
+  2: (c) => [['char:louka', 'Louka (personnage)'], ['venue:laciotat', 'Tennis de La Ciotat (terrain)'], ...(c.f.finalist ? [['char:dimitri-payet', 'Dimitri Payet (personnage)'], ['char:camille-roy', 'Camille Roy (personnage)'], ['char:timeo-boulhol', 'Timéo Boulhol (personnage)']] : [])],
+  3: (c) => [['char:gege-pastis', 'Gégé (personnage)'], ['char:momo-rose', 'Momo (personnage)'], ...(c.f.rivalEliott ? [['char:philippe-hanras', 'Philippe Hanras (personnage)']] : []), ...(c.f.wonCey ? [['venue:ceyreste', 'Padel de Ceyreste (terrain)'], ['char:le-maire-de-ceyreste', 'Le maire (personnage)']] : [])],
+  4: (c) => [['char:stephane-ruffier', 'Stéphane Ruffier (personnage)'], ...(c.f.contactNasri ? [['char:samir-nasri', 'Samir Nasri (personnage)']] : []), ...(c.f.contactHanouna ? [['char:cyril-hanouna', 'Cyril Hanouna (personnage)']] : []), ...(c.f.finalRiviera ? [['venue:prestige', 'Riviera Padel Palace (terrain)']] : [])],
+  5: (c) => [...(c.f.regional === 'player' ? [['venue:beach', 'Padel Beach Arena (terrain)']] : []), ...(c.f.girlfriend ? [['char:lea', 'Léa (personnage)']] : [])],
+  6: (c) => [['char:chico', 'Chico (personnage)'], ...(c.f.contactFlavien ? [['char:flavien', 'Flavien le barman (personnage)']] : []), ...(c.f.national ? [['char:nathan-subrero', 'Nathan Subrero (personnage)'], ['venue:hangar', 'Le Hangar (terrain)']] : [])],
+  7: (c) => (c.f.mondial ? [['venue:national', 'Centre national (terrain)'], ['char:zinedine-zidane', 'Zinedine Zidane (personnage)']] : []),
+  8: (c) => [['char:benjamin-tison', 'Benjamin Tison (personnage)'], ...(c.f.worldChamp ? [['venue:pro', 'Stade du Mondial (terrain)']] : [])],
+};
 const KEY = (slot) => `padel-arena.adventure.${slot}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const celeb = (id) => CELEBRITIES.find((c) => c.id === id) || PRO_PAIRS.flatMap((p) => p.players).find((c) => c.id === id);
 const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka', ruffier: 'stephane-ruffier', nasri: 'samir-nasri', mandanda: 'steve-mandanda', hanouna: 'cyril-hanouna', benarfa: 'hatem-ben-arfa', lacheau: 'philippe-lacheau', sichez: 'romain-sichez', tapia: 'agustin-tapia', coello: 'arturo-coello', nathan: 'nathan-subrero', zlatan: 'zlatan-ibrahimovic', zidane: 'zinedine-zidane' };
-const EXTRA = {
-  philippe: makeNpc('Philippe Hanras', 34, 'defender', { short: 'HANRAS', look: { skin: 0xe8bf9c, hair: 0x8a8580, hairStyle: 'short', beard: 'short', buildId: 'fine', height: 1.13, headwear: 'none' } }),
-  gege: makeNpc('Gégé Pastis', 22, 'allround', { short: 'GÉGÉ', look: { skin: 0xe0a88a, hair: 0x9a9a9a, hairStyle: 'receding', beard: 'full', buildId: 'heavy', height: 0.97, headwear: 'none' } }),
-  momo: makeNpc('Momo Rosé', 26, 'lobber', { short: 'MOMO', look: { skin: 0xc68a5e, hair: 0x2a1a10, hairStyle: 'bald', beard: 'moustache', buildId: 'heavy', height: 1.0, headwear: 'cap' } }),
-  opp: makeNpc('Adversaire', 30, 'allround', { short: 'ADVERSAIRE' }),
-  journalist: makeNpc('Journaliste', 20, 'allround', { short: 'PRESSE', look: { skin: 0xe8bf9c, hair: 0x6e4e30, hairStyle: 'long', beard: 'none', buildId: 'fine', headwear: 'none', shirtHex: 0x2a2f3a, accentHex: 0x2a2f3a, shortsHex: 0x1a1a1a } }),
-  veteran: makeNpc('Marco Ferri', 30, 'allround', { short: 'FERRI', look: { skin: 0xd9a47c, hair: 0xb0b0b0, hairStyle: 'receding', beard: 'beard', buildId: 'heavy', headwear: 'none' } }),
-  flavien: makeNpc('Flavien', 30, 'allround', { short: 'FLAVIEN', look: { skin: 0xe6b894, hair: 0x15100c, hairStyle: 'curly', beard: 'stubble', buildId: 'stocky', height: 1.0, headwear: 'none', shirtHex: 0x1c1d22, accentHex: 0xff9800, shortsHex: 0x15161a } }),
-  chico: makeNpc('Chico', 58, 'attacker', { short: 'CHICO', look: { skin: 0xf2d2b3, hair: 0xe8cf7a, hairStyle: 'short', beard: 'none', buildId: 'fine', height: 0.93, headwear: 'none', stance: { bounce: 1.9, tempo: 1.4, crouch: 1.3 } } }),
-  tison: makeNpc('Benjamin Tison', 84, 'smasher', { short: 'TISON', look: { skin: 0xe6b894, hair: 0x2a1a10, hairStyle: 'short', beard: 'stubble', buildId: 'athletic', height: 1.06, headwear: 'none', shirtHex: 0x1d2f6f, accentHex: 0xffffff, shortsHex: 0x1d2f6f } }),
-  fan: makeNpc('Supporter', 10, 'allround', { short: 'FAN', look: { skin: 0xe6b894, hair: 0x6e4e30, hairStyle: 'ponytail', beard: 'none', buildId: 'fine', height: 0.95, headwear: 'cap', female: true } }),
-  ref: makeNpc('Juge-arbitre', 30, 'allround', { short: 'ARBITRE', look: { skin: 0xd9a47c, hair: 0x555555, hairStyle: 'short', beard: 'none', buildId: 'normal', headwear: 'none', shirtHex: 0x111111, accentHex: 0x111111, shortsHex: 0x111111 } }),
-};
-const LABEL = { flavien: 'Flavien', chico: 'Chico', tison: 'Benjamin Tison', fan: 'Une supportrice', zlatan: 'Zlatan', zidane: 'Zidane', tapia: 'Tapia', coello: 'Coello', ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
+const EXTRA = ADV_NPCS;
+const LABEL = { lea: 'Léa', flavien: 'Flavien', chico: 'Chico', tison: 'Benjamin Tison', fan: 'Une supportrice', zlatan: 'Zlatan', zidane: 'Zidane', tapia: 'Tapia', coello: 'Coello', ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
 
 export class AdventureUI {
@@ -81,6 +81,7 @@ export class AdventureUI {
   get short() { return (this.s?.name || 'Toi').split(' ')[0]; }
 
   apply(effects = {}, set = {}, rep = 0) {
+    if (set?.money) { this.onMoney?.(set.money); set = { ...set, money: undefined, moneyGot: (this.s.flags.moneyGot || 0) + set.money }; }
     for (const [k, v] of Object.entries(effects || {})) this.s.rel[k] = Math.max(-100, Math.min(100, (this.s.rel[k] || 0) + v));
     Object.assign(this.s.flags, set || {});
     this.s.rep = Math.max(-100, Math.min(100, (this.s.rep || 0) + (rep || 0)));
@@ -92,6 +93,12 @@ export class AdventureUI {
     while (st?.type === 'branch') { id = st.to(this.ctx); this.s.step = id; st = STEPS[id]; }
     if (st?.effects && st.type !== 'choice') this.apply(val(st.effects, this.ctx));
     if (st?.rep && st.type === 'scene') this.apply({}, {}, st.rep);
+    if (st?.type === 'end' && UNLOCKS[st.chapter] && !(this.s.unlockedCh || []).includes(st.chapter)) {
+      const list = UNLOCKS[st.chapter](this.ctx).filter((x) => x[0] && !x[0].endsWith('undefined'));
+      unlockAdv(list.map((x) => x[0]));
+      this.s.unlockedCh = [...(this.s.unlockedCh || []), st.chapter];
+      this.s.lastUnlocks = list.map((x) => x[1]);
+    }
     if (st?.type === 'end' && st.ending) { try { const g = JSON.parse(localStorage.getItem('padel-arena.endings') || '[]'); if (!g.includes(st.ending)) { g.push(st.ending); localStorage.setItem('padel-arena.endings', JSON.stringify(g)); } } catch { /* ignoré */ } }
     if (st?.set && st.type === 'scene') this.apply({}, val(st.set, this.ctx));
     if (st?.venue) this.s.venue = st.venue;
@@ -113,6 +120,7 @@ export class AdventureUI {
     if (id === 'random') { const n = genericNpc(Math.random, o.ovr || 30); return npcSpec(n, kit, lane); }
     if (EXTRA[id]) return npcSpec(EXTRA[id], kit, lane, o.idle);
     if (id === 'narr') return npcSpec(EXTRA.opp, kit, lane, true);
+    if (id === 'lea') return npcSpec(EXTRA.beachgirl, kit, lane, o.idle);
     return npcSpec(celeb(NPC_ID[id]), kit, lane, o.idle);
   }
 
@@ -190,6 +198,7 @@ export class AdventureUI {
       if (st.weak?.includes(id)) sp = { ...sp, stats: flatStats(0.12), bot: { ...sp.bot, diff: { ...sp.bot.diff, level: 0.1, speedMul: 0.72, reaction: 0.5, planError: 0.6, margin: 1.2 } } };
       // demi-finale relevée ; raquettes sabotées par Raf : adversaires diminués
       if (side < 0 && st.hard) sp = { ...sp, bot: { ...sp.bot, diff: { ...sp.bot.diff, level: Math.min(0.95, (sp.bot.diff.level || 0.5) + 0.2), reaction: Math.max(0.1, (sp.bot.diff.reaction || 0.25) - 0.06) } } };
+      if (side > 0 && id === 'me' && this.s.flags.weakened && st.hard) sp = { ...sp, stats: Object.fromEntries(Object.entries(sp.stats).map(([k, v]) => [k, k === 'power' ? v : v * 0.75])) };
       if (st.drunk?.includes(id)) sp = { ...sp, appearance: { ...sp.appearance, stance: { ...(sp.appearance.stance || {}), sway: 0.22, lean: 0.14, bounce: 0.15, tempo: 0.7, stride: 0.7 } }, stats: Object.fromEntries(Object.entries(sp.stats).map(([k, v]) => [k, k === 'power' ? v : 0.05])), bot: { ...sp.bot, diff: { ...sp.bot.diff, level: 0.04, speedMul: 0.6, planError: 1.2, reaction: 0.8, margin: 1.4 } } };
       if (side < 0 && this.s.flags.sabotage && st.hard) sp = { ...sp, stats: Object.fromEntries(Object.entries(sp.stats).map(([k, v]) => [k, typeof v === 'number' && k !== 'power' ? v * 0.8 : v])) };
       return sp;
@@ -343,7 +352,7 @@ export class AdventureUI {
     if (st.type === 'choice') return `<div class="adv-line choice"><b>${esc(st.who)}</b><p>${esc(val(st.text, c))}</p></div>`;
     if (st.type === 'scene') return '<div class="adv-line"><b>Cinématique</b><p>La scène va se jouer sur le court.</p></div>';
     if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') return `<div class="adv-line"><b>${st.type === 'watch' ? 'Au bord du court' : 'À toi de jouer'}</b><p>${esc(st.intro || val(st.label, c))}</p></div>`;
-    if (st.type === 'end') return `<div class="adv-line end"><b>${st.final ? 'FIN DE L\'AVENTURE' : `FIN DU CHAPITRE ${st.chapter}`}</b><p>${esc(val(st.text, c))}</p></div>`;
+    if (st.type === 'end') return `<div class="adv-line end"><b>${st.final ? 'FIN DE L\'AVENTURE' : `FIN DU CHAPITRE ${st.chapter}`}</b><p>${esc(val(st.text, c))}</p>${this.s.lastUnlocks?.length ? `<p><b>Débloqué en exhibition :</b><br>${this.s.lastUnlocks.map((t) => `🔓 ${esc(t)}`).join('<br>')}</p>` : ''}</div>`;
     return '';
   }
 

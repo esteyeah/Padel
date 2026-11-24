@@ -100,7 +100,7 @@ function rigid(geo, boneIdx, matrix) {
  */
 export function buildSkinnedBody(av, mat, a) {
   const B = a.build, BL = a.belly, MU = a.muscle || 0, LB = 1 + BL * 0.16 + MU * 0.22;
-  const fem = !!a.female;
+  const fem = !!a.female, CV = fem ? (a.curvy || 0) : 0;   // CV : silhouette plus marquée (poitrine, hanches, fessier)
   // --- squelette (pose de repos : toutes les rotations à zéro)
   const bones = [av.body, av.pelvis, av.spine, av.chest, av.head, av.lShoulder, av.lElbow, av.rShoulder, av.rElbow];
   for (const L of av.legs) bones.push(L.hip, L.knee, L.ankle);
@@ -122,11 +122,11 @@ export function buildSkinnedBody(av, mat, a) {
   const torsoTable = [
     [-0.15, 0.06, 0.05, 0.05, 0],
     [-0.11, 0.14 * B, 0.085, 0.1, 0],
-    [-0.03, 0.165 * B, 0.1 + belly * 0.5, 0.115, 0],
-    [0.06, 0.152 * B + BL * 0.03, 0.098 + belly, 0.1, 0.004],
-    [0.17, 0.142 * B + BL * 0.035, 0.1 + belly * 1.1, 0.092, 0.008],
+    [-0.03, 0.165 * B + CV * 0.03, 0.1 + belly * 0.5, 0.115 + CV * 0.035, 0],
+    [0.06, 0.152 * B + BL * 0.03 + CV * 0.02, 0.098 + belly, 0.1 + CV * 0.02, 0.004],
+    [0.17, 0.142 * B + BL * 0.035 - CV * 0.018, 0.1 + belly * 1.1 - CV * 0.012, 0.092, 0.008],
     [0.27, (fem ? 0.15 : 0.158) * B + BL * 0.025, 0.108 + belly * 0.6 + (fem ? 0.01 : 0), 0.098, 0.006],
-    [0.37, (fem ? 0.165 : 0.185) * B + BL * 0.02 + MU * 0.02, 0.118 + belly * 0.3 + (fem ? 0.035 : 0.008) + MU * 0.02, 0.105, 0.008],
+    [0.37, (fem ? 0.165 : 0.185) * B + BL * 0.02 + MU * 0.02, 0.118 + belly * 0.3 + (fem ? 0.035 + CV * 0.035 : 0.008) + MU * 0.02, 0.105, 0.008],
     [0.45, (fem ? 0.17 : 0.198) * B + MU * 0.03, 0.105 + MU * 0.012, 0.1, 0.004],
     [0.51, (fem ? 0.155 : 0.175) * B, 0.085, 0.085, 0],
     [0.54, 0.105, 0.07, 0.075, -0.006],

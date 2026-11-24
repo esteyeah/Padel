@@ -21,7 +21,7 @@ import { MAYOR_LOOK, GROWTH, grownCelebs, CHATTER } from './data/roster.js';
 import { PRO_PAIRS, CELEBRITIES, STYLES, COACH, genericNpc, makeNpc } from './data/roster.js';
 import { createTournament, playerMatch, reportPlayerResult, roundName, totalRounds, winProbability } from './Tournament.js';
 import { pickMission, liveMission, missionDone } from './data/missions.js';
-import { SHOP_ITEMS, FREE_ITEMS, SHOP_REWARDS, TEST_UNLOCK_ALL_VENUES, itemById, isUnlocked } from './data/shop.js';
+import { SHOP_ITEMS, FREE_ITEMS, SHOP_REWARDS, TEST_UNLOCK_ALL_VENUES, itemById, isUnlocked, advUnlocks } from './data/shop.js';
 import { DRILLS, DRILL_IDS } from '../core/Drills.js';
 import { makeAppearance, resolveLook, rackById, bagById, DEFAULT_LOOK as LOOK0, KITS, rng } from '../entities/Appearance.js';
 import { botDiffFromRating } from '../config.js';
@@ -54,6 +54,7 @@ export function npcSpec(npc, kit, lane, idle = false) {
     if (npc.look.shirtHex != null) Object.assign(appearance, { shirt: r.shirt, accent: r.accent, shorts: r.shorts });
     if (npc.look.number) appearance.number = npc.look.number;
     if (npc.look.kitStyle) appearance.kitStyle = npc.look.kitStyle;
+    if (npc.look.female) Object.assign(appearance, { female: true, curvy: npc.look.curvy || 0 });
   }
   return {
     name: npc.short, hand: npc.hand === 'L' ? -1 : 1, lane, stats: { ...toStats(npc.attrs), power: npc.power || 1 }, appearance, idle,
@@ -323,6 +324,8 @@ export class Career {
       if (!raw) return null;
       const s = JSON.parse(raw);
       if (!s || !s.profile) return null;
+      // argent gagné dans l'Aventure avant d'avoir une carrière
+      try { const pm = +localStorage.getItem('padel-arena.pendingMoney') || 0; if (pm) { s.money = (s.money || 0) + pm; localStorage.removeItem('padel-arena.pendingMoney'); storage.setItem(KEY, JSON.stringify(s)); } } catch { /* ignoré */ }
       if (s.v === 1) {
         // migration v1 -> v2 : boutique, réglages, entraînements, nouveau format d'apparence
         Object.assign(s, { v: 2, shopPts: 0, owned: [...FREE_ITEMS], settings: { formats: { ...DEFAULT_FORMATS } }, drills: {}, trainedWeek: 0 });
@@ -448,7 +451,7 @@ export class Career {
   // ------------------------------------------------------------------ entraînement
   /** Un seul atelier par semaine, et pas pendant un tournoi. */
   /** Personnages jouables en exhibition. */
-  hasChar(id) { this.s.chars ??= []; return this.s.chars.includes(id) || isUnlocked(); }
+  hasChar(id) { this.s.chars ??= []; return this.s.chars.includes(id) || isUnlocked() || advUnlocks().includes(`char:${id}`); }
   buyChar(id) {
     const c = findCharacter(id);
     if (!c || c.mission) return { ok: false, error: 'Ce personnage se débloque par une mission.' };
@@ -567,7 +570,7 @@ export class Career {
   setFormat(tier, id) { if (FORMAT_CHOICES[tier]?.includes(id)) { this.s.settings.formats[tier] = id; this.save(); } }
 
   // ------------------------------------------------------------------ boutique
-  owns(id) { const it = itemById(id); return this.s.owned.includes(id) || (it && it.price === 0) || ((TEST_UNLOCK_ALL_VENUES || isUnlocked()) && id.startsWith('venue:')); }
+  owns(id) { const it = itemById(id); return this.s.owned.includes(id) || advUnlocks().includes(id) || (it && it.price === 0) || ((TEST_UNLOCK_ALL_VENUES || isUnlocked()) && id.startsWith('venue:')); }
   buy(id) {
     const it = itemById(id);
     if (!it || this.owns(id)) return { ok: false, error: 'Déjà acheté.' };
