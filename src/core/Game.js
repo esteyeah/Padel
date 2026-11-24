@@ -1026,7 +1026,7 @@ export class Game {
   // =========================================================================
   startCeremony(spec) {
     const h = this.human;
-    const mesh = makeTrophy(spec);
+    const mesh = makeTrophy({ ...spec, size: Math.max(spec.size, 0.62) });
     this.scene.add(mesh);
     // confettis pour les tournois importants
     let confetti = null;
@@ -1075,7 +1075,11 @@ export class Game {
       p.avatar.root.position.set(p.pos.x, mine ? Math.max(0, Math.sin(c.t * 5 + (p === h ? 0 : 1)) * 0.12) : 0, p.pos.z);
     }
     const s = c.spec.size;
-    c.mesh.position.set(h.pos.x, 1.1 + lift * 1.15, h.pos.z - h.side * 0.12);
+    // le trophée est tenu dans les deux mains (milieu des deux poignets)
+    const av = h.avatar; av.root.updateMatrixWorld(true);
+    const rh = av.rElbow.localToWorld(new THREE.Vector3(-0.28, 0, 0)), lh = av.lElbow.localToWorld(new THREE.Vector3(0, -0.28, 0));
+    const mid = rh.add(lh).multiplyScalar(0.5);
+    c.mesh.position.set(mid.x, mid.y - 0.12 * s, mid.z);
     c.mesh.rotation.y = yaw + Math.sin(c.t * 1.5) * 0.3;
     if (c.confetti) {
       const M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
