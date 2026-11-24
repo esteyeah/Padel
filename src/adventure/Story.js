@@ -179,7 +179,7 @@ const CH2 = {
       { who: 'coach', text: 'Bienvenue au Tennis de La Ciotat. Huit équipes, matchs en super tie-break. Venez, le tableau est affiché au club-house.' },
       {
         who: c.partner, text: c.partner === 'raf' ? 'Voyons qui on va écraser.' : 'Regarde, on est là !',
-        sheet: bracket(c, 'OPEN DE LA CIOTAT — TABLEAU', `<div><span class="me">${'Toi'} / ${NAME[c.partner]}</span><span>Paire La Ciotat 3</span><span>Duo Aubagne</span><span>Vidal / Moreau</span><span>${pair(c.friends)}</span><span>Paire Cassis</span><span>Les Marseillais</span><span>Roy / Boulhol</span></div><div><span>1/2 finale</span><span>…</span><span>1/2 finale</span><span>…</span></div><div><span>FINALE</span></div>`),
+        sheet: bracket(c, 'OPEN DE LA CIOTAT — TABLEAU', `<div><span class="me">${'Toi'} / ${NAME[c.partner]}</span><span>Paire La Ciotat 3</span><span>Subrero / Ferreira</span><span>Vidal / Moreau</span><span>${pair(c.friends)}</span><span>Paire Cassis</span><span>Les Marseillais</span><span>Roy / Boulhol</span></div><div><span>1/2 finale</span><span>…</span><span>1/2 finale</span><span>…</span></div><div><span>FINALE</span></div>`),
       },
       { who: c.friends[0], text: 'Si on gagne nos deux matchs, on se retrouve en demi-finale !' },
       { who: 'coach', text: 'Et de l\'autre côté du tableau, Camille Roy et Timéo Boulhol. Les favoris. Concentrez-vous sur votre premier match.' },
@@ -387,7 +387,7 @@ const CH3 = {
   c3_tourn: {
     type: 'scene', venue: 'municipal', ambiance: 'night', cast: (c) => ['me', 'coach', c.partner3, ...c.mates3],
     lines: (c) => [
-      { who: 'coach', text: 'Samedi, il y a un tournoi à Ceyreste, un peu plus simple que La Ciotat. Je vous ai inscrits, les deux duos.' },
+      { who: 'coach', text: 'Samedi, il y a un tournoi à Ceyreste, un peu plus simple que La Ciotat. Je vous ai inscrits, les deux duos. Regardez l\'affiche.', sheet: '<h4>TOURNOI DE CEYRESTE</h4><div class="br" style="grid-template-columns:1fr"><div><span>Samedi · 8 équipes · super tie-break</span><span>Têtes d\'affiche : <b>Nathan Subrero</b> et ses copains de Cassis</span><span>Inscriptions à la buvette · Apéro offert par la mairie</span></div></div>' },
       { who: 'coach', text: c.f.rivalEliott && c.f.partner === 'eliott' ? `Eliott n'est plus là. Tu joueras avec Louka. ${pair(c.mates3)} jouent ensemble.` : `Tu gardes ${NAME[c.partner3]}. En face : ${pair(c.mates3)}.` },
       { who: c.partner3, text: c.partner3 === 'louka' ? 'Bon. Visiblement on est coéquipiers. On va voir ce que tu vaux.' : 'C\'est reparti !' },
     ],
@@ -487,9 +487,169 @@ const CH3 = {
     ],
     next: 'ch3_end',
   },
-  ch3_end: { type: 'end', chapter: 3, text: (c) => `${c.f.wonCey ? 'Vainqueur du tournoi de Ceyreste !' : 'Fin du tournoi de Ceyreste.'} Rival : ${c.f.rivalEliott ? 'Eliott' : 'Louka'}. Réputation : ${c.s.rep > 0 ? '+' : ''}${c.s.rep}. Le chapitre 4 arrive bientôt.` },
+  ch3_end: { type: 'end', chapter: 3, next: 'c4_bus', text: (c) => `${c.f.wonCey ? 'Vainqueur du tournoi de Ceyreste !' : 'Fin du tournoi de Ceyreste.'} Rival : ${c.f.rivalEliott ? 'Eliott' : 'Louka'}. Réputation : ${c.s.rep > 0 ? '+' : ''}${c.s.rep}. ` },
 };
 
-export const CHAPTERS = { 1: 'Chapitre 1 · Le commencement', 2: 'Chapitre 2 · L\'Open de La Ciotat', 3: 'Chapitre 3 · Le retour de Louka', 4: 'Chapitre 4 · Bientôt' };
-export const STEPS = { ...CH1, ...CH2, ...CH3 };
-export const chapterOf = (id) => (id in CH3 ? 3 : id in CH2 ? 2 : 1);
+// ================================================================== chapitre 4 : le tournoi de la Riviera
+const CH4 = {
+  c4_bus: {
+    type: 'scene', venue: 'municipal', ambiance: 'day', spot: 'bus', bus: true, cast: (c) => ['me', 'mayor', 'coach', ...c.group4],
+    lines: (c) => [
+      { who: 'mayor', text: 'Mes champions ! Grâce à mon ami Stéphane Ruffier, j\'ai obtenu cinq places au tournoi des célébrités du Riviera Padel Palace. Tout le monde en minibus !' },
+      { who: 'coach', text: 'Le Riviera… Je n\'y ai pas remis les pieds depuis longtemps.' },
+      { who: c.group4[0], text: c.group4.includes('raf') && c.group4[0] === 'raf' ? 'Je prends la place devant. Je suis le meilleur, je mérite la vue.' : 'Des célébrités ?! Il va y avoir des footballeurs ?' },
+      { who: 'mayor', text: 'Des footballeurs, des humoristes, et même quelques joueurs pros. En route ! Et pas de chips dans le minibus.' },
+    ],
+    next: 'c4_arrive',
+  },
+  c4_arrive: {
+    type: 'scene', venue: 'prestige', ambiance: 'day', spot: 'talk', cast: (c) => ['me', 'ruffier', 'mayor', 'coach', c.partner3],
+    lines: (c) => [
+      { who: 'mayor', text: 'Stéphane ! Toujours en forme ? Je te présente mes petits protégés.' },
+      { who: 'ruffier', text: 'Bienvenue au Riviera ! Ici, c\'est spécial : tous les matchs se jouent en 3 points. Le premier à 3 gagne. Ça va très vite, il ne faut rien laisser filer.' },
+      { who: 'ruffier', text: 'Il y a du beau monde aujourd\'hui. Profitez… et méfiez-vous de ceux qui parlent beaucoup.' },
+      { who: 'ruffier', text: '*remarque le coach* … Roméo ? Ça fait des années.' },
+      { who: 'coach', text: '*sec* Stéphane.' },
+      { who: c.partner3, text: 'Ils se connaissent ? Il y a un malaise, non ?' },
+    ],
+    next: 'c4_r1',
+  },
+  c4_r1: { type: 'match', label: 'Tour 1 contre Philippe Lacheau et Romain Sichez', format: '2v2', mt: 3, sudden: true, venue: 'prestige', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['lacheau', 'sichez'], title: '1ER TOUR · 3 POINTS', subtitle: 'Tournoi de la Riviera', win: 'c4_whisper', lose: 'c4_whisper', set: {} },
+  c4_whisper: {
+    type: 'scene', venue: 'prestige', ambiance: 'day', spot: 'between', cast: (c) => ['me', 'veteran', c.partner3],
+    lines: (c) => [
+      { who: 'veteran', text: 'Vous êtes les élèves de Roméo ? Ha ! Roméo Vidal… En 2015, il était le grand espoir. Finale ici même, au Riviera.' },
+      { who: 'veteran', text: 'Et puis on a retrouvé les grips de ses adversaires sabotés. Suspendu deux ans. Il n\'a jamais rejoué.' },
+      { who: c.partner3, text: 'Roméo ? Tricheur ? Je n\'y crois pas…' },
+    ],
+    set: { knowsRomeo: true },
+    next: 'c4_r2_pre',
+  },
+  c4_r2_pre: {
+    type: 'scene', venue: 'prestige', ambiance: 'day', cast: (c) => ['me', 'nasri', 'mandanda', c.partner3],
+    lines: [
+      { who: 'nasri', text: 'C\'est vous les petits du maire ? Je vais être gentil : je vous laisse marquer un point. Peut-être.' },
+      { who: 'mandanda', text: 'Samir, sois sympa. Bon match les gars.' },
+    ],
+    next: 'c4_r2',
+  },
+  c4_r2: {
+    type: 'match', label: 'Tour 2 contre Samir Nasri et Steve Mandanda', format: '2v2', mt: 3, sudden: true, venue: 'prestige', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['nasri', 'mandanda'], title: 'QUART DE FINALE · 3 POINTS', subtitle: 'Tournoi de la Riviera',
+    mid: {
+      at: 1,
+      who: 'nasri', text: 'Dehors ! Elle était dehors, celle-là. Point pour nous.',
+      options: [
+        { label: '« Non, elle était bonne. Rejoue le point. »', rep: 4, set: { contestNasri: true }, after: [{ who: 'nasri', text: '… Ah ouais ? T\'as du caractère, toi. Bon, on rejoue.' }] },
+        { label: 'Ne rien dire', point: 'them', after: [{ who: 'nasri', text: '*sourire en coin* Merci, merci.' }] },
+      ],
+    },
+    win: 'c4_after_r2', lose: 'c4_after_r2_lose',
+  },
+  c4_after_r2: {
+    type: 'scene', venue: 'prestige', ambiance: 'day', spot: 'between', cast: (c) => ['me', 'nasri', 'mandanda', c.partner3],
+    lines: (c) => [
+      c.f.contestNasri ? { who: 'nasri', text: 'Respect. Du répondant sur le terrain ET dans la parole. Ça me plaît. Tiens, mon numéro, si un jour vous cherchez un sparring.' } : { who: 'nasri', text: 'Bien joué. Vous avez eu de la chance.' },
+      { who: 'mandanda', text: 'Bravo les jeunes, vraiment.' },
+    ],
+    effects: (c) => (c.f.contestNasri ? { coach: 4 } : {}),
+    set: (c) => ({ contactNasri: !!c.f.contestNasri }),
+    next: 'c4_romeo_clash',
+  },
+  c4_after_r2_lose: {
+    type: 'scene', venue: 'prestige', ambiance: 'day', spot: 'between', cast: (c) => ['me', 'nasri', 'mandanda', c.partner3],
+    lines: (c) => [
+      c.f.contestNasri ? { who: 'nasri', text: 'Vous perdez, mais respect : du répondant sur le terrain et dans la parole. Gardez mon numéro.' } : { who: 'nasri', text: 'Pas mal pour des débutants. Allez, bonne fin de tournoi.' },
+      { who: c.partner3, text: 'Éliminés… mais on a joué contre Nasri et Mandanda !' },
+    ],
+    set: (c) => ({ contactNasri: !!c.f.contestNasri, outRiviera: 'r2' }),
+    next: 'c4_romeo_clash',
+  },
+  c4_romeo_clash: {
+    type: 'scene', venue: 'prestige', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', 'coach', 'veteran', c.partner3],
+    lines: [
+      { who: 'veteran', text: 'Roméo Vidal ! Revenu sur les lieux du crime ? Tes élèves savent ce que tu as fait en 2015 ?' },
+      { who: 'coach', text: 'Je n\'ai rien saboté. Je l\'ai dit à l\'époque, personne ne m\'a cru. Ça n\'a pas changé.' },
+      { who: 'veteran', text: 'Bien sûr. Les grips se sont desserrés tout seuls.' },
+      { who: 'coach', text: '*s\'éloigne sans un mot*' },
+    ],
+    next: 'c4_hanouna_branch',
+  },
+  c4_hanouna_branch: { type: 'branch', to: (c) => (c.f.outRiviera ? 'c4_press' : 'c4_hanouna') },
+  c4_hanouna: {
+    type: 'scene', venue: 'prestige', ambiance: 'sunset', spot: 'between', cast: (c) => ['me', 'hanouna'],
+    lines: [
+      { who: 'hanouna', text: 'Eh ! Viens, viens. Tu me connais, hein ? Bon. Demi-finale : toi contre moi. J\'ai parié gros avec Ben Arfa que je vais en finale.' },
+      { who: 'hanouna', text: 'Tu perds tranquille, et je te fais un virement. Mille euros. Personne ne saura. Alors ?' },
+    ],
+    choice: {
+      who: 'hanouna', text: 'On fait affaire ?',
+      options: [
+        { label: 'Accepter : perdre la demi-finale contre 1 000 €', rep: -15, set: { bribed: true }, after: [{ who: 'hanouna', text: 'Voilà ! Un homme d\'affaires ! Et surtout, fais semblant de te battre, hein.' }], next: 'c4_semi' },
+        { label: 'Refuser et le battre sur le court', rep: 6, after: [{ who: 'hanouna', text: 'Ah, un idéaliste. Tant pis pour toi, je vais te faire danser.' }], next: 'c4_semi' },
+      ],
+    },
+  },
+  c4_semi: { type: 'match', label: 'Demi-finale contre Cyril Hanouna et Hatem Ben Arfa', format: '2v2', mt: 3, sudden: true, venue: 'prestige', ambiance: 'sunset', near: (c) => ['me', c.partner3], far: ['hanouna', 'benarfa'], title: 'DEMI-FINALE · 3 POINTS', subtitle: 'Tournoi de la Riviera', win: 'c4_semi_win', lose: 'c4_semi_lose' },
+  c4_semi_win: {
+    type: 'scene', venue: 'prestige', ambiance: 'sunset', spot: 'between', cast: (c) => ['me', 'hanouna', c.partner3],
+    lines: (c) => [
+      c.f.bribed ? { who: 'hanouna', text: 'QUOI ?! Tu avais accepté ! Pas de virement, et tu vas en entendre parler dans mon émission !' } : { who: 'hanouna', text: 'Bon… bien joué. T\'as du cran, toi. Je t\'invite sur le plateau un de ces jours.' },
+      { who: c.partner3, text: 'LA FINALE ! On est en finale du Riviera !' },
+    ],
+    effects: (c) => (c.f.bribed ? { coach: -2 } : { coach: 4 }),
+    set: (c) => (c.f.bribed ? { hanounaEnemy: true } : { contactHanouna: true }),
+    next: 'c4_final_pre',
+  },
+  c4_semi_lose: {
+    type: 'scene', venue: 'prestige', ambiance: 'sunset', spot: 'between', cast: (c) => ['me', 'hanouna', c.partner3],
+    lines: (c) => [
+      c.f.bribed ? { who: 'hanouna', text: '*glisse discrètement* Parfait, l\'argent est parti. Un plaisir de faire des affaires.' } : { who: 'hanouna', text: 'Et voilà ! Finale ! Sans tricher, en plus. Enfin… presque.' },
+      { who: c.partner3, text: c.f.bribed ? 'Attends… tu as fait exprès de rater ce smash ?' : 'Dommage, on y était presque.' },
+    ],
+    effects: (c) => (c.f.bribed ? { [c.partner3]: -10 } : {}),
+    set: (c) => (c.f.bribed ? { money: 1000 } : {}),
+    next: 'c4_press',
+  },
+  c4_final_pre: {
+    type: 'scene', venue: 'prestige', ambiance: 'night', cast: (c) => ['me', 'tapia', 'coello', c.partner3],
+    lines: [
+      { who: 'tapia', text: 'Hola ! Finale d\'exhibition contre nous. Profitez, c\'est du spectacle.' },
+      { who: 'coello', text: 'Trois points, rapides. On ne va pas vous faire mal… beaucoup.' },
+    ],
+    next: 'c4_final',
+  },
+  c4_final: { type: 'match', label: 'Finale contre Agustín Tapia et Arturo Coello', format: '2v2', mt: 3, sudden: true, venue: 'prestige', ambiance: 'night', near: (c) => ['me', c.partner3], far: ['tapia', 'coello'], rig: 'lose', title: 'FINALE · 3 POINTS', subtitle: 'Tournoi de la Riviera', set: { finalRiviera: true }, win: 'c4_press', lose: 'c4_press' },
+  c4_press: {
+    type: 'scene', venue: 'prestige', ambiance: 'night', spot: 'talk', cast: (c) => ['me', 'journalist', 'coach', 'mayor'],
+    lines: (c) => [
+      { who: 'journalist', text: `${c.f.finalRiviera ? 'Finalistes du Riviera face à Tapia et Coello !' : 'Belle première au Riviera !'} Une question : votre coach, Roméo Vidal, a été suspendu en 2015 pour sabotage. Vous le saviez ?` },
+    ],
+    choice: {
+      who: 'journalist', text: 'Que pensez-vous de votre entraîneur ?',
+      options: [
+        { label: 'Prendre sa défense publiquement', rep: 6, effects: { coach: 25 }, set: { defendRomeo: true }, after: [{ who: 'me', text: 'Roméo nous a tout appris, et il nous apprend surtout à jouer propre. Je le crois quand il dit qu\'il n\'a rien fait.' }, { who: 'coach', text: '*la voix serrée* … Merci.' }], next: 'c4_end_scene' },
+        { label: 'Le lyncher publiquement', rep: -8, effects: { coach: -50 }, set: { enemyRomeo: true }, after: [{ who: 'me', text: 'Franchement ? Un tricheur reste un tricheur. Je ne sais pas si je vais continuer avec lui.' }, { who: 'coach', text: '*se lève et quitte la salle sans un mot*' }, { who: 'mayor', text: 'Oh là là… ça, c\'était pas malin.' }], next: 'c4_end_scene' },
+        { label: '« Pas de commentaire. »', after: [{ who: 'journalist', text: 'Très bien. Merci.' }], next: 'c4_end_scene' },
+      ],
+    },
+  },
+  c4_end_scene: {
+    type: 'scene', venue: 'prestige', ambiance: 'night', spot: 'talk', cast: (c) => ['me', 'ruffier', 'mayor', c.partner3],
+    lines: (c) => {
+      const L = [{ who: 'ruffier', text: 'Belle journée. Tiens, ma carte. Si un jour tu veux t\'entraîner avec des gens sérieux, appelle-moi.' }];
+      if (c.f.contactNasri) L.push({ who: 'narr', text: 'Dans ton téléphone : Stéphane Ruffier, Samir Nasri.' });
+      if (c.f.contactHanouna) L.push({ who: 'narr', text: 'Et une invitation sur le plateau de Cyril Hanouna.' });
+      if (c.f.enemyRomeo) L.push({ who: 'mayor', text: 'Roméo est rentré seul en taxi. Le minibus va être calme au retour…' });
+      else if (c.f.defendRomeo) L.push({ who: 'ruffier', text: '*à voix basse* Tu as bien fait de le défendre. En 2015… je n\'ai jamais cru à cette histoire non plus.' });
+      L.push({ who: 'mayor', text: 'Allez, tout le monde au minibus ! Et cette fois, j\'ai acheté des chips.' });
+      return L;
+    },
+    set: { contacts: true },
+    next: 'ch4_end',
+  },
+  ch4_end: { type: 'end', chapter: 4, text: (c) => `${c.f.finalRiviera ? 'Finaliste du tournoi de la Riviera !' : 'Tournoi de la Riviera terminé.'} Nouveaux contacts : Ruffier${c.f.contactNasri ? ', Nasri' : ''}${c.f.contactHanouna ? ', Hanouna' : ''}. ${c.f.enemyRomeo ? 'Roméo est désormais ton ennemi.' : c.f.defendRomeo ? 'Roméo te fait confiance.' : ''} Réputation : ${c.s.rep > 0 ? '+' : ''}${c.s.rep}.` },
+};
+
+export const CHAPTERS = { 1: 'Chapitre 1 · Le commencement', 2: 'Chapitre 2 · L\'Open de La Ciotat', 3: 'Chapitre 3 · Le retour de Louka', 4: 'Chapitre 4 · Le tournoi de la Riviera', 5: 'Chapitre 5 · Bientôt' };
+export const STEPS = { ...CH1, ...CH2, ...CH3, ...CH4 };
+export const chapterOf = (id) => (id in CH4 ? 4 : id in CH3 ? 3 : id in CH2 ? 2 : 1);

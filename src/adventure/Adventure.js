@@ -7,9 +7,9 @@ import { DRILLS } from '../core/Drills.js';
 import { VENUE_COURTS } from '../render/Venues.js';
 import * as THREE from 'three';
 // lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
-const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4] } };
+const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, prestige: { between: [-13, 0], talk: [-26, 26] } };
 const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
-import { CELEBRITIES, COACH, genericNpc, makeNpc } from '../career/data/roster.js';
+import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS } from '../career/data/roster.js';
 import { npcSpec, drillCutscene } from '../career/Career.js';
 import { resolveLook, DEFAULT_LOOK } from '../entities/Appearance.js';
 import { flatStats } from '../config.js';
@@ -17,16 +17,18 @@ import { ask } from '../ui/Ask.js';
 
 const KEY = (slot) => `padel-arena.adventure.${slot}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const celeb = (id) => CELEBRITIES.find((c) => c.id === id);
-const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka' };
+const celeb = (id) => CELEBRITIES.find((c) => c.id === id) || PRO_PAIRS.flatMap((p) => p.players).find((c) => c.id === id);
+const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka', ruffier: 'stephane-ruffier', nasri: 'samir-nasri', mandanda: 'steve-mandanda', hanouna: 'cyril-hanouna', benarfa: 'hatem-ben-arfa', lacheau: 'philippe-lacheau', sichez: 'romain-sichez', tapia: 'agustin-tapia', coello: 'arturo-coello', nathan: 'nathan-subrero' };
 const EXTRA = {
   philippe: makeNpc('Philippe Hanras', 34, 'defender', { short: 'HANRAS', look: { skin: 0xe8bf9c, hair: 0x8a8580, hairStyle: 'short', beard: 'short', buildId: 'fine', height: 1.13, headwear: 'none' } }),
   gege: makeNpc('Gégé Pastis', 22, 'allround', { short: 'GÉGÉ', look: { skin: 0xe0a88a, hair: 0x9a9a9a, hairStyle: 'receding', beard: 'full', buildId: 'heavy', height: 0.97, headwear: 'none' } }),
   momo: makeNpc('Momo Rosé', 26, 'lobber', { short: 'MOMO', look: { skin: 0xc68a5e, hair: 0x2a1a10, hairStyle: 'bald', beard: 'moustache', buildId: 'heavy', height: 1.0, headwear: 'cap' } }),
   opp: makeNpc('Adversaire', 30, 'allround', { short: 'ADVERSAIRE' }),
+  journalist: makeNpc('Journaliste', 20, 'allround', { short: 'PRESSE', look: { skin: 0xe8bf9c, hair: 0x6e4e30, hairStyle: 'long', beard: 'none', buildId: 'fine', headwear: 'none', shirtHex: 0x2a2f3a, accentHex: 0x2a2f3a, shortsHex: 0x1a1a1a } }),
+  veteran: makeNpc('Marco Ferri', 30, 'allround', { short: 'FERRI', look: { skin: 0xd9a47c, hair: 0xb0b0b0, hairStyle: 'receding', beard: 'beard', buildId: 'heavy', headwear: 'none' } }),
   ref: makeNpc('Juge-arbitre', 30, 'allround', { short: 'ARBITRE', look: { skin: 0xd9a47c, hair: 0x555555, hairStyle: 'short', beard: 'none', buildId: 'normal', headwear: 'none', shirtHex: 0x111111, accentHex: 0x111111, shortsHex: 0x111111 } }),
 };
-const LABEL = { philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
+const LABEL = { ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
 
 export class AdventureUI {
@@ -65,7 +67,7 @@ export class AdventureUI {
     const group = f.rivalEliott ? ['jean', 'raf', 'louka'] : ['eliott', 'jean', 'raf'];
     const partner3 = group.includes(partner) ? partner : 'louka';
     const mates3 = group.filter((x) => x !== partner3);
-    return { s: this.s, f, partner, friends, partner3, mates3, rival3: f.rivalEliott ? 'eliott' : 'louka' };
+    return { s: this.s, f, partner, friends, partner3, mates3, rival3: f.rivalEliott ? 'eliott' : 'louka', group4: [partner3, ...mates3] };
   }
   get step() { return this.s ? STEPS[this.s.step] : null; }
   get short() { return (this.s?.name || 'Toi').split(' ')[0]; }
@@ -81,7 +83,7 @@ export class AdventureUI {
     let st = STEPS[id];
     while (st?.type === 'branch') { id = st.to(this.ctx); this.s.step = id; st = STEPS[id]; }
     if (st?.effects && st.type !== 'choice') this.apply(val(st.effects, this.ctx));
-    if (st?.set && st.type === 'scene') this.apply({}, st.set);
+    if (st?.set && st.type === 'scene') this.apply({}, val(st.set, this.ctx));
     if (st?.venue) this.s.venue = st.venue;
     this.save();
     // les cinématiques s'enchaînent directement dans le jeu
@@ -191,7 +193,7 @@ export class AdventureUI {
     this.startGame({
       mode: 'career', format: st.format, sets: 1, gamesPerSet: 6, golden: true, matchTiebreak: st.mt || 10, venue: st.venue, ambiance: st.ambiance,
       title: st.title || val(st.label, c).toUpperCase(), subtitle: st.subtitle || 'Entraînement', replays: false,
-      rig: st.rig === 'lose', rigWin: st.rig === 'win', lineup, party: false, onEnd: back, onQuit: () => this.show(),
+      sudden: !!st.sudden, rig: st.rig === 'lose', rigWin: st.rig === 'win', lineup, party: false, onEnd: back, onQuit: () => this.show(),
       drunk: (st.drunk || []).map((id) => this.spec(id, 'red', 0).name),
       midEvent: st.mid ? { at: st.mid.at, lines: () => this.midLines(st.mid) } : null,
     });
@@ -205,7 +207,7 @@ export class AdventureUI {
       const attr = st.type === 'drill' ? ({ serve: 'drive', lob: 'lob' }[st.drill] || 'drive') : ['speed', 'drive', 'smash', 'lob'][Math.floor(Math.random() * 4)];
       this.s.stats[attr] = Math.min(0.95, (this.s.stats[attr] || 0.3) + gain);
       this.s.stats.stamina = Math.min(0.95, (this.s.stats.stamina || 0.3) + 0.008);
-      if (st.set) this.apply({}, st.set);
+      if (st.set) this.apply({}, val(st.set, this.ctx));
     }
     if (st.compete) this.compete(st, result);
     const next = st.type === 'drill' || st.type === 'watch' ? st.next : (result.won ? st.win : st.lose);
@@ -224,6 +226,20 @@ export class AdventureUI {
       const [cx, cz] = toWorld(st.venue, sp);
       g.players.forEach((p, i) => { p.pos.set(cx + (i ? 0.25 : -0.25), 0, cz + (i ? -1.1 : 1.1)); });
       (g.actors || []).forEach((a, i) => { const ang = -1.2 + (i / Math.max(1, g.actors.length - 1)) * 2.4; a.pos.set(cx + Math.sin(ang) * 1.9, 0, cz + Math.cos(ang) * 0.4); });
+    }
+    if (st.bus && sp) {
+      // minibus blanc du club garé à côté du groupe
+      const [cx, cz] = toWorld(st.venue, sp);
+      const bus = new THREE.Group(); bus.position.set(cx - 3.2, 0, cz); bus.userData.adv = true;
+      const body = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.4, metalness: 0.2 }), glass = new THREE.MeshStandardMaterial({ color: 0x1a2533, roughness: 0.1, metalness: 0.5 }), dark = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 });
+      const b1 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 5.4), body); b1.position.y = 1.4; bus.add(b1);
+      for (const sx of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.7), glass); w.position.set(sx * 1.01, 1.9, -0.2); w.rotation.y = sx * Math.PI / 2; bus.add(w); }
+      const wf = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.8), glass); wf.position.set(0, 1.85, 2.71); bus.add(wf);
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.02, 0.18, 5.42), new THREE.MeshStandardMaterial({ color: 0x1f5fbf })); stripe.position.y = 1.15; bus.add(stripe);
+      for (const [x, z] of [[-1, 1.8], [1, 1.8], [-1, -1.8], [1, -1.8]]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.25, 14).rotateZ(Math.PI / 2), dark); w.position.set(x, 0.36, z); bus.add(w); }
+      bus.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+      g.scene.add(bus);
+      g._advProps = [...(g._advProps || []), bus];
     }
     for (const it of all) if (props[it.id] === 'beer') {
       const beer = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.17, 12), new THREE.MeshStandardMaterial({ color: 0xd99a1c, roughness: 0.15, transparent: true, opacity: 0.85 }));

@@ -120,6 +120,7 @@ export class Game {
     this.score = new Score({ sets: o.sets, gamesPerSet: o.gamesPerSet, goldenPoint: o.golden, matchTiebreak: o.matchTiebreak, firstServer: o.firstServer ?? (Math.random() < 0.5 ? 1 : -1) });
     // match pris en cours (aventure : on arrive en fin de match)
     if (o.startPoints) this.score.points = [...o.startPoints];
+    if (o.sudden) this.score.sudden = true;
     this._midDone = false;
     this.knownTurn = -1;
     this.teamTurns = { 1: 0, [-1]: 0 };
@@ -161,6 +162,8 @@ export class Game {
     }
     // spectateurs au bord du court (aventure : on regarde le match de ses amis)
     for (const sp of this.spectators || []) this.scene.remove(sp.root);
+    for (const pr of this._advProps || []) this.scene.remove(pr);
+    this._advProps = [];
     this.spectators = (o.spectators || []).map((ap, i) => {
       const av = new Avatar({ ...ap }); av.racket.visible = false;
       av.root.position.set(-(COURT.halfW + 1.4), 0, -1 + i * 1.1); this.scene.add(av.root);

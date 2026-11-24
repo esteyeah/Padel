@@ -538,3 +538,7 @@ padel-sim/
 - Personnalités en tenue de leur club ou sélection, avec écusson et numéro : Payet, Nasri, Mandanda, Cheyrou, Squillaci (OM) ; Messi, Puyol, Piqué (Barça, rayures blaugrana) ; Zidane, Deschamps, Riner (France) ; Zlatan, Ménez, Jallet (PSG) ; Gonalons, Grenier (OL) ; Pires, Vieira (Arsenal) ; Lemoine (Saint-Étienne) ; Ben Arfa (Newcastle) ; Ocon (couleurs de son écurie).
 - Barbes moins « masque » : poils moins denses, teinte plus naturelle, ombre plus légère.
 - Nouveau : Stéphane Ruffier (72, national), maillot de Saint-Étienne n° 16.
+
+### 0.60
+- Aventure, chapitre 4 « Le tournoi de la Riviera » : départ en minibus avec le maire, le coach et les quatre joueurs ; accueil par Stéphane Ruffier (matchs en 3 points secs) ; la controverse de Roméo (suspendu en 2015) révélée au fil du tournoi ; Nasri ment sur une balle (contester ou non : il respecte ceux qui répondent) ; Cyril Hanouna propose 1 000 € pour perdre la demi-finale ; finale d'exhibition contre Tapia et Coello ; conférence de presse : défendre Roméo, le lyncher (il devient un ennemi) ou ne rien dire ; nouveaux contacts.
+- Nathan Subrero sur l'affiche de Ceyreste et le tableau de La Ciotat.

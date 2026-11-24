@@ -48,7 +48,7 @@ export class Score {
     const a = this.points[i], b = this.points[o];
 
     if (this.tiebreak) {
-      if (a >= this.tbTarget && a - b >= 2) {
+      if (a >= this.tbTarget && (a - b >= 2 || this.sudden)) {
         this.games[i]++;
         if (this.matchTiebreak) {
           // match en un seul (super) tie-break : le score affiché est celui des points
