@@ -647,12 +647,22 @@ const CH4 = {
     set: { contacts: true },
     next: 'ch4_end',
   },
-  ch4_end: { type: 'end', chapter: 4, next: 'c5_start', text: (c) => `${c.f.finalRiviera ? 'Finaliste du tournoi de la Riviera !' : 'Tournoi de la Riviera terminé.'} Nouveaux contacts : Ruffier${c.f.contactNasri ? ', Nasri' : ''}${c.f.contactHanouna ? ', Hanouna' : ''}. ${c.f.enemyRomeo ? 'Roméo est désormais ton ennemi.' : c.f.defendRomeo ? 'Roméo te fait confiance.' : ''} Réputation : ${c.s.rep > 0 ? '+' : ''}${c.s.rep}.` },
+  ch4_end: { type: 'end', chapter: 4, next: 'c5_tv', text: (c) => `${c.f.finalRiviera ? 'Finaliste du tournoi de la Riviera !' : 'Tournoi de la Riviera terminé.'} Nouveaux contacts : Ruffier${c.f.contactNasri ? ', Nasri' : ''}${c.f.contactHanouna ? ', Hanouna' : ''}. ${c.f.enemyRomeo ? 'Roméo est désormais ton ennemi.' : c.f.defendRomeo ? 'Roméo te fait confiance.' : ''} Réputation : ${c.s.rep > 0 ? '+' : ''}${c.s.rep}.` },
 };
 
 // ================================================================== chapitre 5 : la place au régional
 const relSum = (c) => ['eliott', 'jean', 'raf', 'coach'].reduce((a, k) => a + (c.s.rel[k] || 0), 0);
 const CH5 = {
+  c5_tv: { type: 'branch', to: (c) => (c.f.hanounaEnemy ? 'c5_hanouna_tv' : 'c5_start') },
+  c5_hanouna_tv: {
+    type: 'scene', venue: 'municipal', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner3, 'coach'], rep: -12,
+    lines: (c) => [
+      { who: 'narr', text: 'Le soir, à la télé, Cyril Hanouna montre ta photo : « Ce petit joueur a pris mon argent et n\'a même pas tenu parole ! Un tricheur ! »' },
+      { who: c.partner3, text: 'Tout le monde en parle au club… Les gens nous regardent bizarrement.' },
+      { who: 'coach', text: 'Une réputation, ça se construit en des années et ça se perd en une émission.' },
+    ],
+    next: 'c5_start',
+  },
   c5_start: {
     type: 'scene', venue: 'municipal', ambiance: 'sunset', cast: (c) => ['me', 'coach', ...c.group4],
     lines: (c) => [
@@ -664,12 +674,19 @@ const CH5 = {
     next: 'c5_beach_pre',
   },
   c5_beach_pre: {
-    type: 'scene', venue: 'beach', ambiance: 'day', cast: (c) => ['me', c.partner3, ...c.mates3],
+    type: 'scene', venue: 'beach', ambiance: 'day', cast: (c) => ['me', c.partner3, ...c.mates3, 'fan'],
     lines: (c) => [
       { who: 'narr', text: 'Samedi, Padel Beach Arena. Sable chaud, vent de mer, et un tableau de 8 équipes.' },
       { who: c.mates3[1], text: `Le premier qui va plus loin que l'autre prend la place. On se retrouve au bar après !` },
+      { who: 'fan', text: c.s.rep <= -10 ? 'Eh, c\'est pas toi le tricheur de la télé ? … Bon, je peux quand même avoir une photo ?' : 'Excusez-moi ! Vous êtes ceux de la Riviera ? Je peux avoir un selfie ?' },
     ],
-    next: 'c5_r1',
+    choice: {
+      who: 'fan', text: 'Alors, une photo ?',
+      options: [
+        { label: 'Faire le selfie avec le sourire', rep: 3, after: [{ who: 'fan', text: 'Merci ! Je la mets en fond d\'écran !' }], next: 'c5_r1' },
+        { label: '« Pas maintenant, je me concentre. »', rep: -2, after: [{ who: 'fan', text: 'Ah… d\'accord. Bonne chance quand même.' }], next: 'c5_r1' },
+      ],
+    },
   },
   c5_r1: { type: 'match', label: 'Tour 1', format: '2v2', mt: 10, venue: 'beach', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['random', 'random'], randomOvr: 34, title: '1ER TOUR', subtitle: 'Padel Beach Arena', win: 'c5_mid', lose: 'c5_worse' },
   c5_mid: {
@@ -735,7 +752,7 @@ const CH5 = {
     ],
     next: 'end_bad',
   },
-  end_bad: { type: 'end', chapter: 5, final: true, text: () => 'FIN : tu as arrêté le padel. Plus personne ne voulait jouer avec toi.' },
+  end_bad: { type: 'end', chapter: 5, final: true, ending: 'bad', text: () => 'FIN : tu as arrêté le padel. Plus personne ne voulait jouer avec toi.' },
   c5_end_calm: {
     type: 'scene', venue: 'ceyreste', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, 'mayor'],
     lines: (c) => [
@@ -746,7 +763,7 @@ const CH5 = {
     ],
     next: 'end_calm',
   },
-  end_calm: { type: 'end', chapter: 5, final: true, text: () => 'FIN : le padel du dimanche, entre amis. Une vie tranquille.' },
+  end_calm: { type: 'end', chapter: 5, final: true, ending: 'calm', text: () => 'FIN : le padel du dimanche, entre amis. Une vie tranquille.' },
   ch5_end: { type: 'end', chapter: 5, next: 'c6_start', text: (c) => (c.f.regional === 'fan' ? `${pair(c.mates3)} vont au régional. Toi, tu vas les soutenir.` : 'Tu es qualifié pour le championnat régional, au Hangar !') },
 };
 
@@ -762,7 +779,22 @@ const CH6 = {
     ],
     next: 'c6_r1',
   },
-  c6_r1: { type: 'match', label: (c) => `Tour 1 contre ${NAME[c.rival3]}`, format: '2v2', mt: 10, venue: 'hangar', ambiance: 'day', near: (c) => ['me', c.partner6], far: (c) => [c.rival3, c.rival3 === 'eliott' ? 'philippe' : 'random'], randomOvr: 40, title: '1ER TOUR', subtitle: 'Championnat régional', win: 'c6_r2_pre', lose: 'c6_out' },
+  c6_r1: { type: 'match', label: (c) => `Tour 1 contre ${NAME[c.rival3]}`, format: '2v2', mt: 10, venue: 'hangar', ambiance: 'day', near: (c) => ['me', c.partner6], far: (c) => [c.rival3, c.rival3 === 'eliott' ? 'philippe' : 'random'], randomOvr: 40, title: '1ER TOUR', subtitle: 'Championnat régional', win: 'c6_bar', lose: 'c6_out' },
+  c6_bar: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'bar', cast: (c) => ['me', 'flavien', c.partner6],
+    lines: (c) => [
+      { who: 'flavien', text: 'Eh, les vainqueurs du premier tour ! Moi c\'est Flavien, le barman. Asseyez-vous, c\'est ma tournée : sirop, panaché, ce que vous voulez.' },
+      { who: c.partner6, text: 'Sérieux ? Merci !' },
+      { who: 'flavien', text: 'J\'ai vu votre match, magnifique. Je vous laisse mon numéro : si un jour vous faites une fête, j\'amène la tireuse.' },
+    ],
+    choice: {
+      who: 'flavien', text: 'Tu prends mon numéro ?',
+      options: [
+        { label: 'Prendre son numéro et trinquer', set: { contactFlavien: true }, after: [{ who: 'flavien', text: 'Santé ! Et bonne chance pour la suite !' }], next: 'c6_r2_pre' },
+        { label: 'Refuser poliment, rester concentré', after: [{ who: 'flavien', text: 'Pas de souci, champion. Je serai derrière mon bar.' }], next: 'c6_r2_pre' },
+      ],
+    },
+  },
   c6_r2_pre: {
     type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner6, 'camille', 'timeo'],
     lines: [
@@ -774,9 +806,7 @@ const CH6 = {
   c6_r2: { type: 'match', label: 'Quart de finale contre Camille et Timéo', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'day', near: (c) => ['me', c.partner6], far: ['timeo', 'camille'], hard: true, title: 'QUART DE FINALE', subtitle: 'Championnat régional', win: 'c6_semi_pre', lose: 'c6_out' },
   c6_semi_pre: {
     type: 'scene', venue: 'hangar', ambiance: 'sunset', spot: 'between', cast: (c) => ['me', c.partner6, ...c.semiOpp],
-    lines: (c) => (c.f.enemyRomeo ? [
-      { who: 'coach', text: 'Surprise. Oui, je joue encore. Et j\'attendais ce match depuis la conférence de presse.' },
-    ] : c.partner6 === 'nasri' ? [
+    lines: (c) => (c.partner6 === 'nasri' ? [
       { who: c.semiOpp[0], text: 'Vous êtes avec Nasri maintenant ? On aura tout vu.' },
     ] : [
       { who: 'nasri', text: 'Ah, mes petits contradicteurs ! Cette fois, pas de balle litigieuse. Que du jeu.' },
@@ -786,11 +816,14 @@ const CH6 = {
   },
   c6_semi: { type: 'match', label: 'Demi-finale', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'sunset', near: (c) => ['me', c.partner6], far: (c) => c.semiOpp, hard: true, title: 'DEMI-FINALE', subtitle: 'Championnat régional', win: 'c6_final_pre', lose: 'c6_out' },
   c6_final_pre: {
-    type: 'scene', venue: 'hangar', ambiance: 'night', cast: (c) => ['me', c.partner6, 'nathan'],
-    lines: [{ who: 'nathan', text: 'Allez allez allez ! Une finale ! J\'ai bu QUATRE cafés ! On joue ? On joue !' }],
+    type: 'scene', venue: 'hangar', ambiance: 'night', cast: (c) => ['me', c.partner6, 'nathan', c.f.enemyRomeo ? 'coach' : 'chico'],
+    lines: (c) => [
+      { who: 'nathan', text: 'Allez allez allez ! Une finale ! J\'ai bu QUATRE cafés ! On joue ? On joue !' },
+      c.f.enemyRomeo ? { who: 'coach', text: 'Surprise. Oui, je joue encore. Avec Nathan. Et j\'attendais ce match depuis la conférence de presse.' } : { who: 'chico', text: 'Moi c\'est Chico ! Nathan et moi, on n\'a jamais perdu un match où on a sauté plus que l\'adversaire ! WOUHOU !' },
+    ],
     next: 'c6_final',
   },
-  c6_final: { type: 'match', label: 'Finale contre Nathan Subrero', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'night', near: (c) => ['me', c.partner6], far: ['nathan', 'random'], randomOvr: 60, hard: true, title: 'FINALE', subtitle: 'Championnat régional', win: 'c6_qualified', lose: 'c6_qualified' },
+  c6_final: { type: 'match', label: 'Finale contre Nathan Subrero', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'night', near: (c) => ['me', c.partner6], far: (c) => ['nathan', c.f.enemyRomeo ? 'coach' : 'chico'], hard: true, title: 'FINALE', subtitle: 'Championnat régional', win: 'c6_qualified', lose: 'c6_qualified' },
   c6_qualified: {
     type: 'scene', venue: 'hangar', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner6, 'mayor', 'coach'],
     lines: (c) => [
@@ -820,7 +853,7 @@ const CH6 = {
     ],
     next: 'end_apero',
   },
-  end_apero: { type: 'end', chapter: 6, final: true, text: () => 'FIN : tu as arrêté la compétition. Place aux apéros du club.' },
+  end_apero: { type: 'end', chapter: 6, final: true, ending: 'apero', text: () => 'FIN : tu as arrêté la compétition. Place aux apéros du club.' },
   c6_retry1: { type: 'match', label: 'Régional (2e tentative) : 1er tour', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'day', near: (c) => ['me', c.partner6], far: ['random', 'random'], randomOvr: 48, title: '1ER TOUR', subtitle: 'Championnat régional', win: 'c6_retry2', lose: 'c6_injury' },
   c6_retry2: { type: 'match', label: 'Régional (2e tentative) : demi-finale', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'sunset', near: (c) => ['me', c.partner6], far: ['random', 'random'], randomOvr: 56, hard: true, title: 'DEMI-FINALE', subtitle: 'Championnat régional', win: 'c6_qualified', lose: 'c6_injury' },
   c6_injury: {
@@ -832,7 +865,7 @@ const CH6 = {
     ],
     next: 'end_injury',
   },
-  end_injury: { type: 'end', chapter: 6, final: true, text: () => 'FIN : une blessure met fin à ta carrière.' },
+  end_injury: { type: 'end', chapter: 6, final: true, ending: 'injury', text: () => 'FIN : une blessure met fin à ta carrière.' },
   // --- en spectateur : soutenir les collègues, puis Nasri cherche un partenaire
   c6_fan: {
     type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner3, ...c.mates3],
@@ -878,9 +911,11 @@ const CH6 = {
     set: { withNasri: true },
     next: 'c6_r2',
   },
-  ch6_end: { type: 'end', chapter: 6, text: () => 'Qualifié pour le championnat national ! La suite de l\'aventure arrive bientôt.' },
+  ch6_end: { type: 'end', chapter: 6, next: 'c7_start', text: () => 'Qualifié pour le championnat national !' },
 };
 
-export const CHAPTERS = { 1: 'Chapitre 1 · Le commencement', 2: 'Chapitre 2 · L\'Open de La Ciotat', 3: 'Chapitre 3 · Le retour de Louka', 4: 'Chapitre 4 · Le tournoi de la Riviera', 5: 'Chapitre 5 · Une seule place', 6: 'Chapitre 6 · Le championnat régional' };
-export const STEPS = { ...CH1, ...CH2, ...CH3, ...CH4, ...CH5, ...CH6 };
-export const chapterOf = (id) => (id in CH6 ? 6 : id in CH5 ? 5 : id in CH4 ? 4 : id in CH3 ? 3 : id in CH2 ? 2 : 1);
+export const CHAPTERS = { 1: 'Chapitre 1 · Le commencement', 2: 'Chapitre 2 · L\'Open de La Ciotat', 3: 'Chapitre 3 · Le retour de Louka', 4: 'Chapitre 4 · Le tournoi de la Riviera', 5: 'Chapitre 5 · Une seule place', 6: 'Chapitre 6 · Le championnat régional', 7: 'Chapitre 7 · Le championnat national', 8: 'Chapitre 8 · Le Mondial', 9: 'Chapitre 9 · Le tournoi d\'honneur' };
+export const ENDINGS = { bad: 'Plus personne ne veut jouer avec toi', calm: 'Le padel du dimanche', apero: 'Les apéros du club', injury: 'La blessure', national: 'La Provence en souvenir', fair: 'La légende fair-play', dark: 'Le champion que personne n\'aime', friend: 'L\'ami fidèle' };
+import { CH7, CH8, CH9 } from './Story2.js';
+export const STEPS = { ...CH1, ...CH2, ...CH3, ...CH4, ...CH5, ...CH6, ...CH7, ...CH8, ...CH9 };
+export const chapterOf = (id) => (id in CH9 ? 9 : id in CH8 ? 8 : id in CH7 ? 7 : id in CH6 ? 6 : id in CH5 ? 5 : id in CH4 ? 4 : id in CH3 ? 3 : id in CH2 ? 2 : 1);

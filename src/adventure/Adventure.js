@@ -2,12 +2,13 @@
 //  Mode Aventure : deux emplacements de sauvegarde, déroulé des étapes,
 //  écrans (dans le menu principal), cinématiques et matchs dans le jeu.
 // ============================================================================
-import { STEPS, PEOPLE, START_REL, CHAPTERS, chapterOf } from './Story.js';
+import { STEPS, PEOPLE, START_REL, CHAPTERS, chapterOf, ENDINGS } from './Story.js';
+import { GUESTS } from './Story2.js';
 import { DRILLS } from '../core/Drills.js';
 import { VENUE_COURTS } from '../render/Venues.js';
 import * as THREE from 'three';
 // lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
-const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0] }, hangar: { between: [0, -12.5], talk: [-12.6, 4] }, prestige: { between: [-13, 0], talk: [-26, 26] } };
+const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0] }, hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [0, -21.5] }, national: { between: [14, 0], talk: [14, 4] }, pro: { between: [12, 0], talk: [12, 4] }, prestige: { between: [-13, 0], talk: [-26, 26] } };
 const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
 import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS } from '../career/data/roster.js';
 import { npcSpec, drillCutscene } from '../career/Career.js';
@@ -18,7 +19,7 @@ import { ask } from '../ui/Ask.js';
 const KEY = (slot) => `padel-arena.adventure.${slot}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const celeb = (id) => CELEBRITIES.find((c) => c.id === id) || PRO_PAIRS.flatMap((p) => p.players).find((c) => c.id === id);
-const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka', ruffier: 'stephane-ruffier', nasri: 'samir-nasri', mandanda: 'steve-mandanda', hanouna: 'cyril-hanouna', benarfa: 'hatem-ben-arfa', lacheau: 'philippe-lacheau', sichez: 'romain-sichez', tapia: 'agustin-tapia', coello: 'arturo-coello', nathan: 'nathan-subrero' };
+const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka', ruffier: 'stephane-ruffier', nasri: 'samir-nasri', mandanda: 'steve-mandanda', hanouna: 'cyril-hanouna', benarfa: 'hatem-ben-arfa', lacheau: 'philippe-lacheau', sichez: 'romain-sichez', tapia: 'agustin-tapia', coello: 'arturo-coello', nathan: 'nathan-subrero', zlatan: 'zlatan-ibrahimovic', zidane: 'zinedine-zidane' };
 const EXTRA = {
   philippe: makeNpc('Philippe Hanras', 34, 'defender', { short: 'HANRAS', look: { skin: 0xe8bf9c, hair: 0x8a8580, hairStyle: 'short', beard: 'short', buildId: 'fine', height: 1.13, headwear: 'none' } }),
   gege: makeNpc('Gégé Pastis', 22, 'allround', { short: 'GÉGÉ', look: { skin: 0xe0a88a, hair: 0x9a9a9a, hairStyle: 'receding', beard: 'full', buildId: 'heavy', height: 0.97, headwear: 'none' } }),
@@ -26,9 +27,13 @@ const EXTRA = {
   opp: makeNpc('Adversaire', 30, 'allround', { short: 'ADVERSAIRE' }),
   journalist: makeNpc('Journaliste', 20, 'allround', { short: 'PRESSE', look: { skin: 0xe8bf9c, hair: 0x6e4e30, hairStyle: 'long', beard: 'none', buildId: 'fine', headwear: 'none', shirtHex: 0x2a2f3a, accentHex: 0x2a2f3a, shortsHex: 0x1a1a1a } }),
   veteran: makeNpc('Marco Ferri', 30, 'allround', { short: 'FERRI', look: { skin: 0xd9a47c, hair: 0xb0b0b0, hairStyle: 'receding', beard: 'beard', buildId: 'heavy', headwear: 'none' } }),
+  flavien: makeNpc('Flavien', 30, 'allround', { short: 'FLAVIEN', look: { skin: 0xe6b894, hair: 0x15100c, hairStyle: 'curly', beard: 'stubble', buildId: 'stocky', height: 1.0, headwear: 'none', shirtHex: 0x1c1d22, accentHex: 0xff9800, shortsHex: 0x15161a } }),
+  chico: makeNpc('Chico', 58, 'attacker', { short: 'CHICO', look: { skin: 0xf2d2b3, hair: 0xe8cf7a, hairStyle: 'short', beard: 'none', buildId: 'fine', height: 0.93, headwear: 'none', stance: { bounce: 1.9, tempo: 1.4, crouch: 1.3 } } }),
+  tison: makeNpc('Benjamin Tison', 84, 'smasher', { short: 'TISON', look: { skin: 0xe6b894, hair: 0x2a1a10, hairStyle: 'short', beard: 'stubble', buildId: 'athletic', height: 1.06, headwear: 'none', shirtHex: 0x1d2f6f, accentHex: 0xffffff, shortsHex: 0x1d2f6f } }),
+  fan: makeNpc('Supporter', 10, 'allround', { short: 'FAN', look: { skin: 0xe6b894, hair: 0x6e4e30, hairStyle: 'ponytail', beard: 'none', buildId: 'fine', height: 0.95, headwear: 'cap', female: true } }),
   ref: makeNpc('Juge-arbitre', 30, 'allround', { short: 'ARBITRE', look: { skin: 0xd9a47c, hair: 0x555555, hairStyle: 'short', beard: 'none', buildId: 'normal', headwear: 'none', shirtHex: 0x111111, accentHex: 0x111111, shortsHex: 0x111111 } }),
 };
-const LABEL = { ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
+const LABEL = { flavien: 'Flavien', chico: 'Chico', tison: 'Benjamin Tison', fan: 'Une supportrice', zlatan: 'Zlatan', zidane: 'Zidane', tapia: 'Tapia', coello: 'Coello', ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
 
 export class AdventureUI {
@@ -67,7 +72,10 @@ export class AdventureUI {
     const group = f.rivalEliott ? ['jean', 'raf', 'louka'] : ['eliott', 'jean', 'raf'];
     const partner3 = group.includes(partner) ? partner : 'louka';
     const mates3 = group.filter((x) => x !== partner3);
-    return { s: this.s, f, partner, friends, partner3, mates3, rival3: f.rivalEliott ? 'eliott' : 'louka', group4: [partner3, ...mates3], partner6: f.withNasri ? 'nasri' : partner3, semiOpp: f.enemyRomeo ? ['coach', 'random'] : f.withNasri ? [f.rivalEliott ? 'eliott' : 'louka', f.rivalEliott ? 'philippe' : 'random'] : ['nasri', 'mandanda'] };
+    const inv = (f.inv || []).filter((id) => { const g = GUESTS.find((x) => x[0] === id); return g && g[2]({ s: this.s, f }); });
+    const pool = [...inv, 'random', 'random', 'random'];
+    const p8 = f.p8 || partner3;
+    return { s: this.s, f, guests9: inv, h9: pool.slice(0, 3), semi8: (p8 === partner3 ? mates3 : [partner3, mates3[0]]), partner, friends, partner3, mates3, rival3: f.rivalEliott ? 'eliott' : 'louka', group4: [partner3, ...mates3], partner6: f.withNasri ? 'nasri' : partner3, semiOpp: f.withNasri ? [f.rivalEliott ? 'eliott' : 'louka', f.rivalEliott ? 'philippe' : 'random'] : ['nasri', 'mandanda'] };
   }
   get step() { return this.s ? STEPS[this.s.step] : null; }
   get short() { return (this.s?.name || 'Toi').split(' ')[0]; }
@@ -83,6 +91,8 @@ export class AdventureUI {
     let st = STEPS[id];
     while (st?.type === 'branch') { id = st.to(this.ctx); this.s.step = id; st = STEPS[id]; }
     if (st?.effects && st.type !== 'choice') this.apply(val(st.effects, this.ctx));
+    if (st?.rep && st.type === 'scene') this.apply({}, {}, st.rep);
+    if (st?.type === 'end' && st.ending) { try { const g = JSON.parse(localStorage.getItem('padel-arena.endings') || '[]'); if (!g.includes(st.ending)) { g.push(st.ending); localStorage.setItem('padel-arena.endings', JSON.stringify(g)); } } catch { /* ignoré */ } }
     if (st?.set && st.type === 'scene') this.apply({}, val(st.set, this.ctx));
     if (st?.venue) this.s.venue = st.venue;
     this.save();
@@ -138,10 +148,11 @@ export class AdventureUI {
     if (ch) {
       // le choix se fait dans la cinématique : une touche par réponse, puis la réaction des personnages
       const q = conv1({ who: val(ch.who, c), text: val(ch.text, c) });
-      q.choices = ch.options.map((op) => ({ label: op.label, sub: op.sub }));
+      const opts = val(ch.options, c);
+      q.choices = opts.map((op) => ({ label: op.label, sub: op.sub }));
       q.onChoose = (k) => {
-        const op = ch.options[k];
-        this.apply(val(op.effects, this.ctx), op.set, op.rep);
+        const op = opts[k];
+        this.apply(val(op.effects, this.ctx), val(op.set, this.ctx), op.rep);
         this.s.log.push({ step: this.s.step, choice: op.label });
         chosenNext = op.next;
         this.save();
@@ -322,7 +333,8 @@ export class AdventureUI {
   }
 
   body() {
-    if (!this.slot) return '<p class="adv-text">Une vraie histoire, des choix qui changent l\'aventure, et un joueur qui part de rien. Deux sauvegardes possibles.</p>';
+    if (!this.slot) { let got = []; try { got = JSON.parse(localStorage.getItem('padel-arena.endings') || '[]'); } catch { /* ignoré */ } return `<p class="adv-text">Une vraie histoire, des choix qui changent l'aventure. Deux sauvegardes possibles.</p><div class="adv-line"><b>Galerie des fins · ${got.length} / ${Object.keys(ENDINGS).length}</b><p>${Object.entries(ENDINGS).map(([k, t]) => (got.includes(k) ? `✔ ${esc(t)}` : '🔒 ???')).join('<br>')}</p></div>`; }
+    if (false) return '<p class="adv-text">Une vraie histoire, des choix qui changent l\'aventure, et un joueur qui part de rien. Deux sauvegardes possibles.</p>';
     if (!this.s) return '<p class="adv-text">Tout commence par un coup de fil d\'Eliott…</p>';
     const c = this.ctx;
     if (this.react) { const p = this.react.pages[this.page]; return `<div class="adv-line"><b>${esc(p.who)}</b><p>${esc(p.text)}</p></div>`; }
