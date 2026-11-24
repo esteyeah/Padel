@@ -519,12 +519,23 @@ const CH4 = {
       { who: 'mayor', text: 'Ceintures attachées, et pas de chips dans le minibus : il est tout neuf. En route pour la Riviera !' },
       { who: 'narr', text: 'Une heure de route le long de la côte. Le maire raconte ses souvenirs de pétanque avec Ruffier ; Roméo, lui, regarde la mer sans dire un mot.' },
     ],
+    next: 'c4_hostess',
+  },
+  c4_hostess: {
+    type: 'scene', venue: 'prestige', ambiance: 'day', spot: 'entrance', cast: (c) => ['me', 'hostess', 'mayor', 'coach', c.partner3],
+    lines: (c) => [
+      { who: 'hostess', text: 'Bienvenue au Riviera Padel Palace ! Vous êtes les invités de monsieur Ruffier ? Parfait. Suivez-moi, je vous conduis à la loge VIP.' },
+      { who: 'mayor', text: 'La loge VIP ! Vous entendez ça ? La LOGE VIP !' },
+      { who: 'hostess', text: 'Par ici. Attention à la marche. Les joueurs du tournoi ont accès au buffet toute la journée.', walk: { dx: 5, dz: 3, dur: 3.5 } },
+      { who: c.partner3, text: '*chuchote* Regarde, c\'est Zlatan, là-bas ! Et Hanouna !' },
+      { who: 'hostess', text: 'Nous y sommes. Monsieur Ruffier vous attend.', walk: { dx: 2, dz: 2, dur: 1.8 } },
+    ],
     next: 'c4_arrive',
   },
   c4_arrive: {
     type: 'scene', venue: 'prestige', ambiance: 'day', spot: 'loge', cast: (c) => ['me', 'ruffier', 'mayor', 'coach', c.partner3],
     lines: (c) => [
-      { who: 'narr', text: 'Le Riviera Padel Palace. Une hôtesse vous fait monter dans la loge VIP, au-dessus du court central. Champagne, petits fours, vue sur les palmiers.' },
+      { who: 'narr', text: 'La loge VIP, au-dessus du court central. Champagne, petits fours, vue sur les palmiers.' },
       { who: 'mayor', text: 'Stéphane ! Toujours en forme ? Je te présente mes petits protégés.' },
       { who: 'ruffier', text: 'Bienvenue au Riviera ! Le maire m\'a beaucoup parlé de vous. Asseyez-vous, je vous explique comment ça marche ici.' },
       { who: 'ruffier', text: 'Le tournoi des célébrités a un format spécial : chaque match se joue en 3 points. Pas de jeux, pas de sets. Le premier binôme qui marque 3 points gagne le match.' },
@@ -718,29 +729,38 @@ const CH5 = {
   },
   c5_r1: { type: 'match', label: 'Tour 1', format: '2v2', mt: 10, venue: 'beach', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['random', 'random'], randomOvr: 34, title: '1ER TOUR', subtitle: 'Padel Beach Arena', win: 'c5_flirt', lose: 'c5_worse' },
   c5_flirt: {
-    type: 'scene', venue: 'beach', ambiance: 'day', spot: 'talk', cast: ['me', 'lea'],
-    lines: [{ who: 'lea', text: '*en maillot de bain, lunettes de soleil sur la tête* Joli match… Tu joues souvent ici ? Moi c\'est Léa.' }],
+    type: 'scene', venue: 'beach', ambiance: 'day', spot: 'shore', cast: ['me', 'lea'],
+    lines: [
+      { who: 'narr', text: 'Entre deux matchs, tu descends te rafraîchir au bord de l\'eau. Une jeune femme en maillot de bain s\'approche, lunettes de soleil sur la tête.' },
+      { who: 'lea', text: 'Joli match… Tu joues souvent ici ? Moi c\'est Léa. Je t\'ai regardé depuis la buvette.' },
+      { who: 'me', text: 'Euh… merci. C\'est mon premier tournoi sur le sable.' },
+      { who: 'lea', text: '*pose la main sur ton bras* Ça se voit pas. Tu as un sacré bras, d\'ailleurs. Tu fais de la muscu ?', touch: 'lea' },
+      { who: 'me', text: '*rougit* Un peu de padel, surtout…' },
+      { who: 'lea', text: '*rit et laisse sa main sur ton bras* Modeste en plus. J\'aime bien.' },
+    ],
     choice: {
       who: 'lea', text: 'On se retrouve au bar après ton prochain match ?',
       options: [
-        { label: '« Désolé, je suis concentré sur le tournoi. »', after: [{ who: 'lea', text: 'Dommage… Bonne chance alors.' }], next: 'c5_mid' },
-        { label: 'Tenter ta chance', next: 'c5_flirt_roll' },
+        { label: '« Désolé, je suis concentré sur le tournoi. »', after: [{ who: 'lea', text: '*retire sa main* Dommage… Bonne chance alors, champion.' }], next: 'c5_mid' },
+        { label: 'Tenter ta chance', after: [{ who: 'me', text: 'Au bar, après le match ? Avec plaisir. C\'est moi qui invite.' }, { who: 'lea', text: '*sourire en coin* J\'espérais que tu dises ça.' }], next: 'c5_flirt_roll' },
       ],
     },
   },
   c5_flirt_roll: { type: 'branch', to: () => (Math.random() < 0.5 ? 'c5_flirt_ok' : 'c5_flirt_trap') },
   c5_flirt_ok: {
-    type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'talk', cast: ['me', 'lea'], set: { girlfriend: true },
+    type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'shore', cast: ['me', 'lea'], set: { girlfriend: true },
     lines: [
-      { who: 'lea', text: 'Tu es drôle, toi. On se revoit après le tournoi ? Je te laisse mon numéro.' },
+      { who: 'lea', text: '*se rapproche et te prend le bras* Tu es drôle, toi. On se revoit après le tournoi ? Je te laisse mon numéro.', touch: 'lea' },
+      { who: 'me', text: 'Avec grand plaisir.' },
       { who: 'narr', text: 'Quelques semaines plus tard, Léa est devenue ta copine. Elle sera dans les tribunes à chacun de tes matchs.' },
     ],
     next: 'c5_mid',
   },
   c5_flirt_trap: {
-    type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'talk', cast: ['me', 'lea', 'timeo'], set: { weakened: true },
+    type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'shore', cast: ['me', 'lea', 'timeo'], set: { weakened: true },
     lines: [
-      { who: 'lea', text: 'Allez, encore un verre… et puis un autre. Tu ne vas pas me laisser boire seule ?' },
+      { who: 'lea', text: '*te caresse le bras* Allez, encore un verre… et puis un autre. Tu ne vas pas me laisser boire seule ?', touch: 'lea' },
+      { who: 'me', text: 'Juste un dernier… j\'ai une demi-finale après.' },
       { who: 'timeo', text: 'Ah, tu as rencontré ma copine ? Merci de l\'avoir occupée. Et bonne chance pour la demi… tu as l\'air un peu fatigué.' },
       { who: 'narr', text: 'Tu as les jambes lourdes et la tête qui tourne. Le piège était parfait.' },
     ],

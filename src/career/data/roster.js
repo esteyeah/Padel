@@ -330,3 +330,4 @@ export const ADV_NPCS = {
   ref: makeNpc('Juge-arbitre', 30, 'allround', { short: 'ARBITRE', look: { skin: 0xd9a47c, hair: 0x555555, hairStyle: 'short', beard: 'none', buildId: 'normal', headwear: 'none', shirtHex: 0x111111, accentHex: 0x111111, shortsHex: 0x111111 } }),
 };
 ADV_NPCS.beachgirl = makeNpc('Léa', 10, 'allround', { short: 'LÉA', look: { skin: 0xd9a47c, hair: 0x2a1a10, hairStyle: 'long', beard: 'none', buildId: 'fine', height: 0.96, headwear: 'none', female: true, curvy: 1.2, shirtHex: 0xff5252, accentHex: 0xff5252, shortsHex: 0xff5252 } });
+ADV_NPCS.hostess = makeNpc('Hôtesse', 10, 'allround', { short: 'HÔTESSE', look: { skin: 0xe6b894, hair: 0x2a1a10, hairStyle: 'bun', beard: 'none', buildId: 'fine', height: 0.98, headwear: 'none', female: true, curvy: 0.6, shirtHex: 0x0d1b2a, accentHex: 0xd4a72c, shortsHex: 0x0d1b2a } });

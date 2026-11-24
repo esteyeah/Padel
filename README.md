@@ -571,3 +571,6 @@ padel-sim/
 
 ### 0.66
 - Aventure : le minibus est garé bien visible derrière le groupe ; au chapitre 5, si tes collègues font mieux que toi, une équipe se désiste et tu es repêché pour le régional (plus de fin d'aventure à cet endroit).
+
+### 0.67
+- Cinématiques de l'Aventure : les personnages sont enfin placés hors du court (ils étaient replacés sur le terrain par erreur) ; le maire parle devant le minibus ; l'hôtesse vous accueille et vous conduit en marchant jusqu'à la loge VIP ; Léa vous aborde au bord de l'eau, pose la main sur votre bras, plus de dialogues.

@@ -8,7 +8,7 @@ import { DRILLS } from '../core/Drills.js';
 import { VENUE_COURTS } from '../render/Venues.js';
 import * as THREE from 'three';
 // lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
-const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0] }, hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [0, -21.5] }, national: { between: [14, 0], talk: [14, 4] }, pro: { between: [12, 0], talk: [12, 4] }, prestige: { between: [-13, 0], talk: [-26, 26], loge: [0, -19.7, 3.45] } };
+const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0], shore: [3, -32] }, hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [0, -21.5] }, national: { between: [14, 0], talk: [14, 4] }, pro: { between: [12, 0], talk: [12, 4] }, prestige: { between: [-13, 0], talk: [-26, 26], loge: [0, -19.7, 3.45], entrance: [-7, -24] } };
 const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
 import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS, ADV_NPCS } from '../career/data/roster.js';
 import { unlockAdv } from '../career/data/shop.js';
@@ -33,7 +33,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const celeb = (id) => CELEBRITIES.find((c) => c.id === id) || PRO_PAIRS.flatMap((p) => p.players).find((c) => c.id === id);
 const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka', ruffier: 'stephane-ruffier', nasri: 'samir-nasri', mandanda: 'steve-mandanda', hanouna: 'cyril-hanouna', benarfa: 'hatem-ben-arfa', lacheau: 'philippe-lacheau', sichez: 'romain-sichez', tapia: 'agustin-tapia', coello: 'arturo-coello', nathan: 'nathan-subrero', zlatan: 'zlatan-ibrahimovic', zidane: 'zinedine-zidane' };
 const EXTRA = ADV_NPCS;
-const LABEL = { lea: 'Léa', flavien: 'Flavien', chico: 'Chico', tison: 'Benjamin Tison', fan: 'Une supportrice', zlatan: 'Zlatan', zidane: 'Zidane', tapia: 'Tapia', coello: 'Coello', ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
+const LABEL = { hostess: 'L\'hôtesse', lea: 'Léa', flavien: 'Flavien', chico: 'Chico', tison: 'Benjamin Tison', fan: 'Une supportrice', zlatan: 'Zlatan', zidane: 'Zidane', tapia: 'Tapia', coello: 'Coello', ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
 
 export class AdventureUI {
@@ -122,6 +122,7 @@ export class AdventureUI {
     if (EXTRA[id]) return npcSpec(EXTRA[id], kit, lane, o.idle);
     if (id === 'narr') return npcSpec(EXTRA.opp, kit, lane, true);
     if (id === 'lea') return npcSpec(EXTRA.beachgirl, kit, lane, o.idle);
+    if (id === 'hostess') return npcSpec(EXTRA.hostess, kit, lane, o.idle);
     return npcSpec(celeb(NPC_ID[id]), kit, lane, o.idle);
   }
 
@@ -147,7 +148,7 @@ export class AdventureUI {
     });
     const conv1 = (L) => {
       const label = L.who === 'me' ? this.short : LABEL[L.who] || L.who;
-      const base = { label: L.label || label, text: L.text, sheet: L.sheet };
+      const base = { label: L.label || label, text: L.text, sheet: L.sheet, walk: L.walk, touch: L.touch };
       if (L.who === 'me') return { side: 1, ...base };
       if (L.who === other) return { name: otherSpec.name, ...base };
       if (extras.includes(L.who)) return { actor: L.who, ...base };
@@ -249,13 +250,13 @@ export class AdventureUI {
       const [cx, cz] = toWorld(st.venue, sp);
       const Y = sp[2] || 0, tight = 0.6;   // deux personnes qui se parlent se tiennent côte à côte
       g.players.forEach((p, i) => { p.pos.set(cx + (i ? 0.25 : -0.25), 0, cz + (i ? -tight : tight)); p.avatar.root.position.y = Y; });
-      (g.actors || []).forEach((a, i) => { const ang = -1.2 + (i / Math.max(1, g.actors.length - 1)) * 2.4; a.pos.set(cx + Math.sin(ang) * (Y ? 2.2 : 1.6), 0, cz + Math.cos(ang) * 0.5); a.avatar.root.position.y = Y; });
+      (g.actors || []).forEach((a, i) => { const ang = -1.2 + (i / Math.max(1, g.actors.length - 1)) * 2.4; a.pos.set(cx + Math.sin(ang) * (Y ? 2.4 : 2.3), 0, cz + Math.cos(ang) * 0.6); a.avatar.root.position.y = Y; });
       g.opts.sceneY = Y;
     }
     if (st.bus && sp) {
       // minibus blanc du club garé à côté du groupe
       const [cx, cz] = toWorld(st.venue, sp);
-      const bus = new THREE.Group(); bus.position.set(cx - 0.8, 0, cz - 5.2); bus.rotation.y = Math.PI / 2; bus.userData.adv = true;   // garé juste derrière le groupe, de profil
+      const bus = new THREE.Group(); bus.position.set(cx, 0, cz - 2.9); bus.rotation.y = Math.PI / 2; bus.userData.adv = true;   // garé juste derrière le groupe, de profil
       const body = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.4, metalness: 0.2 }), glass = new THREE.MeshStandardMaterial({ color: 0x1a2533, roughness: 0.1, metalness: 0.5 }), dark = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 });
       const b1 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 5.4), body); b1.position.y = 1.4; bus.add(b1);
       for (const sx of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.7), glass); w.position.set(sx * 1.01, 1.9, -0.2); w.rotation.y = sx * Math.PI / 2; bus.add(w); }

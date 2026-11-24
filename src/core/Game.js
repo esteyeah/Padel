@@ -169,7 +169,6 @@ export class Game {
       av.root.position.set(-(COURT.halfW + 1.4), 0, -1 + i * 1.1); this.scene.add(av.root);
       return av;
     });
-    o.onStarted?.(this);
     if (this.cutscene) { this.nextLine(); document.body.classList.add('cinema'); }
     // match en ligne : l'hôte simule et diffuse, l'invité affiche ce qu'il reçoit
     if (o.net) this.netLink = o.net.role === 'host' ? new NetHost(this, o.net) : new NetClient(this, o.net);
@@ -187,6 +186,8 @@ export class Game {
     }
     this.setupServe(1);
     if (!this.attract) this.hud.banner(o.title || 'MATCH', o.subtitle ? `${o.subtitle} · ${this.teamName(1)} vs ${this.teamName(-1)}` : `${this.teamName(1)}  vs  ${this.teamName(-1)}`, 2.6);
+    // placement des personnages (aventure) une fois le service préparé
+    o.onStarted?.(this);
   }
 
   /** Fiches des joueurs pour le match rapide, la démo et le fond du menu. */
@@ -881,6 +882,10 @@ export class Game {
       return;
     }
     cs.choosing = null;
+    // tout le groupe marche (ex. l'hôtesse qui vous emmène à la loge)
+    if (L.walk) { const d = L.walk.dur || 3; cs.walkT = d; cs.walkV = [L.walk.dx / d, L.walk.dz / d]; }
+    // un personnage touche le bras du joueur (drague…)
+    if (L.touch) { const t = this.actors?.find((a) => a.id === L.touch) || this.players.find((q) => q !== this.players[0]); if (t) { t._touch = true; const me = this.players[0]; t.pos.set(me.pos.x + 0.42, 0, me.pos.z - 0.18); } }
     this.hud.sheet?.(L.sheet || null);
     this.hud.dialog(L.label || who?.name || '', L.text, cs.i + 1 < cs.lines.length);
   }
@@ -941,10 +946,20 @@ export class Game {
     this.ball.setVisible(false);
     // les personnages se tournent les uns vers les autres
     const p = cs.who;
-    for (const q of this.players) {
-      q.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: (q.side > 0 ? Math.PI : 0) + (q === p ? Math.sin(cs.t * 1.3) * 0.15 : 0), look: 0, ready: false, armed: null, swing: null });
+    let walking = 0, wyaw = 0;
+    if (cs.walkT > 0) {
+      cs.walkT -= dt;
+      const [vx, vz] = cs.walkV;
+      for (const q of this.players) { q.pos.x += vx * dt; q.pos.z += vz * dt; }
+      for (const ac of this.actors || []) { ac.pos.x += vx * dt; ac.pos.z += vz * dt; }
+      walking = Math.hypot(vx, vz); wyaw = Math.atan2(vx, vz);
     }
-    for (const ac of this.actors || []) ac.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: (ac.side > 0 ? Math.PI : 0) + (ac === p ? Math.sin(cs.t * 1.1) * 0.2 : 0), look: 0, ready: false, armed: null, swing: null });
+    const me0 = this.players[0];
+    const yawOf = (q, base, sway) => (walking ? wyaw : q._touch ? Math.atan2(me0.pos.x - q.pos.x, me0.pos.z - q.pos.z) : base + sway);
+    for (const q of this.players) {
+      q.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(q, q.side > 0 ? Math.PI : 0, q === p ? Math.sin(cs.t * 1.3) * 0.15 : 0), look: 0, ready: false, armed: q._touch ? { kind: 'fore', charge: 0.05 } : null, swing: null });
+    }
+    for (const ac of this.actors || []) ac.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(ac, ac.side > 0 ? Math.PI : 0, ac === p ? Math.sin(cs.t * 1.1) * 0.2 : 0), look: 0, ready: false, armed: ac._touch ? { kind: 'fore', charge: 0.05 } : null, swing: null });
     this.render(dt);
     if (p) {
       // caméra par-dessus l'épaule de l'autre, cadrée sur celui qui parle
