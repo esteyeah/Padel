@@ -647,9 +647,240 @@ const CH4 = {
     set: { contacts: true },
     next: 'ch4_end',
   },
-  ch4_end: { type: 'end', chapter: 4, text: (c) => `${c.f.finalRiviera ? 'Finaliste du tournoi de la Riviera !' : 'Tournoi de la Riviera terminé.'} Nouveaux contacts : Ruffier${c.f.contactNasri ? ', Nasri' : ''}${c.f.contactHanouna ? ', Hanouna' : ''}. ${c.f.enemyRomeo ? 'Roméo est désormais ton ennemi.' : c.f.defendRomeo ? 'Roméo te fait confiance.' : ''} Réputation : ${c.s.rep > 0 ? '+' : ''}${c.s.rep}.` },
+  ch4_end: { type: 'end', chapter: 4, next: 'c5_start', text: (c) => `${c.f.finalRiviera ? 'Finaliste du tournoi de la Riviera !' : 'Tournoi de la Riviera terminé.'} Nouveaux contacts : Ruffier${c.f.contactNasri ? ', Nasri' : ''}${c.f.contactHanouna ? ', Hanouna' : ''}. ${c.f.enemyRomeo ? 'Roméo est désormais ton ennemi.' : c.f.defendRomeo ? 'Roméo te fait confiance.' : ''} Réputation : ${c.s.rep > 0 ? '+' : ''}${c.s.rep}.` },
 };
 
-export const CHAPTERS = { 1: 'Chapitre 1 · Le commencement', 2: 'Chapitre 2 · L\'Open de La Ciotat', 3: 'Chapitre 3 · Le retour de Louka', 4: 'Chapitre 4 · Le tournoi de la Riviera', 5: 'Chapitre 5 · Bientôt' };
-export const STEPS = { ...CH1, ...CH2, ...CH3, ...CH4 };
-export const chapterOf = (id) => (id in CH4 ? 4 : id in CH3 ? 3 : id in CH2 ? 2 : 1);
+// ================================================================== chapitre 5 : la place au régional
+const relSum = (c) => ['eliott', 'jean', 'raf', 'coach'].reduce((a, k) => a + (c.s.rel[k] || 0), 0);
+const CH5 = {
+  c5_start: {
+    type: 'scene', venue: 'municipal', ambiance: 'sunset', cast: (c) => ['me', 'coach', ...c.group4],
+    lines: (c) => [
+      { who: 'coach', text: c.f.enemyRomeo ? '*sans te regarder* Écoutez. Je n\'ai qu\'une seule place pour le championnat régional.' : 'Écoutez-moi. J\'ai une seule place pour le championnat régional, au Hangar.' },
+      { who: 'coach', text: 'Je ne veux pas choisir. Ce week-end, il y a le tournoi du Padel Beach Arena. Le duo qui fera le meilleur résultat aura la place.' },
+      { who: c.mates3[0], text: 'Que le meilleur gagne. Sans rancune.' },
+      { who: c.partner3, text: 'On va tout donner. Cette place, elle est pour nous.' },
+    ],
+    next: 'c5_beach_pre',
+  },
+  c5_beach_pre: {
+    type: 'scene', venue: 'beach', ambiance: 'day', cast: (c) => ['me', c.partner3, ...c.mates3],
+    lines: (c) => [
+      { who: 'narr', text: 'Samedi, Padel Beach Arena. Sable chaud, vent de mer, et un tableau de 8 équipes.' },
+      { who: c.mates3[1], text: `Le premier qui va plus loin que l'autre prend la place. On se retrouve au bar après !` },
+    ],
+    next: 'c5_r1',
+  },
+  c5_r1: { type: 'match', label: 'Tour 1', format: '2v2', mt: 10, venue: 'beach', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['random', 'random'], randomOvr: 34, title: '1ER TOUR', subtitle: 'Padel Beach Arena', win: 'c5_mid', lose: 'c5_worse' },
+  c5_mid: {
+    type: 'scene', venue: 'beach', ambiance: 'day', cast: (c) => ['me', c.partner3, ...c.mates3],
+    lines: (c) => [
+      { who: c.mates3[0], text: 'Nous aussi, on passe ! Au tour suivant, on a une paire de Cassis… pas facile.' },
+      { who: c.partner3, text: 'Si on gagne le prochain, on est en demi. Eux, ils ont un tableau plus dur.' },
+    ],
+    next: 'c5_r2',
+  },
+  c5_r2: { type: 'match', label: 'Quart de finale', format: '2v2', mt: 10, venue: 'beach', ambiance: 'day', near: (c) => ['me', c.partner3], far: ['random', 'random'], randomOvr: 40, title: 'QUART DE FINALE', subtitle: 'Padel Beach Arena', win: 'c5_mates_out', lose: 'c5_worse' },
+  c5_mates_out: {
+    type: 'scene', venue: 'beach', ambiance: 'sunset', cast: (c) => ['me', c.partner3, ...c.mates3],
+    lines: (c) => [
+      { who: c.mates3[0], text: 'Éliminés en quart… Bravo à vous. Vous allez plus loin, la place est à vous.' },
+      { who: c.mates3[1], text: c.mates3[1] === 'raf' ? 'Coup de chance. Le régional va vous manger tout crus.' : 'Bien joué, vraiment. Profitez-en !' },
+    ],
+    next: 'c5_semi',
+  },
+  c5_semi: { type: 'match', label: 'Demi-finale contre Camille et Timéo', format: '2v2', mt: 10, venue: 'beach', ambiance: 'sunset', near: (c) => ['me', c.partner3], far: ['timeo', 'camille'], hard: true, title: 'DEMI-FINALE', subtitle: 'Padel Beach Arena', win: 'c5_better', lose: 'c5_better' },
+  c5_better: { type: 'branch', to: (c) => (c.f.enemyRomeo ? 'c5_romeo_refuses' : 'c5_place') },
+  c5_place: {
+    type: 'scene', venue: 'beach', ambiance: 'night', spot: 'talk', cast: (c) => ['me', 'coach', c.partner3],
+    lines: [{ who: 'coach', text: 'Le meilleur résultat, c\'est vous. La place au régional est à vous. Je suis fier de vous.' }],
+    set: { regional: 'player' }, effects: { coach: 5 },
+    next: 'ch5_end',
+  },
+  c5_romeo_refuses: {
+    type: 'scene', venue: 'beach', ambiance: 'night', spot: 'talk', cast: (c) => ['me', 'coach', c.partner3, ...c.mates3],
+    lines: (c) => [
+      { who: 'coach', text: 'Vous avez fait le meilleur résultat. Mais après ce que tu as dit sur moi devant la presse… la place ira à l\'autre duo.' },
+      { who: c.partner3, text: 'Quoi ?! C\'est injuste !' },
+    ],
+    choice: {
+      who: 'narr', text: 'La place t\'échappe. Que fais-tu ?',
+      options: [
+        { label: 'Saboter tes collègues pour récupérer la place, quoi qu\'il en coûte', rep: -25, effects: (c) => ({ [c.mates3[0]]: -40, [c.mates3[1]]: -40, coach: -20 }), set: { regional: 'player', sabotagedMates: true }, after: (c) => [{ who: 'narr', text: `La veille du régional, les raquettes de ${pair(c.mates3)} disparaissent. Ils déclarent forfait. La place te revient.` }, { who: c.mates3[0], text: 'Je sais que c\'est toi. Je ne pourrai jamais le prouver… mais je le sais.' }], next: 'ch5_end' },
+        { label: 'Renoncer au tournoi', rep: 6, after: [{ who: 'mayor', text: 'Attendez ! J\'ai encore des contacts, moi. Une invitation pour le régional, ça se trouve. Vous jouerez !' }], set: { regional: 'player', mayorInvite: true }, next: 'ch5_end' },
+      ],
+    },
+  },
+  c5_worse: {
+    type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, 'coach', ...c.mates3],
+    lines: (c) => [
+      { who: 'coach', text: `${pair(c.mates3)} vont plus loin que vous. La place au régional est pour eux.` },
+      { who: c.mates3[0], text: 'Désolé… Vous viendrez nous voir au Hangar ?' },
+    ],
+    choice: {
+      who: c => c.mates3[0], text: 'Vous viendrez nous soutenir au championnat régional ?',
+      options: [
+        { label: 'Aller les soutenir au Hangar', effects: (c) => ({ [c.mates3[0]]: 8, [c.mates3[1]]: 8, coach: 4 }), set: { regional: 'fan' }, after: (c) => [{ who: c.mates3[0], text: 'Génial ! Avec vous dans les tribunes, on va tout casser.' }], next: 'ch5_end' },
+        { label: 'Ne pas y aller', effects: (c) => ({ [c.mates3[0]]: -8, [c.mates3[1]]: -8 }), next: 'c5_quit_branch' },
+      ],
+    },
+  },
+  c5_quit_branch: { type: 'branch', to: (c) => (relSum(c) < 0 ? 'c5_end_bad' : 'c5_end_calm') },
+  c5_end_bad: {
+    type: 'scene', venue: 'municipal', ambiance: 'night', cast: ['me', 'coach'],
+    lines: [
+      { who: 'narr', text: 'Les semaines passent. Plus personne ne t\'appelle pour jouer. Au club, les conversations s\'arrêtent quand tu arrives.' },
+      { who: 'coach', text: 'Le padel, ça se joue à quatre. Et pour jouer à quatre… il faut des amis.' },
+      { who: 'narr', text: 'Un soir, tu ranges ta raquette au fond d\'un placard. Elle n\'en ressortira pas.' },
+    ],
+    next: 'end_bad',
+  },
+  end_bad: { type: 'end', chapter: 5, final: true, text: () => 'FIN : tu as arrêté le padel. Plus personne ne voulait jouer avec toi.' },
+  c5_end_calm: {
+    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, 'mayor'],
+    lines: (c) => [
+      { who: 'narr', text: 'Tu n\'es pas allé au Hangar. La compétition, finalement, ce n\'était pas pour toi.' },
+      { who: c.partner3, text: 'Dimanche, 10 h, à Ceyreste ? Un petit match tranquille, et l\'apéro après.' },
+      { who: 'mayor', text: 'Et l\'apéro, c\'est la mairie qui offre. Comme d\'habitude.' },
+      { who: 'narr', text: 'Chaque dimanche, tu joues pour le plaisir, entouré de tes amis. Une autre façon de gagner.' },
+    ],
+    next: 'end_calm',
+  },
+  end_calm: { type: 'end', chapter: 5, final: true, text: () => 'FIN : le padel du dimanche, entre amis. Une vie tranquille.' },
+  ch5_end: { type: 'end', chapter: 5, next: 'c6_start', text: (c) => (c.f.regional === 'fan' ? `${pair(c.mates3)} vont au régional. Toi, tu vas les soutenir.` : 'Tu es qualifié pour le championnat régional, au Hangar !') },
+};
+
+// ================================================================== chapitre 6 : le championnat régional (Hangar)
+const CH6 = {
+  c6_start: { type: 'branch', to: (c) => (c.f.regional === 'fan' ? 'c6_fan' : 'c6_player') },
+  c6_player: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', cast: (c) => ['me', c.partner6, 'coach'],
+    lines: (c) => [
+      { who: 'narr', text: 'Le Hangar. Quatre courts sous la tôle, la musique à fond, et les meilleurs joueurs de la région.' },
+      { who: c.partner6, text: 'On y est. Le régional. Regarde qui est dans le tableau…' },
+      { who: 'coach', text: c.f.enemyRomeo ? '*n\'est pas venu*' : 'Un match à la fois. Et pas de bêtises.' },
+    ],
+    next: 'c6_r1',
+  },
+  c6_r1: { type: 'match', label: (c) => `Tour 1 contre ${NAME[c.rival3]}`, format: '2v2', mt: 10, venue: 'hangar', ambiance: 'day', near: (c) => ['me', c.partner6], far: (c) => [c.rival3, c.rival3 === 'eliott' ? 'philippe' : 'random'], randomOvr: 40, title: '1ER TOUR', subtitle: 'Championnat régional', win: 'c6_r2_pre', lose: 'c6_out' },
+  c6_r2_pre: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner6, 'camille', 'timeo'],
+    lines: [
+      { who: 'camille', text: 'Encore vous ? La Ciotat, c\'était sympa. Aujourd\'hui, on ne vous fera pas de cadeau.' },
+      { who: 'timeo', text: 'Et cette fois, je ne crierai pas. Promis.' },
+    ],
+    next: 'c6_r2',
+  },
+  c6_r2: { type: 'match', label: 'Quart de finale contre Camille et Timéo', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'day', near: (c) => ['me', c.partner6], far: ['timeo', 'camille'], hard: true, title: 'QUART DE FINALE', subtitle: 'Championnat régional', win: 'c6_semi_pre', lose: 'c6_out' },
+  c6_semi_pre: {
+    type: 'scene', venue: 'hangar', ambiance: 'sunset', spot: 'between', cast: (c) => ['me', c.partner6, ...c.semiOpp],
+    lines: (c) => (c.f.enemyRomeo ? [
+      { who: 'coach', text: 'Surprise. Oui, je joue encore. Et j\'attendais ce match depuis la conférence de presse.' },
+    ] : c.partner6 === 'nasri' ? [
+      { who: c.semiOpp[0], text: 'Vous êtes avec Nasri maintenant ? On aura tout vu.' },
+    ] : [
+      { who: 'nasri', text: 'Ah, mes petits contradicteurs ! Cette fois, pas de balle litigieuse. Que du jeu.' },
+      { who: 'mandanda', text: 'Bonne chance, les gars.' },
+    ]),
+    next: 'c6_semi',
+  },
+  c6_semi: { type: 'match', label: 'Demi-finale', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'sunset', near: (c) => ['me', c.partner6], far: (c) => c.semiOpp, hard: true, title: 'DEMI-FINALE', subtitle: 'Championnat régional', win: 'c6_final_pre', lose: 'c6_out' },
+  c6_final_pre: {
+    type: 'scene', venue: 'hangar', ambiance: 'night', cast: (c) => ['me', c.partner6, 'nathan'],
+    lines: [{ who: 'nathan', text: 'Allez allez allez ! Une finale ! J\'ai bu QUATRE cafés ! On joue ? On joue !' }],
+    next: 'c6_final',
+  },
+  c6_final: { type: 'match', label: 'Finale contre Nathan Subrero', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'night', near: (c) => ['me', c.partner6], far: ['nathan', 'random'], randomOvr: 60, hard: true, title: 'FINALE', subtitle: 'Championnat régional', win: 'c6_qualified', lose: 'c6_qualified' },
+  c6_qualified: {
+    type: 'scene', venue: 'hangar', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner6, 'mayor', 'coach'],
+    lines: (c) => [
+      { who: 'mayor', text: 'FINALISTES DU RÉGIONAL ! Ceyreste est sur la carte ! Vous êtes qualifiés pour le championnat national !' },
+      c.f.enemyRomeo ? { who: c.partner6, text: 'Le national… On l\'a fait. Sans le coach.' } : { who: 'coach', text: 'Le national. Il y a quelques mois, tu n\'avais jamais tenu une raquette.' },
+    ],
+    set: { national: true },
+    next: 'ch6_end',
+  },
+  c6_out: { type: 'branch', to: (c) => (c.f.retried ? 'c6_injury' : 'c6_choice') },
+  c6_choice: {
+    type: 'scene', venue: 'hangar', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner6],
+    lines: (c) => [{ who: c.partner6, text: 'Éliminés avant la finale… Pas de national cette année.' }],
+    choice: {
+      who: 'narr', text: 'Que fais-tu ?',
+      options: [
+        { label: 'Arrêter la compétition', next: 'c6_apero' },
+        { label: 'Retenter un régional, au Hangar', set: { retried: true }, after: [{ who: 'narr', text: 'Trois mois d\'entraînement plus tard, un nouveau régional au Hangar.' }], next: 'c6_retry1' },
+      ],
+    },
+  },
+  c6_apero: {
+    type: 'scene', venue: 'ceyreste', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, ...c.mates3, 'mayor'],
+    lines: [
+      { who: 'mayor', text: 'À nos champions de Ceyreste ! Ils n\'ont pas le national, mais ils ont la buvette !' },
+      { who: 'narr', text: 'Tu raccroches les tournois, mais pas la raquette. Les apéros au club, eux, ne s\'arrêtent jamais.' },
+    ],
+    next: 'end_apero',
+  },
+  end_apero: { type: 'end', chapter: 6, final: true, text: () => 'FIN : tu as arrêté la compétition. Place aux apéros du club.' },
+  c6_retry1: { type: 'match', label: 'Régional (2e tentative) : 1er tour', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'day', near: (c) => ['me', c.partner6], far: ['random', 'random'], randomOvr: 48, title: '1ER TOUR', subtitle: 'Championnat régional', win: 'c6_retry2', lose: 'c6_injury' },
+  c6_retry2: { type: 'match', label: 'Régional (2e tentative) : demi-finale', format: '2v2', mt: 10, venue: 'hangar', ambiance: 'sunset', near: (c) => ['me', c.partner6], far: ['random', 'random'], randomOvr: 56, hard: true, title: 'DEMI-FINALE', subtitle: 'Championnat régional', win: 'c6_qualified', lose: 'c6_injury' },
+  c6_injury: {
+    type: 'scene', venue: 'hangar', ambiance: 'night', spot: 'talk', cast: (c) => ['me', c.partner6, 'coach'],
+    lines: [
+      { who: 'narr', text: 'Sur la dernière balle, ton genou lâche. Le bruit est sec. Le médecin du tournoi secoue la tête.' },
+      { who: 'coach', text: 'Les ligaments… C\'est fini pour la compétition. Je suis désolé.' },
+      { who: 'narr', text: 'Ta carrière s\'arrête là. Mais personne au club n\'oubliera le débutant qui est allé jusqu\'au régional.' },
+    ],
+    next: 'end_injury',
+  },
+  end_injury: { type: 'end', chapter: 6, final: true, text: () => 'FIN : une blessure met fin à ta carrière.' },
+  // --- en spectateur : soutenir les collègues, puis Nasri cherche un partenaire
+  c6_fan: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner3, ...c.mates3],
+    lines: (c) => [{ who: c.mates3[0], text: 'Vous êtes venus ! Allez, regardez notre premier tour !' }],
+    next: 'c6_fan_watch',
+  },
+  c6_fan_watch: { type: 'watch', label: (c) => `Regarder ${pair(c.mates3)}`, venue: 'hangar', near: (c) => c.mates3, far: ['random', 'random'], randomOvr: 40, title: '1ER TOUR', start: [7, 6], next: 'c6_nasri' },
+  c6_nasri: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'between', cast: (c) => ['me', 'nasri', 'mandanda', c.partner3],
+    lines: (c) => [
+      { who: 'mandanda', text: '*grimace, la main sur le mollet* Ah… c\'est le mollet. Je ne peux plus jouer.' },
+      c.f.contactNasri ? { who: 'nasri', text: 'Toi ! Le petit qui a du répondant ! Tu remplaces Steve ? On a un tournoi à gagner.' }
+        : { who: 'nasri', text: 'Il me faut un partenaire. Vous deux… l\'un de vous peut jouer avec moi. Décidez-vous vite.' },
+    ],
+    next: 'c6_nasri_branch',
+  },
+  c6_nasri_branch: { type: 'branch', to: (c) => (c.f.contactNasri ? 'c6_with_nasri' : 'c6_who') },
+  c6_who: {
+    type: 'choice', venue: 'hangar', spot: 'between', cast: (c) => ['me', c.partner3, 'nasri'], who: 'nasri', text: 'Alors, qui joue ?',
+    options: [
+      { label: 'Y aller toi-même', effects: (c) => ({ [c.partner3]: -15 }), after: (c) => [{ who: c.partner3, text: '… OK. Vas-y, toi.' }], next: 'c6_with_nasri' },
+      { label: 'Laisser ta place à ton partenaire', next: 'c6_who_partner' },
+    ],
+  },
+  c6_who_partner: { type: 'branch', to: (c) => ((c.s.rel[c.partner3] || 0) >= 20 && c.partner3 !== 'raf' ? 'c6_partner_gives' : 'c6_partner_plays') },
+  c6_partner_gives: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner3, 'nasri'],
+    lines: (c) => [{ who: c.partner3, text: 'Non, non. C\'est toi qui as tenu tête à Nasri à la Riviera. Vas-y. Je serai ton premier supporter.' }],
+    effects: (c) => ({ [c.partner3]: 10 }),
+    next: 'c6_with_nasri',
+  },
+  c6_partner_plays: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', spot: 'between', cast: (c) => ['me', c.partner3, 'nasri'],
+    lines: (c) => [
+      { who: c.partner3, text: c.partner3 === 'raf' ? 'Merci, je prends ! Regarde et apprends.' : 'Merci… vraiment. Je vais tout donner.' },
+      { who: 'narr', text: `${NAME[c.partner3]} et Nasri vont jusqu'en demi-finale. Toi, tu regardes depuis les tribunes.` },
+    ],
+    next: 'c6_choice',
+  },
+  c6_with_nasri: {
+    type: 'scene', venue: 'hangar', ambiance: 'day', cast: ['me', 'nasri'],
+    lines: [{ who: 'nasri', text: 'Bon. Tu joues à droite, tu ne lâches rien, et tu me laisses parler à l\'arbitre. Allez !' }],
+    set: { withNasri: true },
+    next: 'c6_r2',
+  },
+  ch6_end: { type: 'end', chapter: 6, text: () => 'Qualifié pour le championnat national ! La suite de l\'aventure arrive bientôt.' },
+};
+
+export const CHAPTERS = { 1: 'Chapitre 1 · Le commencement', 2: 'Chapitre 2 · L\'Open de La Ciotat', 3: 'Chapitre 3 · Le retour de Louka', 4: 'Chapitre 4 · Le tournoi de la Riviera', 5: 'Chapitre 5 · Une seule place', 6: 'Chapitre 6 · Le championnat régional' };
+export const STEPS = { ...CH1, ...CH2, ...CH3, ...CH4, ...CH5, ...CH6 };
+export const chapterOf = (id) => (id in CH6 ? 6 : id in CH5 ? 5 : id in CH4 ? 4 : id in CH3 ? 3 : id in CH2 ? 2 : 1);

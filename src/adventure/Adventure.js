@@ -7,7 +7,7 @@ import { DRILLS } from '../core/Drills.js';
 import { VENUE_COURTS } from '../render/Venues.js';
 import * as THREE from 'three';
 // lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
-const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, prestige: { between: [-13, 0], talk: [-26, 26] } };
+const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0] }, hangar: { between: [0, -12.5], talk: [-12.6, 4] }, prestige: { between: [-13, 0], talk: [-26, 26] } };
 const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
 import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS } from '../career/data/roster.js';
 import { npcSpec, drillCutscene } from '../career/Career.js';
@@ -67,7 +67,7 @@ export class AdventureUI {
     const group = f.rivalEliott ? ['jean', 'raf', 'louka'] : ['eliott', 'jean', 'raf'];
     const partner3 = group.includes(partner) ? partner : 'louka';
     const mates3 = group.filter((x) => x !== partner3);
-    return { s: this.s, f, partner, friends, partner3, mates3, rival3: f.rivalEliott ? 'eliott' : 'louka', group4: [partner3, ...mates3] };
+    return { s: this.s, f, partner, friends, partner3, mates3, rival3: f.rivalEliott ? 'eliott' : 'louka', group4: [partner3, ...mates3], partner6: f.withNasri ? 'nasri' : partner3, semiOpp: f.enemyRomeo ? ['coach', 'random'] : f.withNasri ? [f.rivalEliott ? 'eliott' : 'louka', f.rivalEliott ? 'philippe' : 'random'] : ['nasri', 'mandanda'] };
   }
   get step() { return this.s ? STEPS[this.s.step] : null; }
   get short() { return (this.s?.name || 'Toi').split(' ')[0]; }
@@ -137,7 +137,7 @@ export class AdventureUI {
     const conv = lines.map(conv1);
     if (ch) {
       // le choix se fait dans la cinématique : une touche par réponse, puis la réaction des personnages
-      const q = conv1({ who: ch.who, text: val(ch.text, c) });
+      const q = conv1({ who: val(ch.who, c), text: val(ch.text, c) });
       q.choices = ch.options.map((op) => ({ label: op.label, sub: op.sub }));
       q.onChoose = (k) => {
         const op = ch.options[k];
@@ -314,7 +314,7 @@ export class AdventureUI {
     } else if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') {
       add(`${st.type === 'watch' ? 'Regarder' : 'Jouer'} : ${esc(val(st.label, c))}`, () => this.launch(st), 'primary');
     } else if (st.type === 'end') {
-      if (st.next) add(`Continuer : ${esc(CHAPTERS[st.chapter + 1])}`, () => this.goto(st.next), 'primary');
+      if (st.next) add(`Continuer : ${esc(CHAPTERS[st.chapter + 1] || 'la suite')}`, () => this.goto(st.next), 'primary');
     }
     add('Changer de sauvegarde', () => { this.slot = null; this.s = null; this.rerender(); }, 'small');
     add('Effacer cette sauvegarde et recommencer', () => { this.s = null; try { localStorage.removeItem(KEY(this.slot)); } catch { /* ignoré */ } this.newGame(); }, 'small');
@@ -331,7 +331,7 @@ export class AdventureUI {
     if (st.type === 'choice') return `<div class="adv-line choice"><b>${esc(st.who)}</b><p>${esc(val(st.text, c))}</p></div>`;
     if (st.type === 'scene') return '<div class="adv-line"><b>Cinématique</b><p>La scène va se jouer sur le court.</p></div>';
     if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') return `<div class="adv-line"><b>${st.type === 'watch' ? 'Au bord du court' : 'À toi de jouer'}</b><p>${esc(st.intro || val(st.label, c))}</p></div>`;
-    if (st.type === 'end') return `<div class="adv-line end"><b>FIN DU CHAPITRE ${st.chapter}</b><p>${esc(val(st.text, c))}</p></div>`;
+    if (st.type === 'end') return `<div class="adv-line end"><b>${st.final ? 'FIN DE L\'AVENTURE' : `FIN DU CHAPITRE ${st.chapter}`}</b><p>${esc(val(st.text, c))}</p></div>`;
     return '';
   }
 

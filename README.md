@@ -542,3 +542,7 @@ padel-sim/
 ### 0.60
 - Aventure, chapitre 4 « Le tournoi de la Riviera » : départ en minibus avec le maire, le coach et les quatre joueurs ; accueil par Stéphane Ruffier (matchs en 3 points secs) ; la controverse de Roméo (suspendu en 2015) révélée au fil du tournoi ; Nasri ment sur une balle (contester ou non : il respecte ceux qui répondent) ; Cyril Hanouna propose 1 000 € pour perdre la demi-finale ; finale d'exhibition contre Tapia et Coello ; conférence de presse : défendre Roméo, le lyncher (il devient un ennemi) ou ne rien dire ; nouveaux contacts.
 - Nathan Subrero sur l'affiche de Ceyreste et le tableau de La Ciotat.
+
+### 0.61
+- Aventure, chapitre 5 « Une seule place » : une place au régional pour le duo qui ira le plus loin au Padel Beach Arena. Si tu as lynché Roméo, il la donne quand même à l'autre duo : saboter tes collègues ou renoncer (le maire t'offre une invitation). Si tes collègues font mieux : aller les soutenir, ou non (fin « plus personne ne veut jouer avec toi » si tes relations sont mauvaises, sinon fin calme du padel du dimanche).
+- Chapitre 6 « Le championnat régional » (Hangar) : tableau avec ton rival, Camille et Timéo, Nasri et Mandanda (ou Roméo si c'est ton ennemi), finale contre Nathan Subrero. En spectateur : Mandanda se blesse et Nasri te propose de le remplacer (ou te fait choisir entre toi et ton partenaire). Finale atteinte = qualification au national. Sinon : arrêter (apéro au club) ou retenter un régional (nouvel échec = blessure et fin de carrière).
