@@ -40,6 +40,7 @@ export const BUILDS = [
   { id: 'normal', label: 'Normale', build: 1.0, belly: 0 },
   { id: 'athletic', label: 'Athlétique', build: 1.08, belly: 0, muscle: 0.35 },
   { id: 'muscular', label: 'Très musclé', build: 1.16, belly: 0, muscle: 1 },
+  { id: 'huge', label: 'Colosse', build: 1.28, belly: 0.1, muscle: 1.6 },
   { id: 'stocky', label: 'Corpulente', build: 1.1, belly: 0.5 },
   { id: 'heavy', label: 'Surpoids', build: 1.16, belly: 1 },
 ];

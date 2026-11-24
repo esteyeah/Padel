@@ -118,6 +118,9 @@ export class Game {
     this.human = this.players.find((p) => p.isHuman) || null;
 
     this.score = new Score({ sets: o.sets, gamesPerSet: o.gamesPerSet, goldenPoint: o.golden, matchTiebreak: o.matchTiebreak, firstServer: o.firstServer ?? (Math.random() < 0.5 ? 1 : -1) });
+    // match pris en cours (aventure : on arrive en fin de match)
+    if (o.startPoints) this.score.points = [...o.startPoints];
+    this._midDone = false;
     this.knownTurn = -1;
     this.teamTurns = { 1: 0, [-1]: 0 };
     this.hitId = 0;
@@ -572,6 +575,11 @@ export class Game {
       const sc = this.score, mine = sc.points[this.human.side > 0 ? 0 : 1];
       if (sc.tiebreak && mine >= sc.tbTarget - 2) d.winner = -this.human.side;
     }
+    // camp favorisé (match regardé) : l'autre camp ne peut pas atteindre la balle de match
+    if (this.opts.favor && d.winner === -this.opts.favor) {
+      const sc = this.score, other = sc.points[this.opts.favor > 0 ? 1 : 0];
+      if (sc.tiebreak && other >= sc.tbTarget - 2) d.winner = this.opts.favor;
+    }
     // victoire assurée : l'adversaire ne peut pas atteindre la balle de match
     if (this.opts.rigWin && this.human && d.winner === -this.human.side) {
       const sc = this.score, theirs = sc.points[this.human.side > 0 ? 1 : 0];
@@ -592,6 +600,17 @@ export class Game {
     if (!this.human || res.game) d = { ...d, reason: `${who} · ${d.reason}` };
     this.showBanner(big, d.reason, color);
     this.chatterOnPoint(d);
+    // événement en plein match (aventure) : une cinématique avec un choix, puis on reprend
+    const me = this.opts.midEvent;
+    if (me && !this._midDone && !res.match && this.tally.points[0] + this.tally.points[1] >= me.at) {
+      this._midDone = true;
+      setTimeout(() => {
+        if (this.state === 'matchOver' || !this.opts.midEvent) return;
+        this.cutscene = { lines: me.lines(), i: -1, t: 0, onEnd: () => { this.ball.setVisible(true); this.hud.updateScore(this.score); this.cameraRig.snap = true; } };
+        document.body.classList.add('cinema');
+        this.nextLine();
+      }, 900);
+    }
     if (this.r3d.arena.venue?.id === 'pro' && !this.attract) this.umpireCall(res, d);
     // ralenti sur les points spectaculaires (sortie par 3/par 4/par la porte, smash, long échange)
     const spectacular = /por tres|por cuatro|porte/i.test(d.reason)
@@ -826,9 +845,28 @@ export class Game {
     cs.i++; cs.t = 0;
     if (cs.i >= cs.lines.length) { this.endCutscene(); return; }
     const L = cs.lines[cs.i];
+    if (L.goto) { cs.i = cs.lines.findIndex((x) => x.id === L.goto) - 1; this.nextLine(); return; }
     const who = (L.actor && this.actors?.find((x) => x.id === L.actor)) || this.players.find((p) => L.name && p.name === L.name) || (L.side === 1 ? this.teams[1][0] : this.teams[-1][0]);
     cs.who = who;
+    if (L.choices) {
+      cs.choosing = L;
+      this.hud.onChoice = (k) => this.chooseLine(k);
+      this.hud.dialog(L.label || who?.name || '', L.text, L.choices);
+      return;
+    }
+    cs.choosing = null;
+    this.hud.sheet?.(L.sheet || null);
     this.hud.dialog(L.label || who?.name || '', L.text, cs.i + 1 < cs.lines.length);
+  }
+
+  /** Choix d'une réponse pendant une cinématique : la suite (réaction) est insérée juste après. */
+  chooseLine(k) {
+    const cs = this.cutscene, L = cs?.choosing;
+    if (!L || !L.choices[k]) return;
+    cs.choosing = null;
+    const extra = L.onChoose?.(k, this) || [];
+    cs.lines.splice(cs.i + 1, 0, ...extra);
+    this.nextLine();
   }
 
   clearActors() {
@@ -838,6 +876,7 @@ export class Game {
 
   endCutscene() {
     this.clearActors();
+    this.hud.sheet?.(null);
     const done = this.cutscene?.onEnd;
     this.cutscene = null;
     // cinématique seule (aventure) : on rend la main sans jouer
@@ -859,8 +898,20 @@ export class Game {
   updateCutscene(dt) {
     const cs = this.cutscene, inp = this.input;
     cs.t += dt;
-    if (inp.pressed.START) { this.endCutscene(); return; }
-    if (cs.t > 0.35 && inp.menu.confirm) { this.nextLine(); if (!this.cutscene) return; }
+    if (cs.choosing) {
+      if (cs.t > 0.4) {
+        const k = inp.pressed.A ? 0 : inp.pressed.X ? 1 : inp.pressed.Y ? 2 : inp.pressed.B ? 3 : ['Digit1', 'Digit2', 'Digit3', 'Digit4'].findIndex((d) => inp.keys?.has(d));
+        if (k >= 0 && k < cs.choosing.choices.length) { this.chooseLine(k); if (!this.cutscene) return; }
+      }
+    } else {
+      if (inp.pressed.START) {
+        // « Passer » saute jusqu'au prochain choix s'il y en a un
+        const k = cs.lines.findIndex((x, j) => j > cs.i && x.choices);
+        if (k >= 0) { cs.i = k - 1; this.nextLine(); } else this.endCutscene();
+        return;
+      }
+      if (cs.t > 0.35 && inp.menu.confirm) { this.nextLine(); if (!this.cutscene) return; }
+    }
     this.ball.setVisible(false);
     // les personnages se tournent les uns vers les autres
     const p = cs.who;

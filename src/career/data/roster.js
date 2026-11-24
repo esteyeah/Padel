@@ -138,7 +138,7 @@ export const PRO_PAIRS = [
 // ------------------------------------------------------------------ célébrités
 // tiers : paliers où la célébrité peut apparaître dans un tableau.
 // venues : lieux où la célébrité joue (aucun = partout).
-const celeb = (name, ovr, style, tiers, o = {}) => ({ ...makeNpc(name, ovr, style, { ...o, kind: 'celebrity' }), tiers, venues: o.venues || null });
+const celeb = (name, ovr, style, tiers, o = {}) => ({ ...makeNpc(name, ovr, style, { ...o, kind: 'celebrity' }), tiers, venues: o.venues || null, hidden: !!o.hidden });
 
 // look : traits approximatifs (taille, carrure, teint, coiffure, barbe, accessoire), sans
 // recherche de ressemblance fidèle. pairWith : partenaire habituel (ils s'inscrivent ensemble).
@@ -184,7 +184,7 @@ export const CELEBRITIES = [
   celeb('Xari', 49, 'attacker', ['regional'], { pairWith: 'domingo', note: 'Partenaire habituel de Domingo (Team PAX).', look: { skin: SK.light, hair: HC.brown, hairStyle: 'short', beard: 'stubble' } }),
   celeb('Didier Deschamps', 54, 'defender', ['regional'], { tweaks: { lob: 3 }, note: 'Tactique et rigoureux.', look: { skin: SK.light, hair: HC.grey, hairStyle: 'short', beard: 'none' } }),
   celeb('Esteban Ocon', 57, 'allround', ['regional'], { tweaks: { speed: 3, stamina: 4 }, note: 'Bons réflexes, bonne condition.', look: { skin: SK.light, hair: HC.brown, hairStyle: 'short', height: 1.04 } }),
-  celeb('Teddy Riner', 52, 'smasher', ['regional'], { power: 1.22, tweaks: { strength: 30, smash: 6, speed: -8, lob: -6 }, note: 'Une force colossale : chaque frappe part comme un boulet. Moins mobile.', look: { skin: SK.deep, hair: HC.black, hairStyle: 'shaved', beard: 'stubble', height: 1.13, buildId: 'muscular', chin: 1.25, nose: 1.1 , stance: { crouch: 0.85, wide: 0.06, bounce: 0.6, stride: 0.9, tempo: 0.9, back: 1.35, finish: 1.2, twist: 1.3 } } }),
+  celeb('Teddy Riner', 52, 'smasher', ['regional'], { power: 1.22, tweaks: { strength: 30, smash: 6, speed: -8, lob: -6 }, note: 'Une force colossale : chaque frappe part comme un boulet. Moins mobile.', look: { skin: SK.deep, hair: HC.black, hairStyle: 'shaved', beard: 'stubble', height: 1.15, buildId: 'huge', chin: 1.3, nose: 1.1 , stance: { crouch: 0.85, wide: 0.06, bounce: 0.6, stride: 0.9, tempo: 0.9, back: 1.35, finish: 1.2, twist: 1.3 } } }),
   celeb('Patrick Vieira', 58, 'defender', ['regional'], { note: 'Grand compas, solide.', look: { skin: SK.dark, hair: HC.black, hairStyle: 'bald', height: 1.09, buildId: 'athletic' } }),
   celeb('Steve Mandanda', 60, 'defender', ['regional', 'national'], { tweaks: { speed: -2, lob: 2 }, note: 'Réflexes de gardien, solide en défense.', look: { skin: SK.dark, hair: HC.black, hairStyle: 'buzz', height: 1.06, buildId: 'athletic' } }),
   celeb('Maxime Gonalons', 60, 'allround', ['regional', 'national'], { note: 'Régulier, au classement des célébrités.', look: { skin: SK.light, hair: HC.dark, hairStyle: 'short', beard: 'beard' } }),
@@ -193,7 +193,8 @@ export const CELEBRITIES = [
   celeb('Benoît Cheyrou', 63, 'allround', ['national'], { note: 'Au classement des célébrités du padel.', look: { skin: SK.light, hair: HC.brown, hairStyle: 'short', beard: 'stubble' } }),
   celeb('Robert Pires', 63, 'allround', ['regional', 'national'], { note: 'Propre techniquement.', look: { skin: SK.olive, hair: HC.dark, hairStyle: 'long', beard: 'stubble' } }),
   celeb('Fabien Lemoine', 64, 'attacker', ['national'], { note: 'Au classement des célébrités du padel.', look: { skin: SK.light, hair: HC.dark, hairStyle: 'buzz', beard: 'beard' } }),
-  celeb('Dimitri Payet', 65, 'magician', ['national'], { note: 'Toucher de balle, amorties.', look: { skin: SK.brown, hair: HC.black, hairStyle: 'bald', beard: 'beard', buildId: 'stocky' } }),
+  celeb('Dimitri Payet', 65, 'magician', ['national'], { note: 'Toucher de balle, amorties.', look: { skin: SK.brown, hair: HC.black, hairStyle: 'curly', beard: 'beard', buildId: 'stocky' } }),
+  celeb('Louka', 40, 'attacker', [], { hidden: true, note: 'Le joueur blessé dont tu as pris la place.', look: { skin: SK.fair, hair: 0x2a1a10, eye: 0x6f8a6a, hairStyle: 'curly', beard: 'pencil', height: 1.02, buildId: 'normal', headwear: 'none', chin: 1.1, nose: 1.05, number: 91, shirtHex: 0x7b5cd6, accentHex: 0xffffff, shortsHex: 0x15161a } }),
   celeb('Samir Nasri', 66, 'magician', ['national'], { note: 'Technique et malin.', look: { skin: SK.olive, hair: HC.black, hairStyle: 'short', beard: 'beard', height: 0.97 } }),
   celeb('Clément Grenier', 66, 'magician', ['national'], { note: 'Au classement des célébrités du padel.', look: { skin: SK.light, hair: HC.dark, hairStyle: 'quiff', beard: 'stubble' } }),
   celeb('Carles Puyol', 66, 'defender', ['national'], { tweaks: { stamina: 4 }, note: 'Ne lâche aucune balle.', look: { skin: SK.light, hair: HC.brown, hairStyle: 'longcurly', beard: 'stubble', buildId: 'athletic' } }),
@@ -211,7 +212,7 @@ export const CELEBRITIES = [
 ];
 
 /** L'entraîneur des séances d'entraînement (fictif). */
-export const COACH = makeNpc('Coach Roméo', 55, 'allround', { short: 'ROMÉO', look: { skin: SK.light, hair: 0x15100c, hairStyle: 'ponytail', beard: 'stubble', buildId: 'athletic', height: 1.03, headwear: 'cap', capColor: 0x1c2733, shirtHex: 0x1c2733, accentHex: 0x1c2733, shortsHex: 0x111418 } });
+export const COACH = makeNpc('Coach Roméo', 55, 'allround', { short: 'ROMÉO', look: { skin: SK.light, hair: 0x15100c, hairStyle: 'bun', beard: 'moustache', buildId: 'athletic', height: 1.03, headwear: 'cap', capColor: 0x1c2733, shirtHex: 0x1c2733, accentHex: 0x1c2733, shortsHex: 0x111418 } });
 
 // ------------------------------------------------------------------ joueurs génériques (fictifs)
 const FIRST = ['Léo', 'Hugo', 'Nathan', 'Enzo', 'Lucas', 'Théo', 'Maxime', 'Julien', 'Antoine', 'Romain', 'Kévin', 'Bastien', 'Clément', 'Adrien', 'Mathis', 'Yanis', 'Sami', 'Karim', 'Diego', 'Pablo', 'Marco', 'Luca', 'Tomás', 'Iker', 'Nuno', 'Rui', 'Jonas', 'Erik', 'Oscar', 'Milan'];

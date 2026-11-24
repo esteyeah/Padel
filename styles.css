@@ -445,3 +445,15 @@ body.cinema #hud { visibility: hidden; }
 .m-adventure .adv-choice .lbl small { display: block; font-weight: 500; color: var(--dim); margin-top: 2px; }
 .m-adventure .adv-primary .lbl { color: var(--accent); font-weight: 800; }
 .m-adventure .adv-small .lbl { font-size: 12px; opacity: .6; }
+#dialog .d-choices { display: grid; gap: 6px; margin-top: 4px; }
+#dialog .d-choice { display: flex; gap: 10px; align-items: flex-start; padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,0.06); cursor: pointer; pointer-events: auto; }
+#dialog .d-choice:hover { background: rgba(255,212,0,0.15); }
+#dialog .d-choice span { font: 600 15px var(--sans); }
+#dialog .d-choice small { display: block; color: var(--dim); font-weight: 500; font-size: 12.5px; margin-top: 2px; }
+#sheet { position: fixed; left: 50%; top: 9vh; transform: translateX(-50%) rotate(-1.2deg); width: min(560px, calc(100% - 32px)); padding: 18px 22px; background: #fbf8ef; color: #1b1b1b; border-radius: 4px; box-shadow: 0 18px 50px rgba(0,0,0,0.45); z-index: 29; font: 600 15px var(--sans); }
+#sheet.hidden { display: none; }
+#sheet h4 { margin: 0 0 10px; font: 800 22px var(--cond); text-align: center; letter-spacing: 1px; }
+#sheet .br { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: center; }
+#sheet .br div { display: grid; gap: 6px; }
+#sheet .br span { border-bottom: 1px solid #999; padding: 2px 4px; font-size: 13px; }
+#sheet .br span.me { background: #fff3a6; font-weight: 800; }

@@ -206,6 +206,13 @@ export class HUD {
   }
 
   /** Bulle de dialogue des cinématiques (null pour la masquer). */
+  /** Feuille de papier affichée pendant une cinématique (tableau du tournoi…). */
+  sheet(html) {
+    if (!this.sheetEl) { this.sheetEl = document.createElement('div'); this.sheetEl.id = 'sheet'; document.body.appendChild(this.sheetEl); }
+    if (!html) { this.sheetEl.classList.add('hidden'); return; }
+    this.sheetEl.innerHTML = html; this.sheetEl.classList.remove('hidden');
+  }
+
   dialog(name, text, more = false) {
     if (!this.dialogEl) {
       this.dialogEl = document.createElement('div');
@@ -213,7 +220,12 @@ export class HUD {
       document.body.appendChild(this.dialogEl);
     }
     if (name === null) { this.dialogEl.classList.add('hidden'); return; }
-    this.dialogEl.innerHTML = `<b>${name}</b><p>${text}</p><span class="d-next"><kbd>A</kbd> ${more ? 'Suite' : 'Commencer'} · <kbd>${this.input?.labels?.().START || 'Start'}</kbd> Passer</span>`;
+    if (Array.isArray(more)) {
+      // réponse à choisir pendant la cinématique : une touche par réponse
+      const L = this.input?.labels?.() || {}, keys = [L.A || 'A', L.X || 'X', L.Y || 'Y', L.B || 'B'];
+      this.dialogEl.innerHTML = `<b>${name}</b><p>${text}</p><div class="d-choices">${more.map((o, i) => `<div class="d-choice" data-c="${i}"><kbd>${keys[i]}</kbd><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span></div>`).join('')}</div>`;
+      this.dialogEl.querySelectorAll('[data-c]').forEach((el) => el.addEventListener('click', () => { this.onChoice?.(+el.dataset.c); }));
+    } else this.dialogEl.innerHTML = `<b>${name}</b><p>${text}</p><span class="d-next"><kbd>A</kbd> ${more ? 'Suite' : 'Commencer'} · <kbd>${this.input?.labels?.().START || 'Start'}</kbd> Passer</span>`;
     this.dialogEl.classList.remove('hidden');
   }
 

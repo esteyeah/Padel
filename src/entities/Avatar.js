@@ -489,7 +489,12 @@ export class Avatar {
         P.add(h, new THREE.CapsuleGeometry(0.026, 0.16, 4, 10), mat.hair, [0, 0.04, -0.12], [0.35, 0, 0]);
         P.add(h, new THREE.SphereGeometry(0.03, 12, 10), mat.hair, [0, 0.13, -0.095]);
         break;
-      case 'bun': scalp(0.004, 0.006, 0); P.add(h, new THREE.SphereGeometry(0.044, 14, 12), mat.hair, [0, 0.2, -0.07]); break;
+      case 'bun':
+        scalp(0.004, 0.006, 0);
+        // chignon : haut du crâne, ou plus bas sur la nuque sous une casquette (man bun)
+        if (hw0 === 'cap' || hw0 === 'capback') { P.add(h, new THREE.SphereGeometry(0.034, 14, 12), mat.hair, [0, 0.115, -0.112], [0, 0, 0], [1, 0.9, 0.85]); P.add(h, new THREE.TorusGeometry(0.02, 0.006, 6, 14), mat.dark, [0, 0.112, -0.095], [0.3, 0, 0]); }
+        else P.add(h, new THREE.SphereGeometry(0.044, 14, 12), mat.hair, [0, 0.2, -0.07]);
+        break;
       case 'long':
         scalp(0.005, 0.008, 0.004);
         P.add(h, new THREE.CapsuleGeometry(0.07, 0.1, 6, 16), mat.hair, [0, 0.04, -0.05], [0.1, 0, 0], [1.2, 1, 0.65]);
@@ -514,7 +519,23 @@ export class Avatar {
         }
         break;
       }
-      case 'curly': scalp(0.006, 0.01, 0); curls(26, 0.028, 0.105, 0.13, 0.9); break;
+      case 'curly': {
+        // boucles serrées : une multitude de petites boucles plantées sur tout le cuir chevelu
+        scalp(0.007, 0.012, 0);
+        const curlM = new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.8), roughness: 1, metalness: 0, normalMap: mat.hair.normalMap, normalScale: new THREE.Vector2(1.2, 1.2), map: mat.hair.map });
+        const N = a.lod === 'low' ? 1400 : 3600, golden = Math.PI * (3 - Math.sqrt(5));
+        const cen = new THREE.Vector3(0, 0.112, 0);
+        for (let i = 0; i < N; i++) {
+          const y = 1 - (i + 0.5) * (2 / N), r = Math.sqrt(1 - y * y), th = i * golden;
+          const d = new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r);
+          if (!Z.scalp(d) || (covered && covered(d))) continue;
+          const q = F.at(d.x, d.y, d.z), n = q.clone().sub(cen).normalize();
+          const k = ((i * 7919) % 100) / 100, rr = 0.0058 + k * 0.004;
+          q.addScaledVector(n, 0.005 + Math.max(0, d.y) * 0.005 + k * 0.003);
+          P.add(h, new THREE.TorusGeometry(rr, rr * 0.45, 4, 7), curlM, [q.x, q.y, q.z], [k * 6, k * 9, k * 4]);
+        }
+        break;
+      }
       case 'longcurly': scalp(0.006, 0.01, 0); curls(34, 0.032, 0.115, 0.11, 1.2); P.add(h, new THREE.CapsuleGeometry(0.08, 0.12, 4, 12), mat.hair, [0, 0.02, -0.05], [0, 0, 0], [1.3, 1, 0.72]); break;
       case 'afro': P.add(h, new THREE.SphereGeometry(0.14, 22, 16), mat.hair, [0, 0.165, -0.025], [0, 0, 0], [0.95, 0.85, 0.95]); break;
       case 'mohawk': P.add(h, F.shell((d) => Z.top(d) && Math.abs(d.x) < 0.22, 0.004, { topBoost: 0.035 }), mat.hair); break;

@@ -3,7 +3,8 @@
 //  écrans (dans le menu principal), cinématiques et matchs dans le jeu.
 // ============================================================================
 import { STEPS, PEOPLE, START_REL, CHAPTERS, chapterOf } from './Story.js';
-import { CELEBRITIES, COACH, genericNpc } from '../career/data/roster.js';
+import { DRILLS } from '../core/Drills.js';
+import { CELEBRITIES, COACH, genericNpc, makeNpc } from '../career/data/roster.js';
 import { npcSpec, drillCutscene } from '../career/Career.js';
 import { resolveLook, DEFAULT_LOOK } from '../entities/Appearance.js';
 import { flatStats } from '../config.js';
@@ -12,8 +13,14 @@ import { ask } from '../ui/Ask.js';
 const KEY = (slot) => `padel-arena.adventure.${slot}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const celeb = (id) => CELEBRITIES.find((c) => c.id === id);
-const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste' };
-const LABEL = { eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', narr: 'Narrateur' };
+const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-tomatis', camille: 'camille-roy', timeo: 'timeo-boulhol', mayor: 'le-maire-de-ceyreste', payet: 'dimitri-payet', louka: 'louka' };
+const EXTRA = {
+  gege: makeNpc('Gégé Pastis', 22, 'allround', { short: 'GÉGÉ', look: { skin: 0xe0a88a, hair: 0x9a9a9a, hairStyle: 'receding', beard: 'full', buildId: 'heavy', height: 0.97, headwear: 'none' } }),
+  momo: makeNpc('Momo Rosé', 26, 'lobber', { short: 'MOMO', look: { skin: 0xc68a5e, hair: 0x2a1a10, hairStyle: 'bald', beard: 'moustache', buildId: 'heavy', height: 1.0, headwear: 'cap' } }),
+  opp: makeNpc('Adversaire', 30, 'allround', { short: 'ADVERSAIRE' }),
+  ref: makeNpc('Juge-arbitre', 30, 'allround', { short: 'ARBITRE', look: { skin: 0xd9a47c, hair: 0x555555, hairStyle: 'short', beard: 'none', buildId: 'normal', headwear: 'none', shirtHex: 0x111111, accentHex: 0x111111, shortsHex: 0x111111 } }),
+};
+const LABEL = { eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
 
 export class AdventureUI {
@@ -45,8 +52,14 @@ export class AdventureUI {
 
   // ------------------------------------------------------------------ état
   get ctx() {
-    const partner = this.s?.flags.partner || 'eliott';
-    return { s: this.s, partner, friends: ['eliott', 'jean', 'raf'].filter((x) => x !== partner) };
+    const f = this.s?.flags || {};
+    const partner = f.partner || 'eliott';
+    const friends = ['eliott', 'jean', 'raf'].filter((x) => x !== partner);
+    // chapitre 3 : si Eliott a quitté le groupe, Louka le remplace (et devient ton partenaire si besoin)
+    const group = f.rivalEliott ? ['jean', 'raf', 'louka'] : ['eliott', 'jean', 'raf'];
+    const partner3 = group.includes(partner) ? partner : 'louka';
+    const mates3 = group.filter((x) => x !== partner3);
+    return { s: this.s, f, partner, friends, partner3, mates3, rival3: f.rivalEliott ? 'eliott' : 'louka' };
   }
   get step() { return this.s ? STEPS[this.s.step] : null; }
   get short() { return (this.s?.name || 'Toi').split(' ')[0]; }
@@ -63,9 +76,10 @@ export class AdventureUI {
     while (st?.type === 'branch') { id = st.to(this.ctx); this.s.step = id; st = STEPS[id]; }
     if (st?.effects && st.type !== 'choice') this.apply(val(st.effects, this.ctx));
     if (st?.set && st.type === 'scene') this.apply({}, st.set);
+    if (st?.venue) this.s.venue = st.venue;
     this.save();
     // les cinématiques s'enchaînent directement dans le jeu
-    if (autoplay && st?.type === 'scene') { this.play(st); return; }
+    if (autoplay && (st?.type === 'scene' || st?.type === 'choice')) { this.play(st); return; }
     this.rerender();
   }
 
@@ -79,14 +93,19 @@ export class AdventureUI {
     if (id === 'me') return this.me(lane);
     if (id === 'coach') return npcSpec({ ...COACH, ovr: 55, attrs: { drive: 55, lob: 55, smash: 55, speed: 55, stamina: 55, strength: 55 } }, 'black', lane, o.idle);
     if (id === 'random') { const n = genericNpc(Math.random, o.ovr || 30); return npcSpec(n, kit, lane); }
+    if (EXTRA[id]) return npcSpec(EXTRA[id], kit, lane, o.idle);
+    if (id === 'narr') return npcSpec(EXTRA.opp, kit, lane, true);
     return npcSpec(celeb(NPC_ID[id]), kit, lane, o.idle);
   }
 
   // ------------------------------------------------------------------ cinématique en jeu
   play(st) {
     const c = this.ctx;
-    const cast = val(st.cast, c);
-    const lines = val(st.lines, c);
+    const cast = (val(st.cast, c) || ['me', st.who]).filter((x, i, a) => x && x !== 'narr' && a.indexOf(x) === i);
+    if (cast.length < 2) cast.push('coach');
+    const lines = [...(val(st.lines, c) || [])];
+    const ch = st.type === 'choice' ? st : st.choice;
+    let chosenNext = null;
     const specs = {};
     const meSpec = this.spec('me', 'blue', 0);
     const other = cast.find((x) => x !== 'me');
@@ -99,17 +118,33 @@ export class AdventureUI {
       const a = (i - (extras.length - 1) / 2) * 1.3;
       return { id, side: i % 2 ? -1 : 1, x: a * 1.6, z: (i % 2 ? -1 : 1) * 1.6, appearance: { ...sp.appearance, name: sp.name } };
     });
-    const conv = lines.map((L) => {
+    const conv1 = (L) => {
       const label = L.who === 'me' ? this.short : LABEL[L.who] || L.who;
-      if (L.who === 'me') return { side: 1, label, text: L.text };
-      if (L.who === other) return { name: otherSpec.name, label, text: L.text };
-      if (extras.includes(L.who)) return { actor: L.who, label, text: L.text };
-      return { side: 1, label, text: L.text };
-    });
+      const base = { label, text: L.text, sheet: L.sheet };
+      if (L.who === 'me') return { side: 1, ...base };
+      if (L.who === other) return { name: otherSpec.name, ...base };
+      if (extras.includes(L.who)) return { actor: L.who, ...base };
+      return { side: 1, ...base };
+    };
+    const conv = lines.map(conv1);
+    if (ch) {
+      // le choix se fait dans la cinématique : une touche par réponse, puis la réaction des personnages
+      const q = conv1({ who: ch.who, text: val(ch.text, c) });
+      q.choices = ch.options.map((op) => ({ label: op.label, sub: op.sub }));
+      q.onChoose = (k) => {
+        const op = ch.options[k];
+        this.apply(val(op.effects, this.ctx), op.set, op.rep);
+        this.s.log.push({ step: this.s.step, choice: op.label });
+        chosenNext = op.next;
+        this.save();
+        return (val(op.after, this.ctx) || []).map(conv1);
+      };
+      conv.push(q);
+    }
     this.startGame({
       mode: 'career', sceneOnly: true, format: '1v1', sets: 1, matchTiebreak: 7, venue: st.venue || 'municipal', ambiance: st.ambiance || 'day',
       lineup: { near: [{ ...meSpec, lane: 0 }], far: [{ ...otherSpec, lane: 0 }] }, cutscene: conv, actors, party: false,
-      onSceneEnd: () => { this.goto(val(st.next, c), true); if (STEPS[this.s.step]?.type !== 'scene') this.show(); },
+      onSceneEnd: () => { this.goto(chosenNext || val(st.next, c), true); const t = STEPS[this.s.step]?.type; if (t !== 'scene' && t !== 'choice') this.show(); },
     });
   }
 
@@ -135,19 +170,21 @@ export class AdventureUI {
       if (st.weak?.includes(id)) sp = { ...sp, stats: flatStats(0.12), bot: { ...sp.bot, diff: { ...sp.bot.diff, level: 0.1, speedMul: 0.72, reaction: 0.5, planError: 0.6, margin: 1.2 } } };
       // demi-finale relevée ; raquettes sabotées par Raf : adversaires diminués
       if (side < 0 && st.hard) sp = { ...sp, bot: { ...sp.bot, diff: { ...sp.bot.diff, level: Math.min(0.95, (sp.bot.diff.level || 0.5) + 0.2), reaction: Math.max(0.1, (sp.bot.diff.reaction || 0.25) - 0.06) } } };
+      if (st.drunk?.includes(id)) sp = { ...sp, appearance: { ...sp.appearance, stance: { ...(sp.appearance.stance || {}), sway: 0.22, lean: 0.14, bounce: 0.15, tempo: 0.7, stride: 0.7 } }, bot: { ...sp.bot, diff: { ...sp.bot.diff, speedMul: 0.7, planError: 0.7, reaction: 0.55 } } };
       if (side < 0 && this.s.flags.sabotage && st.hard) sp = { ...sp, stats: Object.fromEntries(Object.entries(sp.stats).map(([k, v]) => [k, typeof v === 'number' && k !== 'power' ? v * 0.8 : v])) };
       return sp;
     };
     const lineup = { near: near.map((id, i) => mk(id, i, 'blue', 1)), far: far.map((id, i) => mk(id, i, 'red', -1)) };
     if (st.type === 'watch') {
       lineup.near = lineup.near.map((p) => ({ ...p, human: false }));
-      this.startGame({ mode: 'demo', format: '2v2', sets: 1, matchTiebreak: 10, venue: 'ceyreste', ambiance: 'day', title: st.title || 'MATCH', subtitle: 'Vous regardez depuis le bord du court · A pour passer', lineup, watchFor: 28, replays: false, party: false, onEnd: back });
+      this.startGame({ mode: 'demo', format: '2v2', sets: 1, matchTiebreak: 10, venue: st.venue || 'ceyreste', ambiance: 'day', title: st.title || 'MATCH', subtitle: 'Vous regardez depuis le bord du court · A pour passer', lineup, watchFor: 40, startPoints: st.start, favor: 1, replays: false, party: false, onEnd: back });
       return;
     }
     this.startGame({
       mode: 'career', format: st.format, sets: 1, gamesPerSet: 6, golden: true, matchTiebreak: st.mt || 10, venue: st.venue, ambiance: st.ambiance,
-      title: st.title || val(st.label, c).toUpperCase(), subtitle: st.venue === 'ceyreste' ? 'Tournoi de Ceyreste' : 'Entraînement', replays: false,
+      title: st.title || val(st.label, c).toUpperCase(), subtitle: st.subtitle || 'Entraînement', replays: false,
       rig: st.rig === 'lose', rigWin: st.rig === 'win', lineup, party: false, onEnd: back, onQuit: () => this.show(),
+      midEvent: st.mid ? { at: st.mid.at, lines: () => this.midLines(st.mid) } : null,
     });
   }
 
@@ -161,9 +198,44 @@ export class AdventureUI {
       this.s.stats.stamina = Math.min(0.95, (this.s.stats.stamina || 0.3) + 0.008);
       if (st.set) this.apply({}, st.set);
     }
+    if (st.compete) this.compete(st, result);
     const next = st.type === 'drill' || st.type === 'watch' ? st.next : (result.won ? st.win : st.lose);
     this.goto(next, true);
-    if (STEPS[this.s.step]?.type !== 'scene') this.show();
+    const t = STEPS[this.s.step]?.type;
+    if (t !== 'scene' && t !== 'choice') this.show();
+  }
+
+  /** Situation de fair-play en plein match : choix dans une courte cinématique, effet sur le score. */
+  midLines(mid) {
+    const c = this.ctx;
+    const lbl = (w) => (w === 'me' ? this.short : LABEL[w] || w);
+    return [{
+      side: 1, label: lbl(mid.who), text: val(mid.text, c),
+      choices: mid.options.map((o) => ({ label: o.label })),
+      onChoose: (k, game) => {
+        const op = mid.options[k];
+        this.apply(val(op.effects, this.ctx), op.set, op.rep);
+        const h = game.human;
+        if (h && op.point && game.score.tiebreak && Math.max(...game.score.points) < game.score.tbTarget - 1) { game.score.pointTo(op.point === 'us' ? h.side : -h.side); game.hud.updateScore(game.score); }
+        this.save();
+        return (val(op.after, this.ctx) || []).map((L) => ({ side: 1, label: lbl(L.who), text: L.text }));
+      },
+    }];
+  }
+
+  /** Entraînement à cinq : ton score et ceux des autres ; Eliott finit dernier, de peu. */
+  compete(st, result) {
+    const mine = result.score ?? result.points ?? (result.medal || 0) * 3;
+    const sc = (this.s.compete ??= { me: 0, jean: 0, raf: 0, louka: 0, eliott: 0 });
+    const tot = DRILLS[st.drill]?.total || 10;
+    sc.me += mine;
+    sc.raf += Math.max(mine + 1, Math.round(tot * 0.6));
+    sc.jean += Math.max(1, Math.round(tot * 0.45 + Math.random() * 2));
+    sc.louka += Math.max(1, Math.round(tot * 0.5 + Math.random() * 2));
+    const others = ['me', 'jean', 'raf', 'louka'].map((k) => sc[k]);
+    sc.eliott = Math.max(0, Math.min(...others) - 1 - Math.round(Math.random()));
+    const names = { me: this.short, jean: 'Jean', raf: 'Raf', louka: 'Louka', eliott: 'Eliott' };
+    this.s.ranking = Object.entries(sc).map(([id, pts]) => ({ id, name: names[id], pts })).sort((a, b) => b.pts - a.pts);
   }
 
   // ------------------------------------------------------------------ rendu
@@ -194,15 +266,8 @@ export class AdventureUI {
       const pages = val(st.pages, c);
       if (this.page < pages.length - 1) add('Suivant', () => { this.page++; this.rerender(); }, 'primary');
       else add('Continuer', () => this.goto(val(st.next, c)), 'primary');
-    } else if (st.type === 'scene') {
-      add('Voir la scène', () => this.play(st), 'primary');
-    } else if (st.type === 'choice') {
-      for (const op of st.options) add(esc(op.label) + (op.sub ? `<small>${esc(op.sub)}</small>` : ''), () => {
-        this.apply(op.effects, op.set, op.rep);
-        this.s.log.push({ step: this.s.step, choice: op.label });
-        const after = val(op.after, c);
-        if (after?.length) { this.react = { pages: after, next: op.next }; this.page = 0; this.sel = 0; this.save(); this.rerender(); } else this.goto(op.next);
-      }, 'choice');
+    } else if (st.type === 'scene' || st.type === 'choice') {
+      add('Reprendre la scène', () => this.play(st), 'primary');
     } else if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') {
       add(`${st.type === 'watch' ? 'Regarder' : 'Jouer'} : ${esc(val(st.label, c))}`, () => this.launch(st), 'primary');
     } else if (st.type === 'end') {
@@ -223,7 +288,7 @@ export class AdventureUI {
     if (st.type === 'choice') return `<div class="adv-line choice"><b>${esc(st.who)}</b><p>${esc(val(st.text, c))}</p></div>`;
     if (st.type === 'scene') return '<div class="adv-line"><b>Cinématique</b><p>La scène va se jouer sur le court.</p></div>';
     if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') return `<div class="adv-line"><b>${st.type === 'watch' ? 'Au bord du court' : 'À toi de jouer'}</b><p>${esc(st.intro || val(st.label, c))}</p></div>`;
-    if (st.type === 'end') return `<div class="adv-line end"><b>FIN DU ${st.chapter === 1 ? 'CHAPITRE 1' : 'CHAPITRE 2'}</b><p>${esc(val(st.text, c))}</p></div>`;
+    if (st.type === 'end') return `<div class="adv-line end"><b>FIN DU CHAPITRE ${st.chapter}</b><p>${esc(val(st.text, c))}</p></div>`;
     return '';
   }
 

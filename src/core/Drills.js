@@ -179,11 +179,14 @@ class LobDrill extends FeedDrill {
   }
   setup() { this.zoneMesh = this.zone(2 * COURT.halfW - 0.4, 3); super.setup(); }
   feedSpec() { return { from: [rnd(-2, 2), 1.0, -3], target: { x: rnd(-2, 2), z: rnd(5.5, 7.2) }, type: 'drive', power: 0.3 }; }
+  // seul un vrai lob (touche lob) compte
+  onHit(player, type) { if (player === this.human) this.lastType = type; }
   onBallEvent(e) {
     const ref = this.g.referee;
     if (!this.scored && e.type === 'floor' && ref.lastHitterSide === 1 && ref.crossed && e.side === -1) {
       this.scored = true;
-      if (Math.abs(e.z) >= 7) { this.score++; this.g.drillFlash('LOB PARFAIT !', '#69f0ae'); }
+      if (Math.abs(e.z) >= 7 && this.lastType === 'lob') { this.score++; this.g.drillFlash('LOB PARFAIT !', '#69f0ae'); }
+      else if (Math.abs(e.z) >= 7) this.g.drillFlash('Pas un lob : utilisez la touche lob', '#ffab40');
     }
   }
 }

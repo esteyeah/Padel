@@ -29,7 +29,7 @@ export function characterList() {
   const seen = new Set();
   const out = [];
   const add = (npc, cat) => {
-    if (seen.has(npc.id)) return;
+    if (seen.has(npc.id) || npc.hidden) return;
     seen.add(npc.id);
     out.push({ id: npc.id, npc, cat, mission: MISSION_CHARS[npc.id] || null, price: MISSION_CHARS[npc.id] ? 0 : priceFor(npc) });
   };
