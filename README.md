@@ -568,3 +568,6 @@ padel-sim/
 - Aventure : le maire dans le minibus explique son invitation (son ami Ruffier) ; Ruffier vous reçoit dans la loge VIP et explique en détail le format en 3 points ; cinématiques plus longues avec plus de dialogues ; les discussions se font toujours hors du court, les personnages côte à côte ; choix du côté de jeu (droite / gauche) dans le menu de l'Aventure.
 - Stéphane Ruffier chauve et barbu.
 - Statistiques à l'écran dans tous les modes : vitesse des gros smashs, services et frappes (km/h), longueur des longs échanges, séries de points d'affilée.
+
+### 0.66
+- Aventure : le minibus est garé bien visible derrière le groupe ; au chapitre 5, si tes collègues font mieux que toi, une équipe se désiste et tu es repêché pour le régional (plus de fin d'aventure à cet endroit).

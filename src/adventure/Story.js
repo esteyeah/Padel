@@ -789,15 +789,15 @@ const CH5 = {
     type: 'scene', venue: 'beach', ambiance: 'sunset', spot: 'talk', cast: (c) => ['me', c.partner3, 'coach', ...c.mates3],
     lines: (c) => [
       { who: 'coach', text: `${pair(c.mates3)} vont plus loin que vous. La place au régional est pour eux.` },
-      { who: c.mates3[0], text: 'Désolé… Vous viendrez nous voir au Hangar ?' },
+      { who: c.partner3, text: 'On a tout donné… ce n\'était pas notre jour.' },
+      { who: c.mates3[0], text: 'Désolé… Vraiment. Vous viendrez nous voir au Hangar ?' },
+      { who: 'narr', text: 'Trois jours plus tard, le téléphone du coach sonne.' },
+      { who: 'coach', text: 'Bonne nouvelle ! Une équipe de Toulon s\'est désistée pour le régional : blessure. On est repêchés ! Les deux duos du club iront au Hangar.' },
+      { who: c.partner3, text: 'QUOI ?! On y va ?! On y va !' },
+      { who: c.mates3[1], text: 'Les deux duos de Roméo au régional. Ça va faire parler !' },
     ],
-    choice: {
-      who: c => c.mates3[0], text: 'Vous viendrez nous soutenir au championnat régional ?',
-      options: [
-        { label: 'Aller les soutenir au Hangar', effects: (c) => ({ [c.mates3[0]]: 8, [c.mates3[1]]: 8, coach: 4 }), set: { regional: 'fan' }, after: (c) => [{ who: c.mates3[0], text: 'Génial ! Avec vous dans les tribunes, on va tout casser.' }], next: 'ch5_end' },
-        { label: 'Ne pas y aller', effects: (c) => ({ [c.mates3[0]]: -8, [c.mates3[1]]: -8 }), next: 'c5_quit_branch' },
-      ],
-    },
+    set: { regional: 'player', repeche: true },
+    next: 'ch5_end',
   },
   c5_quit_branch: { type: 'branch', to: (c) => (relSum(c) < 0 ? 'c5_end_bad' : 'c5_end_calm') },
   c5_end_bad: {
@@ -821,7 +821,7 @@ const CH5 = {
     next: 'end_calm',
   },
   end_calm: { type: 'end', chapter: 5, final: true, ending: 'calm', text: () => 'FIN : le padel du dimanche, entre amis. Une vie tranquille.' },
-  ch5_end: { type: 'end', chapter: 5, next: 'c6_start', text: (c) => (c.f.regional === 'fan' ? `${pair(c.mates3)} vont au régional. Toi, tu vas les soutenir.` : 'Tu es qualifié pour le championnat régional, au Hangar !') },
+  ch5_end: { type: 'end', chapter: 5, next: 'c6_start', text: (c) => (c.f.repeche ? 'Repêché au dernier moment : tu joueras le championnat régional, au Hangar !' : 'Tu es qualifié pour le championnat régional, au Hangar !') },
 };
 
 // ================================================================== chapitre 6 : le championnat régional (Hangar)
@@ -974,7 +974,7 @@ const CH6 = {
 };
 
 export const CHAPTERS = { 1: 'Chapitre 1 · Le commencement', 2: 'Chapitre 2 · L\'Open de La Ciotat', 3: 'Chapitre 3 · Le retour de Louka', 4: 'Chapitre 4 · Le tournoi de la Riviera', 5: 'Chapitre 5 · Une seule place', 6: 'Chapitre 6 · Le championnat régional', 7: 'Chapitre 7 · Le championnat national', 8: 'Chapitre 8 · Le Mondial', 9: 'Chapitre 9 · Le tournoi d\'honneur' };
-export const ENDINGS = { bad: 'Plus personne ne veut jouer avec toi', calm: 'Le padel du dimanche', apero: 'Les apéros du club', injury: 'La blessure', national: 'La Provence en souvenir', fair: 'La légende fair-play', dark: 'Le champion que personne n\'aime', friend: 'L\'ami fidèle' };
+export const ENDINGS = { apero: 'Les apéros du club', injury: 'La blessure', national: 'La Provence en souvenir', fair: 'La légende fair-play', dark: 'Le champion que personne n\'aime', friend: 'L\'ami fidèle' };
 import { CH7, CH8, CH9 } from './Story2.js';
 export const STEPS = { ...CH1, ...CH2, ...CH3, ...CH4, ...CH5, ...CH6, ...CH7, ...CH8, ...CH9 };
 export const chapterOf = (id) => (id in CH9 ? 9 : id in CH8 ? 8 : id in CH7 ? 7 : id in CH6 ? 6 : id in CH5 ? 5 : id in CH4 ? 4 : id in CH3 ? 3 : id in CH2 ? 2 : 1);

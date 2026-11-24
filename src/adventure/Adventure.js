@@ -255,7 +255,7 @@ export class AdventureUI {
     if (st.bus && sp) {
       // minibus blanc du club garé à côté du groupe
       const [cx, cz] = toWorld(st.venue, sp);
-      const bus = new THREE.Group(); bus.position.set(cx - 3.2, 0, cz); bus.userData.adv = true;
+      const bus = new THREE.Group(); bus.position.set(cx - 0.8, 0, cz - 5.2); bus.rotation.y = Math.PI / 2; bus.userData.adv = true;   // garé juste derrière le groupe, de profil
       const body = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.4, metalness: 0.2 }), glass = new THREE.MeshStandardMaterial({ color: 0x1a2533, roughness: 0.1, metalness: 0.5 }), dark = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 });
       const b1 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 5.4), body); b1.position.y = 1.4; bus.add(b1);
       for (const sx of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.7), glass); w.position.set(sx * 1.01, 1.9, -0.2); w.rotation.y = sx * Math.PI / 2; bus.add(w); }
