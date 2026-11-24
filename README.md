@@ -537,3 +537,4 @@ padel-sim/
 ### 0.58
 - Personnalités en tenue de leur club ou sélection, avec écusson et numéro : Payet, Nasri, Mandanda, Cheyrou, Squillaci (OM) ; Messi, Puyol, Piqué (Barça, rayures blaugrana) ; Zidane, Deschamps, Riner (France) ; Zlatan, Ménez, Jallet (PSG) ; Gonalons, Grenier (OL) ; Pires, Vieira (Arsenal) ; Lemoine (Saint-Étienne) ; Ben Arfa (Newcastle) ; Ocon (couleurs de son écurie).
 - Barbes moins « masque » : poils moins denses, teinte plus naturelle, ombre plus légère.
+- Nouveau : Stéphane Ruffier (72, national), maillot de Saint-Étienne n° 16.
