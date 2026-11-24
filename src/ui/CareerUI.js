@@ -93,7 +93,17 @@ export class CareerUI {
   }
 
   // ------------------------------------------------------------------ ouverture / fermeture
+  /** Ouvre directement la boutique ou l'éditeur depuis l'accueil (retour à l'accueil ensuite). */
+  openAt(screen) {
+    this.open();
+    if (!this.career) return;
+    this.fromMenu = true;
+    if (screen === 'editor') this.newDraft();
+    this.show(screen);
+  }
+
   open() {
+    this.fromMenu = false;
     this.career = Career.load(this.storage);
     this.visible = true;
     this.el.classList.remove('hidden');
@@ -110,6 +120,7 @@ export class CareerUI {
   hide() { this.visible = false; this.el.classList.add('hidden'); }
 
   show(screen, params = null) {
+    if (this.fromMenu && screen === 'hub') { this.fromMenu = false; this.game.setShowcase(null); this.close(); return; }
     const wasEditor = this.screen === 'editor' || this.screen === 'shop';
     this.screen = screen;
     this.shopSel = null;

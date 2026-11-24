@@ -65,6 +65,8 @@ export class Menu {
           { type: 'tile', label: 'Carrière', sub: 'Du tournoi de quartier au n° 1 mondial', cls: 'hero', run: () => { this.hide(); this.onCareer?.(); } },
           { type: 'tile', label: 'Aventure', sub: 'Une histoire, des choix, des rivaux', run: () => this.open('adventure') },
           { type: 'tile', label: 'Exhibition', sub: 'Un match rapide, vos réglages', run: () => this.open('exhibition') },
+          { type: 'tile', label: 'Boutique', sub: 'Raquettes, tenues, terrains', run: () => { this.hide(); this.onCareerScreen?.('shop'); } },
+          { type: 'tile', label: 'Mon joueur', sub: 'Apparence, tenue, équipement', run: () => { this.hide(); this.onCareerScreen?.('editor'); } },
           { type: 'tile', label: 'En ligne', sub: 'Matchs et tournois contre d\'autres joueurs', run: () => this.open('online') },
           { type: 'tile', label: 'Entraînement', sub: 'Ateliers libres', run: () => this.open('training') },
           { type: 'tile', label: 'Regarder', sub: 'Match entre bots', run: () => this.start({ mode: 'demo' }) },

@@ -26,7 +26,7 @@ const UNLOCKS = {
   5: (c) => [...(c.f.regional === 'player' ? [['venue:beach', 'Padel Beach Arena (terrain)']] : []), ...(c.f.girlfriend ? [['char:lea', 'Léa (personnage)']] : [])],
   6: (c) => [['char:chico', 'Chico (personnage)'], ...(c.f.contactFlavien ? [['char:flavien', 'Flavien le barman (personnage)']] : []), ...(c.f.national ? [['char:nathan-subrero', 'Nathan Subrero (personnage)'], ['venue:hangar', 'Le Hangar (terrain)']] : [])],
   7: (c) => (c.f.mondial ? [['venue:national', 'Centre national (terrain)'], ['char:zinedine-zidane', 'Zinedine Zidane (personnage)']] : []),
-  8: (c) => [['char:benjamin-tison', 'Benjamin Tison (personnage)'], ...(c.f.worldChamp ? [['venue:pro', 'Stade du Mondial (terrain)']] : [])],
+  8: (c) => [['char:benjamin-tison', 'Benjamin Tison (personnage)'], ...(c.f.worldChamp ? [['venue:pro', 'Stade du Mondial (terrain)'], ['racket:mondial', 'Raquette du Mondial (équipement)'], ['money', '50 000 € pour la boutique']] : [])],
 };
 const KEY = (slot) => `padel-arena.adventure.${slot}`;
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

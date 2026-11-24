@@ -10,7 +10,7 @@ const FREE_COLORS = ['blue', 'red', 'green', 'black', 'white', 'navy', 'grey', '
 // Matériel et tenue : payés en euros (dotations des tournois).
 const COLOR_PRICE = { silver: 900, bronze: 600, gold: 4000 };
 const HEADWEAR_PRICE = { none: 0, band: 0, cap: 40, capback: 50, visor: 45, bandana: 70 };
-const RACKET_PRICE = { classic: 0, carbon: 450, power: 450, touch: 450, smash: 600, viper: 700, tour: 1200, storm: 900, gold: 15000 };
+const RACKET_PRICE = { classic: 0, carbon: 450, power: 450, touch: 450, smash: 600, viper: 700, tour: 1200, storm: 900, gold: 15000, mondial: 99999 };
 const BAG_PRICE = { none: 0, blue: 90, black: 90, white: 120, pink: 120, gold: 6000 };
 // Terrains (et personnages, voir Characters.js) : payés en points boutique.
 const VENUE_PRICE = { municipal: 0, club: 0, ceyreste: 350, laciotat: 450, national: 800, prestige: 2500, beach: 1000, hangar: 500, pro: 1800 };

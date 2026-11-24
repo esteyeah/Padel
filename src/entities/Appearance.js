@@ -71,6 +71,7 @@ export const RACKETS = [
   { id: 'viper', label: 'Viper Hybrid', frame: 0x00c853, face: 0x00e676, base: 0x0b1f14, accent: 0x111111, pattern: 'hex', bonus: { drive: 1, lob: 1 } },
   { id: 'tour', label: 'Tour Carbon 18K', frame: 0x111316, face: 0xff6d00, base: 0x15171b, accent: 0x9aa0a8, pattern: 'weave', bonus: { drive: 2, smash: 1 } },
   { id: 'storm', label: 'Storm Attack', frame: 0x283593, face: 0xffeb3b, base: 0x0b1530, accent: 0x40c4ff, pattern: 'bolt', bonus: { smash: 2, strength: 1 } },
+  { id: 'mondial', label: 'Raquette du Mondial', frame: 0xf2efe8, face: 0xd4a72c, base: 0x0d1b2a, accent: 0xffffff, pattern: 'star', metal: true, bonus: { drive: 2, smash: 2, lob: 2, strength: 1 } },
   { id: 'gold', label: 'Gold Edition', frame: 0xd4a72c, face: 0xd4a72c, base: 0x17100b, pattern: 'goldleaf', accent: 0xfff3c4, metal: true, bonus: { drive: 1, smash: 1, strength: 1 } },
 ];
 export const BAGS = [

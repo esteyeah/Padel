@@ -558,3 +558,8 @@ padel-sim/
 - Supportrices plus féminines (silhouette fine, poitrine et hanches marquées).
 - Les 1 000 € de Hanouna sont crédités dans la boutique de la carrière.
 - Exhibition : partenaire et adversaires choisis dans une grille (nom, catégorie, note), avec aperçu du joueur.
+
+### 0.64
+- Accueil : nouvelles tuiles « Boutique » et « Mon joueur » (apparence, tenue, équipement), qui ouvrent directement la boutique et l'éditeur de la carrière.
+- Aventure : champion du monde = 50 000 € pour la boutique et la Raquette du Mondial (édition unique, gros bonus).
+- Flavien 51, Chico 47.
