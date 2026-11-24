@@ -84,7 +84,7 @@ export const VENUE_COURTS = {
   // [x, z, rotation, gazon] : trois courts bleus en diagonale, le gris en haut à gauche, le bordeaux en bas à droite
   national: [[0, 0], [28, 0]],
   prestige: [[0, 0], [-26, -12.5], [-26, 12.5], [26, -12.5], [26, 12.5]],
-  laciotat: [[6.9, -12], [-6.9, -12], [-6.9, 12, Math.PI], [6.9, 12, Math.PI]],
+  laciotat: [[6.9, -12], [-6.9, -12], [-11.2, 13.2, Math.PI / 2], [11.2, 13.2, Math.PI / 2]],
   ceyreste: [[-13.6, -5.8], [0, 0], [14.1, 6.5], [31.5, 16, Math.PI / 2, { base: '#7a1c26', hue: 355, sat: 58, light: 28 }], [-36, -28, Math.PI / 2, { base: '#45484d', hue: 215, sat: 5, light: 27 }]],
   club: [[0, 0], [-15.5, 0], [17.5, 0]],
   hangar: [[-6.2, -12.5], [6.2, -12.5], [-6.2, 12.5, Math.PI], [6.2, 12.5, Math.PI]],
@@ -941,7 +941,73 @@ function decorPrestige(out, renderer) {
     out.group.add(mesh([at(new THREE.CylinderGeometry(0.05, 0.06, 8, 8), fx, 4, fz)], new THREE.MeshStandardMaterial({ color: 0xd8dce2, metalness: 0.8, roughness: 0.3 })));
     out.group.add(mesh([at(new THREE.PlaneGeometry(1.6, 1.0), fx + 0.82, 7.3, fz)], new THREE.MeshStandardMaterial({ color: flagCols[i % 3], roughness: 0.7, side: THREE.DoubleSide })));
   }
-  bushGroup(out, [[-20, -24, 1.2], [20, -24, 1.2], [-20, 24, 1.2], [20, 24, 1.2], [-34, 0, 1.4], [34, 0, 1.4]], 0x3f6b30);
+  bushGroup(out, [[-20, -24, 1.2], [20, -24, 1.2], [-20, 24, 1.2], [20, 24, 1.2]], 0x3f6b30);
+  const white = new THREE.MeshStandardMaterial({ color: 0xf6f3ec, roughness: 0.45 });
+  const stone = new THREE.MeshStandardMaterial({ color: 0xe6dfd0, roughness: 0.6 });
+  // piscine à débordement avec plage en teck, transats et parasols
+  {
+    const pz = 28;
+    out.group.add(mesh([at(new THREE.BoxGeometry(22, 0.35, 11), 0, 0.175, pz)], stone, { shadow: true }));
+    flat(out, 21.6, 10.6, 0, pz, 0xb08a5a, 0.36, TX.photoTex('brown_planks_05', 8, 4));
+    out.group.add(mesh([at(new THREE.PlaneGeometry(16, 6), 0, 0.37, pz, -Math.PI / 2)], new THREE.MeshStandardMaterial({ color: 0x2aa6d6, roughness: 0.03, metalness: 0.25, emissive: 0x0a4a66, emissiveIntensity: 0.3 })));
+    out.group.add(mesh([at(new THREE.BoxGeometry(16.3, 0.06, 0.15), 0, 0.38, pz - 3.05), at(new THREE.BoxGeometry(16.3, 0.06, 0.15), 0, 0.38, pz + 3.05), at(new THREE.BoxGeometry(0.15, 0.06, 6), -8.1, 0.38, pz), at(new THREE.BoxGeometry(0.15, 0.06, 6), 8.1, 0.38, pz)], white));
+    const lounger = [], umb = [], umbP = [];
+    for (let i = 0; i < 7; i++) for (const sz of [-1, 1]) {
+      const lx = -7.2 + i * 2.4, lz = pz + sz * 4.4;
+      lounger.push(at(new THREE.BoxGeometry(0.7, 0.12, 1.8), lx, 0.62, lz), at(new THREE.BoxGeometry(0.7, 0.55, 0.12), lx, 0.85, lz - sz * 0.85, sz * 0.55));
+      if (Math.random() < 0.45) out.crowdSeats.push({ x: lx, y: 0.62, z: lz, ry: sz > 0 ? Math.PI : 0 });
+      if (i % 2 === 0) { umb.push(at(new THREE.ConeGeometry(1.25, 0.45, 10), lx + 1.2, 2.6, lz)); umbP.push(at(new THREE.CylinderGeometry(0.03, 0.03, 2.4, 6), lx + 1.2, 1.55, lz)); }
+    }
+    out.group.add(mesh(lounger, white, { shadow: true }), mesh(umb, new THREE.MeshStandardMaterial({ color: 0xf2e6c8, roughness: 0.7 }), { shadow: true }), mesh(umbP, gold));
+  }
+  // fontaine à vasques avec une raquette dorée monumentale, côté loge VIP
+  {
+    const fz = -31;
+    out.group.add(mesh([at(new THREE.CylinderGeometry(4, 4.2, 0.6, 32), 0, 0.3, fz), at(new THREE.CylinderGeometry(1.6, 1.8, 1.4, 24), 0, 0.7, fz), at(new THREE.CylinderGeometry(0.9, 0.6, 0.35, 20), 0, 1.9, fz)], stone, { shadow: true }));
+    out.group.add(mesh([at(new THREE.CylinderGeometry(3.8, 3.8, 0.02, 32), 0, 0.58, fz)], water));
+    const rk = makeRacketMesh(RACKETS.find((r) => r.id === 'gold') || RACKETS[0], designById('gold24'));
+    rk.scale.setScalar(6); rk.rotation.set(0, 0, -Math.PI / 2); rk.position.set(0, 2.05 + 0.02 * 6, fz); out.group.add(rk);
+  }
+  // hôtel de luxe (balcons, verre) et spa en bois et verre
+  {
+    const hx = 26, hz = -36;
+    out.group.add(mesh([at(new THREE.BoxGeometry(24, 15, 9), hx, 7.5, hz)], white, { shadow: true }));
+    const glass = new THREE.MeshStandardMaterial({ color: 0x7fb2c8, roughness: 0.05, metalness: 0.7, emissive: 0x1a2c38, emissiveIntensity: 0.4 });
+    out.windows.push(glass);
+    const bal = [], win = [];
+    for (let f = 0; f < 4; f++) for (let k = 0; k < 7; k++) {
+      const x = hx - 10.3 + k * 3.43, y = 2.2 + f * 3.4;
+      win.push(at(new THREE.PlaneGeometry(2.6, 2.3), x, y + 0.6, hz + 4.52));
+      bal.push(at(new THREE.BoxGeometry(3, 0.12, 1.1), x, y - 0.5, hz + 5.05), at(new THREE.BoxGeometry(3, 0.9, 0.04), x, y - 0.05, hz + 5.58));
+    }
+    out.group.add(mesh(win, glass), mesh(bal, new THREE.MeshStandardMaterial({ color: 0xdfe6ea, roughness: 0.2, metalness: 0.5, transparent: true, opacity: 0.85 })));
+    sign(out, renderer, 'RIVIERA HOTEL & SPA', [['#0d1b2a', '#1b263b'], '#d4a72c', '#d4a72c'], 9, hx, 15.8, hz + 4.6, 0);
+    // spa
+    out.group.add(mesh([at(new THREE.BoxGeometry(16, 4, 8), 26, 2, 34)], new THREE.MeshStandardMaterial({ color: 0x8a5f3c, roughness: 0.7 }), { shadow: true }));
+    out.group.add(mesh([at(new THREE.PlaneGeometry(14, 3), 26, 2, 29.98, 0, Math.PI)], glass));
+    out.group.add(mesh([at(new THREE.BoxGeometry(17, 0.35, 9), 26, 4.17, 34)], white));
+    sign(out, renderer, 'SPA', [['#2b1d12', '#5a3b22'], '#f5e6b0', '#f5e6b0'], 3, 26, 4.8, 29.4, Math.PI);
+  }
+  // bar à champagne sous pergola, côté ouest
+  {
+    const bx = -26, bz = 31;
+    out.group.add(mesh([at(new THREE.BoxGeometry(7, 1.1, 1.2), bx, 0.55, bz)], new THREE.MeshStandardMaterial({ color: 0x14273d, roughness: 0.4 }), { shadow: true }));
+    out.group.add(mesh([at(new THREE.BoxGeometry(7.2, 0.06, 1.4), bx, 1.13, bz)], gold));
+    const per = [];
+    for (const x of [-5, -1.7, 1.7, 5]) for (const z of [-2.5, 2.5]) per.push(at(new THREE.BoxGeometry(0.18, 3, 0.18), bx + x, 1.5, bz + z));
+    for (let k = 0; k < 9; k++) per.push(at(new THREE.BoxGeometry(0.12, 0.2, 5.4), bx - 5 + k * 1.25, 3.05, bz));
+    out.group.add(mesh(per, white, { shadow: true }));
+    sign(out, renderer, 'CHAMPAGNE BAR', [['#0d1b2a', '#1b263b'], '#d4a72c', '#d4a72c'], 4, bx, 2.2, bz - 0.62, Math.PI);
+    for (let i = 0; i < 5; i++) out.crowdSeats.push({ x: bx - 2.4 + i * 1.2, y: 0.03, z: bz - 1.4, ry: 0 });
+  }
+  // haies taillées et topiaires en cône le long des allées latérales
+  const hedgeM = new THREE.MeshStandardMaterial({ color: 0x2f5a2a, roughness: 0.95 });
+  const hedges = [], topi = [];
+  for (const sx of [-1, 1]) {
+    hedges.push(at(new THREE.BoxGeometry(1.0, 1.1, 50), sx * 35, 0.55, 0));
+    for (let z = -24; z <= 24; z += 6) topi.push(at(new THREE.ConeGeometry(0.75, 2.6, 12), sx * 35, 2.4, z));
+  }
+  out.group.add(mesh(hedges, hedgeM, { shadow: true }), mesh(topi, hedgeM, { shadow: true }));
   city(out, 0.7);
   horizon(out, { r0: 70, r1: 110, kinds: ['pine', 'plane', 'cypress'], n: 50 });
 }
@@ -958,7 +1024,7 @@ function decorLaCiotat(out, renderer) {
   // sol : terre sèche et herbe rase autour, béton gris-vert entre les courts
   const dirt = TX.groundTex(renderer, 'dirt', 40);
   flat(out, 300, 300, 0, 0, 0xf2e2c8, -0.03, dirt);
-  flat(out, 36.4, 52, 0, 0, 0xa8ad9f, -0.015, TX.groundTex(renderer, 'concrete', 10, 18));
+  flat(out, 46, 54, 0, 1, 0xa8ad9f, -0.015, TX.groundTex(renderer, 'concrete', 10, 18));
   flat(out, 3.4, 48, 0, 0, 0x8e9a8a, -0.008);
   flat(out, 30, 3.4, 0, 0, 0x8e9a8a, -0.007);
 
@@ -966,7 +1032,7 @@ function decorLaCiotat(out, renderer) {
   const navy = new THREE.MeshStandardMaterial({ color: 0x1f2a4d, roughness: 0.75, side: THREE.DoubleSide });
   const leg = new THREE.MeshStandardMaterial({ color: 0x2a2c30, metalness: 0.6, roughness: 0.4 });
   const wicker = new THREE.MeshStandardMaterial({ color: 0x9a6a3f, roughness: 0.85 });
-  for (const tz of [-6.2, 6.2]) {
+  for (const tz of [-6.2, 3.2]) {
     const g = new THREE.Group(); g.position.set(0, 0, tz); out.group.add(g);
     g.add(mesh([at(new THREE.ConeGeometry(2.2, 0.8, 4, 1, true), 0, 2.75, 0, 0, Math.PI / 4)], navy, { shadow: true }));
     g.add(mesh([at(new THREE.BoxGeometry(3.1, 0.25, 3.1), 0, 2.25, 0)], navy));
@@ -984,7 +1050,7 @@ function decorLaCiotat(out, renderer) {
   out.group.add(mesh(benchGeo, white, { shadow: true }));
 
   // --- tribune en gradins (est) qui monte à la plateforme du club-house, et escalier à rampe
-  const TX0 = 18.2, steps = 7, run = 0.95, rise = UP / steps;   // tribune un peu éloignée du court central
+  const TX0 = 23.4, steps = 7, run = 0.95, rise = UP / steps;   // tribune un peu éloignée du court central
   const conc = new THREE.MeshStandardMaterial({ color: 0x9ea3a8, roughness: 0.9 });
   const tread = new THREE.MeshStandardMaterial({ color: 0xb8bcc0, roughness: 0.85 });
   const st = [], tr = [];
@@ -1074,17 +1140,17 @@ function decorLaCiotat(out, renderer) {
   // --- végétation : pins d'Alep, palmiers, lauriers-roses en fleurs, agaves
   treeInstances(out, 'pine', [[-16, -30, 1.1], [-17, 6, 1.0], [16, -30, 1.2], [-40, 4, 1.1], [14, 34, 1.0], [-16, 34], [26, 26, 1.1], [30, -26], [-42, -34, 1.2], [8, -64], [-20, 62, 1.1], [40, 40]]);
   treeInstances(out, 'cypress', [[13.6, -26], [13.6, -30], [-15, -36]]);
-  bushGroup(out, [[-14.6, -10, 1.1], [-14.8, -16, 0.9], [-14.6, 10, 1.0], [-14.8, 16, 1.2], [14.6, 16, 1.0], [14.6, 22, 0.9], [-1, -27, 1.2], [3, 27, 1.0]], 0x3f6b30);
+  bushGroup(out, [[-14.6, -10, 1.1], [-14.8, -16, 0.9], [-14.6, 21.5, 1.0], [-8, 21.8, 1.2], [14.6, 21.6, 1.0], [8, 22, 0.9], [-1, -27, 1.2], [3, 27, 1.0]], 0x3f6b30);
   // fleurs de laurier-rose (petites taches roses sur certains buissons)
   const fl = [];
-  for (const [bx, bz, r] of [[-14.6, -10, 1.1], [-14.6, 10, 1.0], [14.6, 16, 1.0], [-1, -27, 1.2]]) for (let k = 0; k < 40; k++) {
+  for (const [bx, bz, r] of [[-14.6, -10, 1.1], [-14.6, 21.5, 1.0], [14.6, 21.6, 1.0], [-1, -27, 1.2]]) for (let k = 0; k < 40; k++) {
     const a = Math.random() * Math.PI * 2, e = Math.random() * 1.2;
     fl.push(at(new THREE.SphereGeometry(0.06, 5, 4), bx + Math.cos(a) * Math.sin(e) * r, r * 0.62 + Math.cos(e) * r * 0.78, bz + Math.sin(a) * Math.sin(e) * r));
   }
   out.group.add(mesh(fl, new THREE.MeshStandardMaterial({ color: 0xe85a8a, roughness: 0.7 })));
   // agaves panachés
   const ag = [], agY = [];
-  for (const [axx, azz] of [[-15.5, -2], [-15.8, 2.5], [15.2, 13], [16, -20], [-2.5, 27.5], [2.5, -27.5]]) {
+  for (const [axx, azz] of [[-15.5, -2], [-15.8, 2.5], [22.6, 21], [16, -20], [-2.5, 27.5], [2.5, -27.5]]) {
     for (let k = 0; k < 12; k++) {
       const a = (k / 12) * Math.PI * 2, tilt = 0.5 + (k % 3) * 0.2;
       const leaf = new THREE.ConeGeometry(0.09, 1.1, 4).translate(0, 0.55, 0).rotateX(tilt).rotateY(a);
@@ -1095,7 +1161,7 @@ function decorLaCiotat(out, renderer) {
   out.group.add(mesh(agY, new THREE.MeshStandardMaterial({ color: 0xa7b46a, roughness: 0.7 }), { shadow: true }));
   // palmiers près de la tribune
   const palm = palmTemplate();
-  const pts = [[16.4, 12.5], [26.5, 12.5], [26.5, -16.5]];
+  const pts = [[22.4, 4.5], [31.5, 12.5], [31.5, -16.5]];
   const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
   const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
   const M = new THREE.Matrix4();
@@ -1670,14 +1736,51 @@ function decorHangar(out, renderer) {
   // --- résine époxy dans les allées (sol plus soigné, légers reflets)
   const epoxy = new THREE.MeshStandardMaterial({ color: 0x5d6b66, roughness: 0.28, metalness: 0.05, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   out.group.add(mesh([at(new THREE.PlaneGeometry(2.3, 2 * 22), 0, 0.006, 0, -Math.PI / 2), at(new THREE.PlaneGeometry(2 * 14.2, 4.6), 0, 0.006, 0, -Math.PI / 2)], epoxy));
-  // --- panneaux « PISTE 1..4 » suspendus au-dessus de chaque court
+  // --- numéros de piste peints au sol dans l'allée, devant chaque court (ne gênent plus les caméras)
   [[-6.2, -12.5], [6.2, -12.5], [-6.2, 12.5], [6.2, 12.5]].forEach(([px, pz], i) => {
-    const tex = canvasTex(256, 96, (g) => { g.fillStyle = '#111418'; g.fillRect(0, 0, 256, 96); g.strokeStyle = '#ff9800'; g.lineWidth = 6; g.strokeRect(5, 5, 246, 86); g.fillStyle = '#ffffff'; g.font = 'bold 54px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center'; g.fillText(`PISTE ${i + 1}`, 128, 68); });
-    const m = new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.6, roughness: 0.5, side: THREE.DoubleSide });
-    const zEdge = pz + Math.sign(pz) * -10.6;
-    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.68), m); p.position.set(px, 5.7, zEdge); out.group.add(p);
-    out.group.add(mesh([at(new THREE.CylinderGeometry(0.006, 0.006, 1.6, 4), px - 0.8, 6.8, zEdge), at(new THREE.CylinderGeometry(0.006, 0.006, 1.6, 4), px + 0.8, 6.8, zEdge)], new THREE.MeshStandardMaterial({ color: 0x222222 })));
+    const tex = canvasTex(256, 128, (g) => { g.clearRect(0, 0, 256, 128); g.fillStyle = 'rgba(255,255,255,0.92)'; g.font = 'bold 84px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center'; g.fillText(`PISTE ${i + 1}`, 128, 100); }, { repeat: false });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 }));
+    m.rotation.x = -Math.PI / 2; m.rotation.z = px < 0 ? -Math.PI / 2 : Math.PI / 2;
+    m.position.set(px < 0 ? -12.6 : 12.6, 0.016, pz); out.group.add(m);
   });
+  // --- déco murale : affiches encadrées, néon, vitrine à trophées
+  {
+    const posters = [['TOURNOI', '#ff9800'], ['ÉCOLE', '#1e88e5'], ['NOCTURNE', '#7c4dff'], ['AMÉRICANO', '#43a047'], ['MIXTE', '#e53935'], ['SENIORS', '#00acc1']];
+    posters.forEach(([t, c], i) => {
+      const tex = canvasTex(192, 256, (g) => {
+        g.fillStyle = '#15171b'; g.fillRect(0, 0, 192, 256); g.fillStyle = c; g.fillRect(10, 10, 172, 236);
+        g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.arc(96, 110, 58, 0, 7); g.fill();
+        g.fillStyle = '#ffffff'; g.beginPath(); g.arc(96, 110, 22, 0, 7); g.fill();
+        g.font = 'bold 34px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center'; g.fillText(t, 96, 214);
+        g.font = '18px Arial'; g.fillText('HANGAR PADEL', 96, 238);
+      });
+      const sx = i < 3 ? -1 : 1, z = -20 + (i % 3) * 20 + 4.5;
+      const fr = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.5), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 }));
+      fr.position.set(sx * (X1 - 0.08), 2.4, z); fr.rotation.y = -sx * Math.PI / 2; out.group.add(fr);
+      out.group.add(mesh([at(new THREE.BoxGeometry(0.04, 1.6, 1.25), sx * (X1 - 0.05), 2.4, z)], new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5 })));
+    });
+    // néon « PLAY HARD » sur le mur est
+    const neon = canvasTex(512, 128, (g) => { g.fillStyle = '#000'; g.fillRect(0, 0, 512, 128); g.shadowColor = '#ff2bd6'; g.shadowBlur = 24; g.strokeStyle = '#ff7bf0'; g.lineWidth = 6; g.font = 'bold 86px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center'; g.strokeText('PLAY HARD', 256, 96); });
+    const nm = new THREE.MeshStandardMaterial({ map: neon, emissive: 0xffffff, emissiveMap: neon, emissiveIntensity: 1.4, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    const n = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), nm); n.position.set(X1 - 0.1, 4.2, 0); n.rotation.y = -Math.PI / 2; out.group.add(n);
+  }
+  // --- accueil plus soigné : tapis, salon (canapés, table basse), vitrine à trophées, écran des réservations
+  {
+    const x = X0 + 0.05;
+    // banquette contre le mur, à côté du sas
+    out.group.add(mesh([at(new THREE.BoxGeometry(0.6, 0.42, 2.2), x + 0.4, 0.21, 10.2), at(new THREE.BoxGeometry(0.15, 0.7, 2.2), x + 0.12, 0.6, 10.2)], new THREE.MeshStandardMaterial({ color: 0x2f3e46, roughness: 0.85 }), { shadow: true }));
+    out.crowdSeats.push({ x: x + 0.45, y: 0.42, z: 10.6, ry: Math.PI / 2 });
+    // vitrine à trophées (verre + coupes dorées)
+    const gold = new THREE.MeshStandardMaterial({ color: 0xd4a72c, metalness: 0.9, roughness: 0.25 });
+    out.group.add(mesh([at(new THREE.BoxGeometry(0.5, 2, 1.8), x + 0.3, 1, 7.6)], new THREE.MeshStandardMaterial({ color: 0x1b1d22, roughness: 0.5 }), { shadow: true }));
+    const cups = [];
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 3; k++) cups.push(at(new THREE.CylinderGeometry(0.07, 0.03, 0.2, 10), x + 0.45, 0.65 + r * 0.55, 7.0 + k * 0.6), at(new THREE.CylinderGeometry(0.05, 0.06, 0.05, 10), x + 0.45, 0.53 + r * 0.55, 7.0 + k * 0.6));
+    out.group.add(mesh(cups, gold));
+    out.group.add(mesh([at(new THREE.PlaneGeometry(1.8, 1.9), x + 0.56, 1, 7.6, 0, Math.PI / 2)], new THREE.MeshStandardMaterial({ color: 0xcfe8ee, roughness: 0.05, transparent: true, opacity: 0.25 })));
+    const book = canvasTex(256, 160, (g) => { g.fillStyle = '#0b1020'; g.fillRect(0, 0, 256, 160); g.fillStyle = '#4fc3f7'; g.font = 'bold 22px Arial'; g.fillText('RÉSERVATIONS', 16, 30); g.font = '16px Arial'; ['18:00  Piste 1  ✔', '18:00  Piste 2  ✔', '19:30  Piste 3  libre', '19:30  Piste 4  ✔', '21:00  Piste 1  libre'].forEach((t, i) => { g.fillStyle = t.includes('libre') ? '#a5d6a7' : '#ffffff'; g.fillText(t, 16, 62 + i * 20); }); });
+    const bm = new THREE.MeshStandardMaterial({ map: book, emissive: 0xffffff, emissiveMap: book, emissiveIntensity: 0.6 });
+    out.group.add(mesh([at(new THREE.PlaneGeometry(1.4, 0.9), x + 0.07, 2.0, -6.8, 0, Math.PI / 2)], bm));
+  }
   // --- fanions de couleur sous le cintre, d'un mur à l'autre, au-dessus de l'allée centrale
   const flagCols = [0xff9800, 0xffffff, 0x1e88e5, 0xffd400, 0xe53935];
   const flags = flagCols.map(() => []);

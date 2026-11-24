@@ -272,6 +272,11 @@ export const CHATTER = {
     ace: ['Normal, j\'étais pas prêt.', 'Attends, j\'étais pas prêt là !', 'Celle-là ne compte pas, je regardais ailleurs.', 'Tu sers avant que je sois en place, c\'est facile.'],
     lost: ['Le vent ! Il y a du vent, là !', 'Partenaire, tu étais où ?!', 'Elle était dehors. Je l\'ai vue dehors.', 'Mon cordage a lâché. Enfin, presque.', 'Le soleil ! J\'avais le soleil dans les yeux.', 'Coup de chance. Pur coup de chance.', 'Je te l\'ai laissé, par politesse.', 'Ce terrain est penché, j\'en suis sûr.', 'C\'est mes chaussures. Elles glissent.', 'Tu m\'as déconcentré avec ton t-shirt.'],
   },
+  'timeo-boulhol': {
+    // Timéo crie (et devient tout rouge) quand il rate
+    miss: ['AAAAAAH !', 'NOOOON ! Mais c\'est pas possible !', 'RAAAH ! Je l\'avais !', 'MAIS QU\'EST-CE QUE JE FAIS ?!', 'Pfff… AAARGH !', 'Elle était FACILE celle-là !'],
+    won: ['Ouais !', 'Allez !', 'Vamos !'],
+  },
   'eliott-hanras': {
     great: ['Mesdames et messieurs, l\'artiste vous salue ! *révérence*', 'Ce coup-là, je l\'ai appris dans un rêve.', 'Applaudissez, c\'est gratuit !'],
     won: ['Tralala, un point pour le troubadour !', 'Encore un et je vous chante une chanson.', 'La-la-la, je suis là !'],

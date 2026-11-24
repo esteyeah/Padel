@@ -494,3 +494,9 @@ padel-sim/
 - Hangar : le toit ne couvrait qu'une moitié de la salle (on voyait le ciel au-dessus de la buvette) ; pignon est visible de l'intérieur ; vrai sas d'entrée vitré avec bandeau lumineux, paillasson et plantes.
 - Nouveau lieu « Riviera Padel Palace » : complexe de luxe, court central entouré de tribunes, loge VIP vitrée, écrans géants, lounge vitré, quatre courts annexes sous des voiles d'ombrage, bassins, palmiers, drapeaux. Tournois « Riviera Masters » (national) et « Grand Prix de la Riviera » (mondial) ; demi-finales et finales sur le court central.
 - Centre national : court n° 2 derrière la tribune latérale, avec ses propres gradins.
+
+### 0.51
+- Hangar : numéros de piste peints au sol (plus de panneaux suspendus devant les caméras), affiches encadrées et néon sur les murs, vitrine à trophées, écran des réservations et banquette à l'accueil.
+- Riviera Padel Palace : piscine à débordement avec plage en teck, transats et parasols ; fontaine avec raquette dorée monumentale ; hôtel de luxe à balcons ; spa ; bar à champagne sous pergola ; haies taillées et topiaires.
+- Tennis de La Ciotat : courts 3 et 4 tournés d'un quart de tour, côte à côte ; tribune et palmiers reculés.
+- Timéo crie et devient tout rouge quand il rate.

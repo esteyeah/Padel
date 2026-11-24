@@ -659,6 +659,12 @@ export class Game {
       const lines = ch[p.name];
       if (!lines) continue;
       let pool = null;
+      // faute directe de ce joueur : réplique « miss » (Timéo crie et devient rouge), sans limite stricte
+      if (lines.miss && d.winner !== p.side && shooter === p && Math.random() < 0.8) {
+        p.avatar.flush?.(2.6);
+        this.hud.speech(p.name, lines.miss[Math.floor(Math.random() * lines.miss.length)], p.side);
+        return;
+      }
       const aceAgainst = d.winner !== p.side && this.lastShot?.type === 'serve' && this.rallyHits <= 1 && !/faute/i.test(d.reason);
       if (aceAgainst && lines.ace) pool = lines.ace;
       else if (d.winner === p.side && shooter === p && great) pool = lines.great;

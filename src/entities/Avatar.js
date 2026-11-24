@@ -621,7 +621,21 @@ export class Avatar {
   /** Pas d'allègement : petit saut d'équilibre quand l'adversaire frappe. */
   splitStep() { this.split = 0.32; }
 
+  /** Le visage rougit (colère) pendant `dur` secondes. */
+  flush(dur = 2.5) { this._flushT = dur; this._flushDur = dur; }
+
   animate(dt, s) {
+    // visage rouge de colère, qui revient progressivement
+    if (this._flushT > 0 || this._flushOn) {
+      this._flushT = Math.max(0, (this._flushT || 0) - dt);
+      const k = this._flushT > 0 ? Math.min(1, this._flushT / Math.min(0.8, this._flushDur)) : 0;
+      for (const m of [this.mat.faceSkin, this.mat.skin]) {
+        if (!m) continue;
+        m.userData.base ??= m.color.clone();
+        m.color.copy(m.userData.base).lerp(new THREE.Color(0xff3a2a), 0.55 * k);
+      }
+      this._flushOn = k > 0;
+    }
     const run = Math.min(1, s.speed / 4.5);
     this.phase += dt * (6 + s.speed * 2.1) * (this.sty?.tempo || 1);
     const ph = this.phase;
