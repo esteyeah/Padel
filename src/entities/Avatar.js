@@ -113,6 +113,7 @@ function tattooTexture(skin) {
 }
 
 /** Écusson de club (Bastia : bleu, tête de Maure ; OM : bleu ciel). */
+const CRESTS = { fcb: ['#a50044', '#f2c94c', 'FCB'], fra: ['#1d2f6f', '#ffffff', 'FFF'], psg: ['#0b1f4d', '#d7262e', 'PSG'], ol: ['#1d3f8f', '#e53935', 'OL'], ars: ['#db0007', '#f2c94c', 'AFC'], asse: ['#0a7a3e', '#ffffff', 'ASSE'], nufc: ['#111111', '#ffffff', 'NUFC'] };
 function crestTexture(kind) {
   return canvas(64, 76, (g, W, H) => {
     g.beginPath(); g.moveTo(4, 4); g.lineTo(W - 4, 4); g.lineTo(W - 4, H * 0.55); g.quadraticCurveTo(W / 2, H, W / 2, H - 2); g.quadraticCurveTo(W / 2, H, 4, H * 0.55); g.closePath();
@@ -121,6 +122,10 @@ function crestTexture(kind) {
       g.fillStyle = '#ffffff'; g.font = 'bold 11px sans-serif'; g.textAlign = 'center'; g.fillText('SC BASTIA', W / 2, 17);
       g.fillStyle = '#111'; g.beginPath(); g.arc(W / 2, 40, 10, 0, Math.PI * 2); g.fill();
       g.fillStyle = '#fff'; g.fillRect(W / 2 - 10, 34, 20, 3);
+    } else if (CRESTS[kind]) {
+      const [bg, fg, txt] = CRESTS[kind];
+      g.fillStyle = bg; g.fill(); g.lineWidth = 3; g.strokeStyle = fg; g.stroke();
+      g.fillStyle = fg; g.textAlign = 'center'; g.font = `bold ${txt.length > 3 ? 13 : 18}px sans-serif`; g.fillText(txt, W / 2, 38);
     } else {
       g.fillStyle = 'rgba(0,0,0,0)'; g.fill();
       g.strokeStyle = '#1f4fbf'; g.lineWidth = 5; g.font = 'bold 40px serif'; g.fillStyle = '#1f4fbf'; g.textAlign = 'center';
@@ -133,7 +138,7 @@ function sponsorTexture(kind) {
   return canvas(128, 44, (g, W, H) => {
     g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillStyle = kind === 'om' ? '#1f4fbf' : 'rgba(255,255,255,0.9)';
-    g.fillText(kind === 'om' ? 'CMA' : '|||', W / 2, H / 2);
+    g.fillText(kind === 'om' ? 'CMA' : kind === 'bastia' ? '|||' : '', W / 2, H / 2);
   });
 }
 
@@ -190,13 +195,13 @@ function hairNormal() {
 }
 /** Maillot technique : panneaux latéraux et coutures teintés par la couleur secondaire. */
 const _jersey = new Map();
-function jerseyTex(accent, style = 'tech') {
-  const key = `${accent}|${style}`;
+function jerseyTex(accent, style = 'tech', base = null) {
+  const key = `${accent}|${style}|${base}`;
   if (_jersey.has(key)) return _jersey.get(key);
   const ac = new THREE.Color(accent);
   const A = `#${ac.getHexString()}`;
   const t = canvas(256, 128, (g, W, H) => {
-    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    g.fillStyle = base != null ? `#${new THREE.Color(base).getHexString()}` : '#ffffff'; g.fillRect(0, 0, W, H);
     // motifs de maillot (u = tour du corps, v = hauteur) ; le blanc prend la couleur principale
     g.fillStyle = A;
     if (style === 'stripes') for (let x = 0; x < W; x += 32) g.fillRect(x, 0, 14, H);
@@ -263,13 +268,13 @@ export class Avatar {
       : new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.82, sheen: 0.6, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xffffff), normalMap: knitNormal(), normalScale: new THREE.Vector2(0.35, 0.35) }));
     const mt = a.metal || {};
     const mat = {
-      shirt: (() => { const m = fabric(a.shirt, mt.shirt); if (!mt.shirt) { m.map = jerseyTex(a.accent, a.kitStyle || 'tech'); } return m; })(),
+      shirt: (() => { const m = fabric(a.shirt, mt.shirt); if (!mt.shirt) { const club = a.jersey && a.jersey !== 'tee' && a.kitStyle && a.kitStyle !== 'tech'; m.map = jerseyTex(a.accent, a.kitStyle || 'tech', club ? a.shirt : null); if (club) m.color.set(0xffffff); } return m; })(),
       accent: fabric(a.accent, mt.accent),
       shorts: fabric(a.shorts, mt.shorts),
       // peau : léger voile chaud (imite la diffusion sous la peau) ; cheveux : reflets
       skin: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.skin).multiplyScalar(0.95), roughness: 0.55, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
       hairCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.85), alphaMap: strandTexture(), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.7, metalness: 0.0, envMapIntensity: 0.15 }),
-      beardCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).multiplyScalar(1.25), alphaMap: beardTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, envMapIntensity: 0.15 }),
+      beardCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).lerp(new THREE.Color(a.skin), 0.22).multiplyScalar(1.15), alphaMap: beardTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, envMapIntensity: 0.15 }),
       hair: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.72), map: hairTex(), normalMap: hairNormal(), normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.5, sheen: 0.8, sheenRoughness: 0.3, sheenColor: new THREE.Color(a.hair).lerp(new THREE.Color(0xffffff), 0.4) }),
       faceSkin: new THREE.MeshPhysicalMaterial({ color: 0xf2e4dc, vertexColors: true, roughness: 0.55, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.3, 0.3), sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
       white: M(0xd9d0c6, 0.3),
@@ -319,7 +324,7 @@ export class Avatar {
     this.chest = group(this.spine, 0, 0.2, 0);
     // détails de maillot (Bastia, OM, t-shirt) et médailles
     const chestFront = 0.118 + BL * 0.02 + (a.female ? 0.03 : 0.008) + 0.012;
-    if (a.jersey === 'bastia' || a.jersey === 'om') {
+    if (a.jersey && a.jersey !== 'tee') {
       const crest = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.07), new THREE.MeshStandardMaterial({ map: crestTexture(a.jersey), transparent: true, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2 }));
       crest.position.set(0.07 * B, 0.13, chestFront - 0.004); crest.rotation.y = 0.28;
       this.chest.add(crest);
@@ -580,7 +585,7 @@ export class Avatar {
       const bc = mat.beardCard, lod = a.lod === 'low' ? 0.45 : 1;
       const bcard = (pred, o) => P.add(h, hairCards(F, pred, { seed: 31, segs: 2, rootOff: 0.001, minScale: 1.0, ...o }), bc);
       const B = a.beard;
-      if (B === 'beard' || B === 'full' || B === 'short') bcard(Z.beard, { count: (B === 'full' ? 16000 : 12000) * lod, len: B === 'full' ? [0.014, 0.024] : B === 'short' ? [0.005, 0.009] : [0.009, 0.015], width: 0.012, flow: FLOWS.beard, lift: 0.3, cross: 0.15, maxOut: 0.008 });
+      if (B === 'beard' || B === 'full' || B === 'short') bcard(Z.beard, { count: (B === 'full' ? 9000 : 6500) * lod, len: B === 'full' ? [0.014, 0.024] : B === 'short' ? [0.005, 0.009] : [0.009, 0.015], width: 0.012, flow: FLOWS.beard, lift: 0.3, cross: 0.15, maxOut: 0.008 });
       if (B === 'goatee' || B === 'vandyke') bcard(Z.goatee, { count: 15000 * lod, len: [0.008, 0.015], width: 0.009, flow: FLOWS.beard, lift: 0.3, maxOut: 0.007 });
       if (['moustache', 'goatee', 'full', 'beard', 'vandyke', 'horseshoe'].includes(B)) bcard(Z.moustache, { count: 18000 * lod, len: [0.005, 0.009], width: 0.006, flow: FLOWS.moustache, lift: 0.2, maxOut: 0.004 });
       if (B === 'chinstrap') bcard(Z.chinstrap, { count: 16000 * lod, len: [0.008, 0.012], width: 0.011, flow: FLOWS.beard, lift: 0.4 });

@@ -139,7 +139,7 @@ export function makeFace(a) {
       if (sc > 0) tmp.lerp(scalpShade, Math.min(0.9, sc * (['shaved', 'buzz'].includes(a.hairStyle) ? 0.7 : 1)));
     }
     if (a.beard && a.beard !== 'none') {
-      const k = beardEdge(d) * (['stubble', 'short'].includes(a.beard) ? 0.75 : ['beard', 'full', 'chinstrap'].includes(a.beard) ? 0.92 : 0.3);
+      const k = beardEdge(d) * (['stubble', 'short'].includes(a.beard) ? 0.6 : ['beard', 'full', 'chinstrap'].includes(a.beard) ? 0.7 : 0.3);
       if (k > 0) tmp.lerp(stubble, k);
     }
     if (['moustache', 'pencil', 'goatee', 'full', 'beard', 'horseshoe', 'vandyke', 'short'].includes(a.beard)) {

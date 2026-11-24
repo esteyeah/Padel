@@ -533,3 +533,7 @@ padel-sim/
 - Roméo et Louka jouables ; Nathan Subrero à 67 ; Jean et Raf d'après les photos (Jean : banane châtain et fine moustache ; Raf : coupe rasée).
 - Exhibition : choix du partenaire et des adversaires parmi tous les personnages.
 - Cérémonie : le trophée est tenu dans les deux mains (il flottait au-dessus de la tête) ; la petite coupe amateur est un peu plus grande pour rester visible.
+
+### 0.58
+- Personnalités en tenue de leur club ou sélection, avec écusson et numéro : Payet, Nasri, Mandanda, Cheyrou, Squillaci (OM) ; Messi, Puyol, Piqué (Barça, rayures blaugrana) ; Zidane, Deschamps, Riner (France) ; Zlatan, Ménez, Jallet (PSG) ; Gonalons, Grenier (OL) ; Pires, Vieira (Arsenal) ; Lemoine (Saint-Étienne) ; Ben Arfa (Newcastle) ; Ocon (couleurs de son écurie).
+- Barbes moins « masque » : poils moins denses, teinte plus naturelle, ombre plus légère.

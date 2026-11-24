@@ -53,6 +53,7 @@ export function npcSpec(npc, kit, lane, idle = false) {
     // tenue personnelle (maillot de club, t-shirt) : on la garde, même en tournoi
     if (npc.look.shirtHex != null) Object.assign(appearance, { shirt: r.shirt, accent: r.accent, shorts: r.shorts });
     if (npc.look.number) appearance.number = npc.look.number;
+    if (npc.look.kitStyle) appearance.kitStyle = npc.look.kitStyle;
   }
   return {
     name: npc.short, hand: npc.hand === 'L' ? -1 : 1, lane, stats: { ...toStats(npc.attrs), power: npc.power || 1 }, appearance, idle,

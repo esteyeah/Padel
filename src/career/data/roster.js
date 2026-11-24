@@ -211,6 +211,33 @@ export const CELEBRITIES = [
   celeb('Rafael Nadal', 85, 'allround', ['national', 'pro'], { hand: 'L', tweaks: { stamina: 8, strength: 5, lob: 3 }, note: 'Très fort tactiquement et physiquement.', power: 1.08, look: { skin: 0xc68a5e, hair: 0x2a1a10, eye: 0x3a2412, hairStyle: 'surfer', beard: 'stubble', headwear: 'bandana', buildId: 'muscular', height: 1.04, chin: 1.2, nose: 1.25 , stance: { crouch: 1.25, bounce: 1.3, tempo: 1.1, back: 1.2, finish: 1.4, twist: 1.3, lean: 0.08 } } }),
 ];
 
+// Tenues des personnalités : le maillot de leur club (ou sélection) et leur numéro.
+const KITS_OF = {
+  'dimitri-payet': { jersey: 'om', shirtHex: 0xf6f6f3, accentHex: 0x2faee0, shortsHex: 0xf6f6f3, number: 10 },
+  'steve-mandanda': { jersey: 'om', shirtHex: 0xf6f6f3, accentHex: 0x2faee0, shortsHex: 0xf6f6f3, number: 30 },
+  'samir-nasri': { jersey: 'om', shirtHex: 0xf6f6f3, accentHex: 0x2faee0, shortsHex: 0xf6f6f3, number: 22 },
+  'benoit-cheyrou': { jersey: 'om', shirtHex: 0xf6f6f3, accentHex: 0x2faee0, shortsHex: 0xf6f6f3, number: 7 },
+  'sebastien-squillaci': { jersey: 'om', shirtHex: 0xf6f6f3, accentHex: 0x2faee0, shortsHex: 0xf6f6f3, number: 4 },
+  'lionel-messi': { jersey: 'fcb', kitStyle: 'stripes', shirtHex: 0x004d98, accentHex: 0xa50044, shortsHex: 0x004d98, number: 10 },
+  'carles-puyol': { jersey: 'fcb', kitStyle: 'stripes', shirtHex: 0x004d98, accentHex: 0xa50044, shortsHex: 0x004d98, number: 5 },
+  'gerard-pique': { jersey: 'fcb', kitStyle: 'stripes', shirtHex: 0x004d98, accentHex: 0xa50044, shortsHex: 0x004d98, number: 3 },
+  'zinedine-zidane': { jersey: 'fra', shirtHex: 0x1d2f6f, accentHex: 0xffffff, shortsHex: 0xffffff, number: 10 },
+  'didier-deschamps': { jersey: 'fra', shirtHex: 0x1d2f6f, accentHex: 0xffffff, shortsHex: 0xffffff, number: 7 },
+  'teddy-riner': { jersey: 'fra', shirtHex: 0x1d2f6f, accentHex: 0xe53935, shortsHex: 0x1d2f6f, number: 1 },
+  'zlatan-ibrahimovic': { jersey: 'psg', kitStyle: 'half', shirtHex: 0x0b1f4d, accentHex: 0xd7262e, shortsHex: 0x0b1f4d, number: 10 },
+  'jeremy-menez': { jersey: 'psg', kitStyle: 'half', shirtHex: 0x0b1f4d, accentHex: 0xd7262e, shortsHex: 0x0b1f4d, number: 7 },
+  'christophe-jallet': { jersey: 'psg', kitStyle: 'half', shirtHex: 0x0b1f4d, accentHex: 0xd7262e, shortsHex: 0x0b1f4d, number: 26 },
+  'maxime-gonalons': { jersey: 'ol', shirtHex: 0xf6f6f3, accentHex: 0x1d3f8f, shortsHex: 0xf6f6f3, number: 21 },
+  'clement-grenier': { jersey: 'ol', shirtHex: 0xf6f6f3, accentHex: 0x1d3f8f, shortsHex: 0xf6f6f3, number: 7 },
+  'robert-pires': { jersey: 'ars', kitStyle: 'shoulders', shirtHex: 0xdb0007, accentHex: 0xffffff, shortsHex: 0xffffff, number: 7 },
+  'patrick-vieira': { jersey: 'ars', kitStyle: 'shoulders', shirtHex: 0xdb0007, accentHex: 0xffffff, shortsHex: 0xffffff, number: 4 },
+  'fabien-lemoine': { jersey: 'asse', shirtHex: 0x0a7a3e, accentHex: 0xffffff, shortsHex: 0xffffff, number: 28 },
+  'hatem-ben-arfa': { jersey: 'nufc', kitStyle: 'stripes', shirtHex: 0xf6f6f3, accentHex: 0x111111, shortsHex: 0x111111, number: 10 },
+  'esteban-ocon': { jersey: 'tee', shirtHex: 0x0a5bd8, accentHex: 0xff69b4, shortsHex: 0x0b1a33, number: 31 },
+};
+for (const c of CELEBRITIES) if (KITS_OF[c.id]) c.look = { ...(c.look || {}), kitStyle: 'tech', ...KITS_OF[c.id] };
+
+
 /** L'entraîneur des séances d'entraînement (fictif). */
 export const COACH = makeNpc('Coach Roméo', 55, 'allround', { short: 'ROMÉO', look: { skin: SK.light, hair: 0x15100c, hairStyle: 'bun', beard: 'moustache', buildId: 'athletic', height: 1.03, headwear: 'cap', capColor: 0x1c2733, shirtHex: 0x1c2733, accentHex: 0x1c2733, shortsHex: 0x111418 } });
 
