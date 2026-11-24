@@ -211,7 +211,7 @@ export const CELEBRITIES = [
 ];
 
 /** L'entraîneur des séances d'entraînement (fictif). */
-export const COACH = makeNpc('Coach Rémi', 50, 'allround', { short: 'COACH', look: { skin: SK.tan, hair: HC.grey, hairStyle: 'receding', beard: 'moustache', buildId: 'stocky', headwear: 'cap' } });
+export const COACH = makeNpc('Coach Roméo', 55, 'allround', { short: 'ROMÉO', look: { skin: SK.light, hair: 0x15100c, hairStyle: 'ponytail', beard: 'stubble', buildId: 'athletic', height: 1.03, headwear: 'cap', capColor: 0x1c2733, shirtHex: 0x1c2733, accentHex: 0x1c2733, shortsHex: 0x111418 } });
 
 // ------------------------------------------------------------------ joueurs génériques (fictifs)
 const FIRST = ['Léo', 'Hugo', 'Nathan', 'Enzo', 'Lucas', 'Théo', 'Maxime', 'Julien', 'Antoine', 'Romain', 'Kévin', 'Bastien', 'Clément', 'Adrien', 'Mathis', 'Yanis', 'Sami', 'Karim', 'Diego', 'Pablo', 'Marco', 'Luca', 'Tomás', 'Iker', 'Nuno', 'Rui', 'Jonas', 'Erik', 'Oscar', 'Milan'];

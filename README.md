@@ -516,3 +516,8 @@ padel-sim/
 - Cheveux en mèches (« hair cards ») : des centaines de petites mèches texturées plantées sur le crâne, orientées selon la coupe (raie, frange, gravité, ondulations, boucles) ; fini les coupes lisses.
 - Barbes et moustaches en poils drus (plus de coques noires), ombre de barbe peinte sous les poils.
 - Yeux : blanc moins éclatant. Personnages de décor allégés (moins de mèches).
+
+### 0.55
+- Aventure : deux emplacements de sauvegarde ; vraies cinématiques sur le court (personnages qui se parlent) ; les conséquences d'un choix ne sont plus annoncées, elles arrivent après coup (sauf la description des trois partenaires) ; Eliott vexé mais pas rancunier ; le coach devient Roméo (cheveux noirs attachés, casquette unie).
+- Chapitre 2 « Le tournoi de Ceyreste » : 1er tour gagné d'office, 2e tour abordable mais perdable (rester encourager les copains ou partir), match des amis (encourager, déconcentrer ou rien), demi-finale difficile contre eux avec dialogues selon ton attitude, finale contre Camille et Timéo, remise des prix par le maire, verre au club-house où l'équipe qui a été la plus loin chambre l'autre. Jauge de réputation et situations de fair-play : balle litigieuse, et avec Raf, sabotage des raquettes adverses (le raisonner, le dénoncer ou laisser faire).
+- Spectateurs assis : chaises / sols corrigés à La Ciotat (terrasse) et au Riviera (loge VIP).

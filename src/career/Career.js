@@ -75,7 +75,7 @@ export function drillCutscene(id, myName = 'VOUS') {
     chase: 'La machine va sortir des balles du terrain, par la porte ou par-dessus le grillage. Lis la trajectoire, sors du court et renvoie-la depuis dehors. Pas de dedans : de dehors !',
   }[id] || d.desc;
   return [
-    { side: -1, label: 'Coach Rémi', text: intro },
+    { side: -1, label: 'Coach Roméo', text: intro },
     { side: 1, label: myName, text: ['C\'est parti, coach.', 'Facile.', 'Je suis prêt.', 'On y va !'][Math.floor(Math.random() * 4)] },
   ];
 }

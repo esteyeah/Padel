@@ -892,7 +892,7 @@ function decorPrestige(out, renderer) {
   out.group.add(mesh([at(new THREE.BoxGeometry(14, 0.3, 3), 0, 3.3, vipZ), at(new THREE.BoxGeometry(14, 0.25, 3.2), 0, 6.2, vipZ)], new THREE.MeshStandardMaterial({ color: 0xf2efe8, roughness: 0.5 }), { shadow: true }));
   out.group.add(mesh([at(new THREE.BoxGeometry(14, 2.6, 0.06), 0, 4.75, vipZ + 1.45)], new THREE.MeshStandardMaterial({ color: 0x9cc7d8, roughness: 0.05, metalness: 0.6, transparent: true, opacity: 0.45 })));
   out.group.add(mesh([at(new THREE.BoxGeometry(14.2, 0.08, 0.08), 0, 6.05, vipZ + 1.5), at(new THREE.BoxGeometry(14.2, 0.08, 0.08), 0, 3.5, vipZ + 1.5)], gold));
-  for (let i = 0; i < 10; i++) out.crowdSeats.push({ x: -5.6 + i * 1.25, y: 3.47, z: vipZ + 0.6, ry: Math.PI });
+  for (let i = 0; i < 10; i++) out.crowdSeats.push({ x: -5.6 + i * 1.25, y: 3.47, floor: 3.45, z: vipZ + 0.6, ry: Math.PI });
   sign(out, renderer, 'LOGE VIP', [['#0d1b2a', '#1b263b'], '#d4a72c', '#d4a72c'], 4, 0, 6.8, vipZ + 1.5, 0);
   // écrans géants dans les angles
   const scr = new THREE.MeshStandardMaterial({ color: 0x0b1020, emissive: 0x6fd3ff, emissiveIntensity: 0.3 });
@@ -1082,7 +1082,7 @@ function decorLaCiotat(out, renderer) {
   for (let i = 0; i < 5; i++) {
     const tz = -7 + i * 3.5;
     tables.push(at(new THREE.CylinderGeometry(0.4, 0.4, 0.04, 14), 0.4, 0.74, tz), at(new THREE.CylinderGeometry(0.04, 0.04, 0.72, 6), 0.4, 0.36, tz));
-    for (const dz of [-0.6, 0.6]) if (Math.random() < 0.7) out.crowdSeats.push({ x: plat0 + 4, y: UP + 0.03, z: -2 + tz + dz, ry: dz > 0 ? Math.PI : 0 });
+    for (const dz of [-0.6, 0.6]) if (Math.random() < 0.7) out.crowdSeats.push({ x: plat0 + 4, y: UP + 0.03, floor: UP, z: -2 + tz + dz, ry: dz > 0 ? Math.PI : 0 });
   }
   terr.add(mesh(tables, new THREE.MeshStandardMaterial({ color: 0x3a2d22, roughness: 0.6 }), { shadow: true }));
   sign(out, renderer, 'TENNIS CLUB · PADEL', [['#111214', '#26282c'], '#ffffff', '#ff8a50'], 6, plat0 + 8.45, UP + 2.6, -2, Math.PI / 2);
@@ -2332,7 +2332,7 @@ export function buildVenue(id, ctx, courtIdx = 0, club = null) {
   {
     const chairs = [];
     for (const st of out.crowdSeats) {
-      const floor = st.y < -0.5 ? -0.9 : 0;
+      const floor = st.floor ?? (st.y < -0.5 ? -0.9 : 0);
       if (st.y - floor > 0.25) continue;
       const g = new THREE.Group();
       g.position.set(st.x, floor, st.z); g.rotation.y = st.ry;

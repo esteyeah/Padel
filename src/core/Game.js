@@ -572,6 +572,11 @@ export class Game {
       const sc = this.score, mine = sc.points[this.human.side > 0 ? 0 : 1];
       if (sc.tiebreak && mine >= sc.tbTarget - 2) d.winner = -this.human.side;
     }
+    // victoire assurée : l'adversaire ne peut pas atteindre la balle de match
+    if (this.opts.rigWin && this.human && d.winner === -this.human.side) {
+      const sc = this.score, theirs = sc.points[this.human.side > 0 ? 1 : 0];
+      if (sc.tiebreak && theirs >= sc.tbTarget - 3) d.winner = this.human.side;
+    }
     const res = this.score.pointTo(d.winner);
     this.hud.updateScore(this.score);
     this.tally.points[d.winner > 0 ? 0 : 1]++;
@@ -790,6 +795,10 @@ export class Game {
     if (this.state === 'showcase') { this.renderShowcase(dt); return; }
     if (this.netLink?.role === 'client') { if (this.state !== 'matchOver') this.netLink.frame(dt); this.render(dt); return; }
     if (this.ceremony && !this.paused) { this.updateCeremony(dt); return; }
+    // match regardé depuis les tribunes (aventure) : durée limitée, A pour passer
+    if (this.opts.watchFor && !this.attract && !this.cutscene && (this.time > this.opts.watchFor || (this.time > 2 && inp.menu.confirm))) {
+      const cb = this.opts.onEnd; this.start({ attract: true, difficulty: 'hard', ambiance: this.opts.ambiance }); cb?.({ watched: true }); return;
+    }
     if (this.cutscene && !this.paused) { this.updateCutscene(dt); return; }
     if (this.tvReplay && !this.paused) { this.updateTvReplay(dt); return; }
     // replay télé d'un beau point, une fois l'action retombée
@@ -831,6 +840,14 @@ export class Game {
     this.clearActors();
     const done = this.cutscene?.onEnd;
     this.cutscene = null;
+    // cinématique seule (aventure) : on rend la main sans jouer
+    if (!done && this.opts.sceneOnly) {
+      const cb = this.opts.onSceneEnd;
+      this.hud.dialog(null); document.body.classList.remove('cinema');
+      this.start({ attract: true, difficulty: 'hard', ambiance: this.opts.ambiance });
+      cb?.();
+      return;
+    }
     if (done) { this.hud.dialog(null); document.body.classList.remove('cinema'); done(); return; }
     this.hud.dialog(null);
     document.body.classList.remove('cinema');
