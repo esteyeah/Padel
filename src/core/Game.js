@@ -25,6 +25,7 @@ import { simulate } from '../physics/BallPhysics.js';
 import { planShot } from '../physics/ShotSolver.js';
 import { createDrill } from './Drills.js';
 import { NetHost, NetClient, RemoteController, PUPPET } from '../net/NetMatch.js';
+import { makeTrophy } from '../entities/Trophy.js';
 
 
 export class Game {
@@ -142,7 +143,7 @@ export class Game {
     this.clearActors();
     this.slowmo = 0;
     this.hud.dialog(null); this.hud.hideSpeech?.(); document.body.classList.remove('cinema');
-    this.recorder.clear(); this.tvReplay = null; this.replayAt = null; this.highlights = []; this.recap = null; this._endScene = false;
+    this.recorder.clear(); this.tvReplay = null; this.replayAt = null; this.highlights = []; this.recap = null; this._endScene = false; this._trophyDone = false; this.endCeremony?.(true);
     document.body.classList.remove('cinema'); this.hud.replayBadge?.(false);
     this.cutscene = !this.attract && o.cutscene?.length ? { lines: o.cutscene, i: -1, t: 0 } : null;
     // figurants des cinématiques (ex. le maire), retirés à la fin de la scène
@@ -783,6 +784,7 @@ export class Game {
 
     if (this.state === 'showcase') { this.renderShowcase(dt); return; }
     if (this.netLink?.role === 'client') { if (this.state !== 'matchOver') this.netLink.frame(dt); this.render(dt); return; }
+    if (this.ceremony && !this.paused) { this.updateCeremony(dt); return; }
     if (this.cutscene && !this.paused) { this.updateCutscene(dt); return; }
     if (this.tvReplay && !this.paused) { this.updateTvReplay(dt); return; }
     // replay télé d'un beau point, une fois l'action retombée
@@ -918,6 +920,8 @@ export class Game {
 
   finishMatchScreen() {
     const won = this.human && this.score.winner === this.human.side;
+    // remise du trophée (finale gagnée) : cérémonie plus ou moins longue selon le tournoi
+    if (won && this.opts.trophy && !this._trophyDone) { this.startCeremony(this.opts.trophy); return; }
     const lines = this.opts.endCutscene?.(won);
     if (lines?.length && !this._endScene) {
       this._endScene = true;
@@ -931,6 +935,85 @@ export class Game {
     if (this.netLink?.role === 'host') this.netLink.end();
     this.endTime = this.time;
     this.hud.showEnd(this.score, this.human, this.career);
+  }
+
+  // =========================================================================
+  //  Cérémonie de remise du trophée
+  // =========================================================================
+  startCeremony(spec) {
+    const h = this.human;
+    const mesh = makeTrophy(spec);
+    this.scene.add(mesh);
+    // confettis pour les tournois importants
+    let confetti = null;
+    if (spec.size >= 0.6) {
+      const n = Math.round(120 + spec.size * 180);
+      confetti = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.06, 0.035), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, vertexColors: false }), n);
+      const cols = spec.metal === 'gold' ? [0xffd54f, 0xffffff, 0xd4a72c, 0x64b5f6] : [0xffffff, 0xcfd8dc, 0x90caf9, 0xffab91];
+      confetti.userData.p = [];
+      for (let i = 0; i < n; i++) {
+        confetti.setColorAt(i, new THREE.Color(cols[i % cols.length]));
+        confetti.userData.p.push({ x: h.pos.x + (Math.random() - 0.5) * 9, y: 4 + Math.random() * 6, z: h.pos.z + (Math.random() - 0.5) * 9, r: Math.random() * 6, v: 0.6 + Math.random() * 0.8 });
+      }
+      this.scene.add(confetti);
+    }
+    this.ceremony = { t: 0, spec, mesh, confetti, cheer: 0 };
+    for (const p of this.players) if (p.side === h.side) p.avatar.racket.visible = false;
+    this.ball.setVisible(false);
+    document.body.classList.add('cinema');
+    this.hud.banner(spec.metal === 'gold' ? 'CHAMPIONS !' : 'VAINQUEURS !', `${this.opts.subtitle || ''} · ${spec.label}`, Math.min(6, spec.duration), spec.metal === 'gold' ? '#ffd54f' : '#e0e0e0');
+    this.sfx.crowd(1);
+  }
+
+  endCeremony(silent = false) {
+    const c = this.ceremony;
+    if (!c) return;
+    this.scene.remove(c.mesh);
+    if (c.confetti) this.scene.remove(c.confetti);
+    this.ceremony = null;
+    for (const p of this.players) p.avatar.racket.visible = true;
+    document.body.classList.remove('cinema');
+    if (silent) return;
+    this._trophyDone = true;
+    this.finishMatchScreen();
+  }
+
+  updateCeremony(dt) {
+    const c = this.ceremony, h = this.human;
+    c.t += dt;
+    if ((c.t > 1 && (this.input.menu.confirm || this.input.pressed.START)) || c.t > c.spec.duration) { this.endCeremony(); return; }
+    // le gagnant lève le trophée au-dessus de sa tête, le partenaire applaudit
+    const lift = Math.min(1, c.t / 1.2);
+    const yaw = h.side > 0 ? Math.PI : 0;
+    for (const p of this.players) {
+      const mine = p.side === h.side;
+      p.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: p.side > 0 ? Math.PI : 0, look: 0, ready: false, armed: mine ? { kind: 'over', charge: 0.3 + 0.2 * Math.sin(c.t * 6) } : null, swing: null });
+      p.avatar.root.position.set(p.pos.x, mine ? Math.max(0, Math.sin(c.t * 5 + (p === h ? 0 : 1)) * 0.12) : 0, p.pos.z);
+    }
+    const s = c.spec.size;
+    c.mesh.position.set(h.pos.x, 1.1 + lift * 1.15, h.pos.z - h.side * 0.12);
+    c.mesh.rotation.y = yaw + Math.sin(c.t * 1.5) * 0.3;
+    if (c.confetti) {
+      const M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), one = new THREE.Vector3(1, 1, 1), v = new THREE.Vector3();
+      c.confetti.userData.p.forEach((p, i) => {
+        p.y -= p.v * dt; p.r += dt * 4; if (p.y < 0.02) p.y = 0.02;
+        e.set(p.r, p.r * 0.7, 0); q.setFromEuler(e);
+        M.compose(v.set(p.x + Math.sin(p.r) * 0.2, p.y, p.z), q, one);
+        c.confetti.setMatrixAt(i, M);
+      });
+      c.confetti.instanceMatrix.needsUpdate = true;
+    }
+    c.cheer -= dt;
+    if (c.cheer <= 0) { this.sfx.crowd(0.9); c.cheer = 2.2; }
+    // caméra qui tourne lentement autour des vainqueurs
+    const cam = this.cameraRig.camera, a = c.t * 0.35 + (h.side > 0 ? Math.PI : 0) - 0.6;
+    const R = 3.2 + s * 0.8;
+    cam.position.set(h.pos.x + Math.sin(a) * R, 1.6 + s * 0.3, h.pos.z + Math.cos(a) * R);
+    cam.lookAt(h.pos.x, 1.5 + lift * 0.6, h.pos.z);
+    this.cameraRig.pos.copy(cam.position);
+    this.ball.updateVisual(dt);
+    this.effects.update(dt);
+    this.hud.update(dt);
   }
 
   updateTvReplay(dt) {

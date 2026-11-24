@@ -15,6 +15,7 @@ export const MISSION_CHARS = {
   'timeo-boulhol': 'Battre Timéo Boulhol en tournoi (carrière)',
   'camille-roy': 'Battre Camille Roy en tournoi (carrière)',
   'eliott-hanras': 'Battre Eliott Hanras en tournoi (carrière)',
+  'nathan-subrero': 'Battre Nathan Subrero en tournoi (carrière)',
   'le-maire-de-ceyreste': 'Battre le maire en tournoi à Ceyreste (carrière)',
 };
 

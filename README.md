@@ -500,3 +500,10 @@ padel-sim/
 - Riviera Padel Palace : piscine à débordement avec plage en teck, transats et parasols ; fontaine avec raquette dorée monumentale ; hôtel de luxe à balcons ; spa ; bar à champagne sous pergola ; haies taillées et topiaires.
 - Tennis de La Ciotat : courts 3 et 4 tournés d'un quart de tour, côte à côte ; tribune et palmiers reculés.
 - Timéo crie et devient tout rouge quand il rate.
+
+### 0.52
+- Nouveau joueur : Nathan Subrero (64, à peine meilleur que Camille), petit, costaud, frappe fort, hyperactif ; à battre en tournoi pour le débloquer.
+- Raf Tomatis remonte à 50 (au-dessus d'Eliott) et joue aussi en régional.
+- La Ciotat : le court de tennis qui chevauchait le court 3 est reculé.
+- Trophées : cérémonie de remise après une finale gagnée (coupe en argent courte et sobre en amateur, coupe dorée et confettis en national/mondial, raquette en or géante à la Riviera) ; vitrine à trophées dans la carrière.
+- Aperçu du hangar dans les menus : la caméra reste à l'intérieur.

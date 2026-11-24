@@ -16,6 +16,7 @@ import { advanceStory } from './Story.js';
 import { extras } from '../entities/Appearance.js';
 import { DECOS, STAFF, CLUB, freshClub, clubIncome, clubTournament, hostRevenue } from './Business.js';
 import { MISSION_CHARS, findCharacter } from './Characters.js';
+import { trophySpec } from '../entities/Trophy.js';
 import { MAYOR_LOOK, GROWTH, grownCelebs, CHATTER } from './data/roster.js';
 import { PRO_PAIRS, CELEBRITIES, STYLES, COACH, genericNpc, makeNpc } from './data/roster.js';
 import { createTournament, playerMatch, reportPlayerResult, roundName, totalRounds, winProbability } from './Tournament.js';
@@ -651,6 +652,7 @@ export class Career {
       venue: t.venue || 'club', court: (['prestige', 'national'].includes(t.venue) && /Finale|Demi/.test(nm.round)) ? 0 : (t.court ??= Math.floor(this.rand()() * ({ ceyreste: 5, club: 3, hangar: 4, laciotat: 4, national: 2, prestige: 5 }[t.venue] || 1))), bag: bagById(look.bag), mission: liveMission(t.mission),
       ambiance: t.venue === 'beach' ? ((t.week % 3) ? 'day' : 'sunset') : t.venue === 'pro' || t.venue === 'national' ? 'night' : ['day', 'sunset', 'night'][(t.week + tierIndex(t.tier)) % 3],
       title: nm.round.toUpperCase(), subtitle: t.name,
+      trophy: nm.round === 'Finale' ? trophySpec(t.tier, t.venue) : null,
       // réputation du tournoi (0..1) : plus elle est haute, plus il y a de chances d'avoir un concert
       reputation: Math.min(1, ({ amateur: 0.15, regional: 0.4, national: 0.75, pro: 1 }[t.tier] || 0.2) + (nm.round === 'Finale' ? 0.25 : /Demi/.test(nm.round) ? 0.1 : 0)),
       replays: t.tier === 'national' || t.tier === 'pro',
@@ -721,6 +723,7 @@ export class Career {
       this.s.results.push({ week: t.week, tplId: t.tplId, name: t.name, tier, points, placing });
       if (this.s.results.length > 80) this.s.results.shift();
       Object.assign(summary, { points, prize, champion: t.pairs[t.champion], title: placing === 0 });
+      if (placing === 0) (this.s.trophies ??= []).push({ name: t.name, tier: t.tier, venue: t.venue, week: t.week, season: this.season, ...trophySpec(t.tier, t.venue) });
       this.s.lastTournament = t;
       // résultats des joueurs montants dans ce tableau : victoires = progression
       this.s.growth ??= {};

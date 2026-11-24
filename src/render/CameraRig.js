@@ -65,7 +65,9 @@ export class CameraRig {
       k = kl = 1 - Math.exp(-dt * 4);
     } else if (attract) {
       this.orbit += dt * 0.06;
-      tp.set(Math.sin(this.orbit) * 21, 8.5 + Math.sin(this.orbit * 0.7) * 1.5, Math.cos(this.orbit) * 21);
+      // en salle (hangar), l'orbite reste sous le toit et entre les murs
+      const R = this.indoor ? 9 : 21, Y = this.indoor ? 4.6 : 8.5;
+      tp.set(Math.sin(this.orbit) * R * (this.indoor ? 0.8 : 1), Y + Math.sin(this.orbit * 0.7) * (this.indoor ? 0.6 : 1.5), Math.cos(this.orbit) * R * (this.indoor ? 1.5 : 1));
       tl.set(0, 0.6, 0);
       k = kl = 1 - Math.exp(-dt * 1.2);
     } else {

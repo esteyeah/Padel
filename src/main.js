@@ -62,7 +62,7 @@ const menu = new Menu({
     game.start(opts);
   },
   onAmbiance: (a) => r3d.arena.setAmbiance(a),
-  onVenue: (v, court, amb) => { if (game.attract || game.state === 'showcase') { r3d.arena.setVenue(v, court, v === 'myclub' ? Career.load(storage)?.s.club : null); r3d.arena.setAmbiance(amb); } },
+  onVenue: (v, court, amb) => { if (game.attract || game.state === 'showcase') { game.cameraRig.indoor = !!VENUES[v]?.indoor; r3d.arena.setVenue(v, court, v === 'myclub' ? Career.load(storage)?.s.club : null); r3d.arena.setAmbiance(amb); } },
   onCareer: () => career.open(),
   hasCareer: () => !!Career.load(storage),
   getCareer: () => Career.load(storage),

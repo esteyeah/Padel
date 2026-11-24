@@ -1133,12 +1133,12 @@ function decorLaCiotat(out, renderer) {
 
   // --- courts de tennis autour : terre battue et résine verte
   tennisCourt(out, renderer, -28, -14, 'clay');
-  tennisCourt(out, renderer, -28, 24, 'hard', 0x2e7a55);
+  tennisCourt(out, renderer, -38, 27, 'hard', 0x2e7a55);
   tennisCourt(out, renderer, -4, -48, 'clay');
   tennisCourt(out, renderer, -28, -52, 'hard', 0x2e7a55);
 
   // --- végétation : pins d'Alep, palmiers, lauriers-roses en fleurs, agaves
-  treeInstances(out, 'pine', [[-16, -30, 1.1], [-17, 6, 1.0], [16, -30, 1.2], [-40, 4, 1.1], [14, 34, 1.0], [-16, 34], [26, 26, 1.1], [30, -26], [-42, -34, 1.2], [8, -64], [-20, 62, 1.1], [40, 40]]);
+  treeInstances(out, 'pine', [[-16, -30, 1.1], [-25, 2, 1.0], [16, -30, 1.2], [-40, 4, 1.1], [14, 34, 1.0], [-16, 34], [26, 26, 1.1], [30, -26], [-42, -34, 1.2], [8, -64], [-20, 62, 1.1], [40, 40]]);
   treeInstances(out, 'cypress', [[13.6, -26], [13.6, -30], [-15, -36]]);
   bushGroup(out, [[-14.6, -10, 1.1], [-14.8, -16, 0.9], [-14.6, 21.5, 1.0], [-8, 21.8, 1.2], [14.6, 21.6, 1.0], [8, 22, 0.9], [-1, -27, 1.2], [3, 27, 1.0]], 0x3f6b30);
   // fleurs de laurier-rose (petites taches roses sur certains buissons)

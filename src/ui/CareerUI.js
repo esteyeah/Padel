@@ -412,6 +412,7 @@ export class CareerUI {
         <button class="c-btn" data-nav data-act="goto" data-arg="shop">Boutique<small>${fr(s.shopPts)} points boutique</small></button>
         <button class="c-btn" data-nav data-act="look">Apparence<small>Tenue, physique, raquette, sac</small></button>
         <button class="c-btn" data-nav data-act="goto" data-arg="ranking">Classement mondial<small>${rankLabel(c.rank)}</small></button>
+        <button class="c-btn" data-nav data-act="goto" data-arg="trophies">Vitrine à trophées<small>${(s.trophies || []).length} trophée${(s.trophies || []).length > 1 ? 's' : ''}</small></button>
         <button class="c-btn" data-nav data-act="goto" data-arg="staff">Staff<small>${c.weeklyCosts ? `${fr(c.weeklyCosts)} € / semaine` : 'Facultatif'}</small></button>
         <button class="c-btn" data-nav data-act="goto" data-arg="club">Mon club<small>${s.club ? `${esc(s.club.name)} · +${fr(c.weeklyIncome)} € / sem.` : 'Facultatif'}</small></button>
         <button class="c-btn" data-nav data-act="goto" data-arg="partner">Partenaire<small>${esc(s.partner.name)} · note ${s.partner.ovr}</small></button>
@@ -682,7 +683,7 @@ export class CareerUI {
   shopPreview(it) {
     const c = this.career;
     if (!c) return;
-    if (it?.cat === 'venue') { this.game.setShowcase(null, true); this.r3d.arena.setVenue(it.ref, 0); this.r3d.arena.setAmbiance('day'); return; }
+    if (it?.cat === 'venue') { this.game.setShowcase(null, true); this.game.cameraRig.indoor = !!this.r3d.arena.venue?.def?.indoor; this.r3d.arena.setVenue(it.ref, 0); this.game.cameraRig.indoor = !!this.r3d.arena.venue?.def?.indoor; this.r3d.arena.setAmbiance('day'); return; }
     const look = { ...c.lookFor() };
     const field = { color: 'primary', headwear: 'headwear', racket: 'racket', design: 'racketDesign', kit: 'kitStyle', bag: 'bag' }[it?.cat];
     if (field) look[field] = it.ref;
@@ -727,6 +728,17 @@ export class CareerUI {
       <p class="c-lead small">Comme dans les vrais tournois, les petits niveaux se jouent souvent en tie-break ou en super tie-break.
       Le format s'applique aux prochains tournois (celui en cours garde le sien).</p>
       <div class="f-list">${rows}</div>
+      <div class="c-actions"><button class="c-btn" data-nav data-default data-act="goto" data-arg="hub">Retour</button></div>`;
+  }
+
+  screen_trophies() {
+    const list = this.career.s.trophies || [];
+    const items = list.length ? list.slice().reverse().map((t) => `<div class="r-row"><span class="rk">${t.metal === 'gold' ? '🏆' : '🥈'}</span><span class="nm">${esc(t.name)}<i>${esc(t.label)}</i></span><span class="pt">S${t.season} · sem. ${t.week}</span></div>`).join('')
+      : '<p class="c-lead small">Aucun trophée pour l\'instant. Gagnez une finale pour inaugurer la vitrine !</p>';
+    return `
+      <div class="c-title">VITRINE À TROPHÉES</div>
+      <p class="c-lead small">Petites coupes en argent pour les tournois amateurs, coupes dorées au niveau national et mondial, et la raquette en or du Grand Prix de la Riviera.</p>
+      <div class="r-table">${items}</div>
       <div class="c-actions"><button class="c-btn" data-nav data-default data-act="goto" data-arg="hub">Retour</button></div>`;
   }
 
