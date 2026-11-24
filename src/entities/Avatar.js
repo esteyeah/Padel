@@ -22,6 +22,7 @@ import { buildSkinnedBody } from './BodyMesh.js';
 import { solveArm, aimRacket, armPose } from './ArmIK.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { racketTexture } from './Racket.js';
+import { hairCards, strandTexture, beardTexture, FLOWS } from './HairCards.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = (t) => t * t * (3 - 2 * t);
@@ -267,9 +268,11 @@ export class Avatar {
       shorts: fabric(a.shorts, mt.shorts),
       // peau : léger voile chaud (imite la diffusion sous la peau) ; cheveux : reflets
       skin: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.skin).multiplyScalar(0.95), roughness: 0.55, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
-      hair: new THREE.MeshPhysicalMaterial({ color: a.hair, map: hairTex(), normalMap: hairNormal(), normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.5, sheen: 0.8, sheenRoughness: 0.3, sheenColor: new THREE.Color(a.hair).lerp(new THREE.Color(0xffffff), 0.4) }),
+      hairCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.85), alphaMap: strandTexture(), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.7, metalness: 0.0, envMapIntensity: 0.15 }),
+      beardCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).multiplyScalar(1.25), alphaMap: beardTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, envMapIntensity: 0.15 }),
+      hair: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.72), map: hairTex(), normalMap: hairNormal(), normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.5, sheen: 0.8, sheenRoughness: 0.3, sheenColor: new THREE.Color(a.hair).lerp(new THREE.Color(0xffffff), 0.4) }),
       faceSkin: new THREE.MeshPhysicalMaterial({ color: 0xf2e4dc, vertexColors: true, roughness: 0.55, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.3, 0.3), sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
-      white: M(0xe9e2d8, 0.3),
+      white: M(0xd9d0c6, 0.3),
       iris: M(new THREE.Color(a.eye ?? 0x4a3020).multiplyScalar(0.8), 0.25),
       fade: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).lerp(new THREE.Color(a.skin), a.hairStyle === 'shaved' ? 0.72 : 0.45), roughness: 0.9 }),
       capMat: new THREE.MeshPhysicalMaterial({ color: a.capColor ?? a.shirt, roughness: 0.85, sheen: 0.4, sheenColor: new THREE.Color(0xffffff) }),
@@ -501,7 +504,7 @@ export class Avatar {
         // mi-long ondulé : volume, ondulations, mèches qui tombent sur les oreilles et le front
         const wave = (d) => 0.005 * Math.sin(Math.atan2(d.x, d.z) * 11 + d.y * 9) + 0.004 * Math.sin(d.y * 23 + d.x * 7) + 0.01 * Math.max(0, -d.y + 0.3) * (1 - Math.max(0, d.z));
         P.add(h, F.shell(Z.surf, 0.009, { topBoost: 0.012, offFn: wave }), mat.hair);
-        if (hw0 !== 'bandana') for (const sx of [1, -1]) {
+        if (false) for (const sx of [1, -1]) {   // mèches remplacées par les hair cards
           for (let k = 0; k < 4; k++) {
             const q = F.at(sx * (0.9 - k * 0.06), 0.05 - k * 0.12, 0.15 - k * 0.12);
             P.add(h, new THREE.CapsuleGeometry(0.012, 0.05, 3, 8), mat.hair, [q.x + sx * 0.012, q.y - 0.02, q.z], [0.2 * k, 0, sx * (0.25 + k * 0.08)]);
@@ -526,18 +529,43 @@ export class Avatar {
       default: scalp(0.005, 0.011, 0.0);
     }
     F.shell = shellRaw; P.add = addRaw;
+    // ---- mèches (hair cards) par-dessus la coque : fini les cheveux « lisses »
+    {
+      const zoneOf = (pred) => (covered ? (d) => pred(d) && !covered(d) : pred);
+      const hc = mat.hairCard;
+      const card = (pred, o) => P.add(h, hairCards(F, zoneOf(pred), { seed: 7 + (a.hair % 97), ...o }), hc);
+      const lod = a.lod === 'low' ? 0.45 : 1;
+      switch (a.hairStyle) {
+        case 'short': card(Z.scalp, { count: 3600 * lod, len: [0.026, 0.042], width: 0.017, flow: FLOWS.short, lift: 0.12, cross: 0.1, maxOut: 0.008 }); break;
+        case 'fade': card(Z.top, { count: 3600 * lod, len: [0.03, 0.05], width: 0.017, flow: FLOWS.fade, lift: 0.18, cross: 0.12, maxOut: 0.012 }); break;
+        case 'receding': card((d) => Z.scalp(d) && !Z.top(d), { count: 3000 * lod, len: [0.02, 0.032], width: 0.014, flow: FLOWS.short, lift: 0.2 }); break;
+        case 'quiff': card(Z.top, { count: 3600 * lod, len: [0.04, 0.075], width: 0.018, flow: FLOWS.quiff, lift: 0.35, cross: 0.2, maxOut: 0.03 }); card((d) => Z.scalp(d) && !Z.top(d), { count: 2400 * lod, len: [0.015, 0.025], width: 0.013, flow: FLOWS.fade, lift: 0.1 }); break;
+        case 'surfer': card(Z.surf, { count: 4200 * lod, len: [0.06, 0.1], width: 0.02, flow: FLOWS.surfer, lift: 0.15, cross: 0.12, curl: 0.5, gravity: 0.6, maxOut: 0.018, free: true }); break;
+        case 'curtain': card(Z.curtain, { count: 4000 * lod, len: [0.05, 0.085], width: 0.019, flow: FLOWS.curtain, lift: 0.15, cross: 0.1, gravity: 0.4, maxOut: 0.016, free: true }); break;
+        case 'long': card(Z.scalp, { count: 4200 * lod, len: [0.1, 0.17], width: 0.02, flow: FLOWS.long, lift: 0.12, cross: 0.08, gravity: 1.2, segs: 6, maxOut: 0.02, free: true }); break;
+        case 'ponytail': case 'bun': card(Z.scalp, { count: 3600 * lod, len: [0.04, 0.07], width: 0.016, flow: FLOWS.tied, lift: 0.1 }); break;
+        case 'curly': case 'longcurly': card(Z.scalp, { count: 3200 * lod, len: [0.025, a.hairStyle === 'curly' ? 0.04 : 0.07], width: 0.018, flow: FLOWS.curly, lift: 0.4, cross: 0.3, curl: 2.2, maxOut: 0.02 }); break;
+        case 'mohawk': card((d) => Z.top(d) && Math.abs(d.x) < 0.22, { count: 3000 * lod, len: [0.04, 0.07], width: 0.016, flow: FLOWS.mohawk, lift: 0.8, cross: 0.4, maxOut: 0.05 }); break;
+        case 'buzz': card(Z.scalp, { count: 4200 * lod, len: [0.006, 0.01], width: 0.01, flow: FLOWS.short, lift: 0.3, segs: 2 }); break;
+        default: break;
+      }
+    }
     // barbe
-    const beardM = mat.hair;
-    if (a.beard === 'beard') P.add(h, F.shell(Z.beard, 0.005), beardM);
-    if (a.beard === 'full') P.add(h, F.shell(Z.beard, 0.008, { topBoost: 0 }), beardM);
-    if (a.beard === 'goatee') P.add(h, F.shell(Z.goatee, 0.0045), beardM);
-    if (a.beard === 'moustache' || a.beard === 'goatee' || a.beard === 'full' || a.beard === 'beard') P.add(h, F.shell(Z.moustache, 0.0045), beardM);
+    const beardM = new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).lerp(new THREE.Color(a.skin), 0.35).multiplyScalar(0.8), roughness: 0.95 });
+    if (a.beard === 'full') P.add(h, F.shell(Z.beard, 0.0016, { topBoost: 0 }), beardM);
     if (a.beard === 'pencil') P.add(h, F.shell(Z.pencil, 0.0024), beardM);
-    if (a.beard === 'short') P.add(h, F.shell(Z.beard, 0.0032), beardM);
-    if (a.beard === 'chinstrap') P.add(h, F.shell(Z.chinstrap, 0.0045), beardM);
-    if (a.beard === 'mutton') P.add(h, F.shell(Z.mutton, 0.004), beardM);
-    if (a.beard === 'horseshoe') P.add(h, F.shell(Z.horseshoe, 0.005), beardM);
-    if (a.beard === 'vandyke') { P.add(h, F.shell((d) => Z.goatee(d) && Math.abs(d.x) < 0.18, 0.005), beardM); P.add(h, F.shell(Z.moustache, 0.0045), beardM); }
+    // poils de barbe (petites mèches drues) par-dessus les coques
+    {
+      const bc = mat.beardCard, lod = a.lod === 'low' ? 0.45 : 1;
+      const bcard = (pred, o) => P.add(h, hairCards(F, pred, { seed: 31, segs: 2, rootOff: 0.001, minScale: 1.0, ...o }), bc);
+      const B = a.beard;
+      if (B === 'beard' || B === 'full' || B === 'short') bcard(Z.beard, { count: (B === 'full' ? 16000 : 12000) * lod, len: B === 'full' ? [0.014, 0.024] : B === 'short' ? [0.005, 0.009] : [0.009, 0.015], width: 0.012, flow: FLOWS.beard, lift: 0.3, cross: 0.15, maxOut: 0.008 });
+      if (B === 'goatee' || B === 'vandyke') bcard(Z.goatee, { count: 15000 * lod, len: [0.008, 0.015], width: 0.009, flow: FLOWS.beard, lift: 0.3, maxOut: 0.007 });
+      if (['moustache', 'goatee', 'full', 'beard', 'vandyke', 'horseshoe'].includes(B)) bcard(Z.moustache, { count: 18000 * lod, len: [0.005, 0.009], width: 0.006, flow: FLOWS.moustache, lift: 0.2, maxOut: 0.004 });
+      if (B === 'chinstrap') bcard(Z.chinstrap, { count: 16000 * lod, len: [0.008, 0.012], width: 0.011, flow: FLOWS.beard, lift: 0.4 });
+      if (B === 'mutton') bcard(Z.mutton, { count: 16000 * lod, len: [0.008, 0.013], width: 0.011, flow: FLOWS.beard, lift: 0.4 });
+      if (B === 'horseshoe') bcard(Z.horseshoe, { count: 26000 * lod, len: [0.008, 0.014], width: 0.01, flow: FLOWS.beard, lift: 0.4 });
+    }
     // accessoires : coques ajustées au crâne (au-dessus des cheveux), visière et écusson
     const hw = a.headwear;
     const capM = a.capColor != null ? mat.capMat : mat.shirt;

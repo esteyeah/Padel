@@ -1631,7 +1631,7 @@ function decorHangar(out, renderer) {
     const wood = new THREE.MeshStandardMaterial({ color: 0x9a6a3f, roughness: 0.8 });
     out.group.add(mesh([at(new THREE.BoxGeometry(0.8, 1.1, 2.6), x + 2.4, 0.55, 4.3), at(new THREE.BoxGeometry(1, 0.06, 2.8), x + 2.4, 1.13, 4.3)], wood, { shadow: true }));
     out.group.add(mesh([at(new THREE.BoxGeometry(0.4, 0.3, 0.05), x + 2.4, 1.32, 4.0, 0, Math.PI / 2 - 0.3)], new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x4fc3f7, emissiveIntensity: 0.4 })));
-    const host = new Avatar({ ...makeAppearance('blue', 3141, { name: '' }), headwear: null }); host.racket.visible = false;
+    const host = new Avatar({ lod: 'low', ...makeAppearance('blue', 3141, { name: '' }), headwear: null }); host.racket.visible = false;
     host.root.position.set(x + 1.6, 0, 4.3); host.root.rotation.y = Math.PI / 2; out.group.add(host.root);
     out.ambient.push({ t: 0, update(dt) { this.t += dt; host.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: Math.PI / 2 + Math.sin(this.t * 0.4) * 0.5, look: 0, ready: false, armed: null, swing: null }); } });
     // pro shop : mur de raquettes en vente (vrais modèles et designs de la boutique), étiquettes de prix
@@ -1894,7 +1894,7 @@ class Band {
     const outfit = (seed, over = {}) => ({ ...makeAppearance('white', seed, { name: '', ...over }), headwear: null, accent: 0xc62828, shorts: 0x1a1a1d });
     const roles = [['accordion', -1.8, 0], ['guitar', -0.6, 0.15], ['drum', 0.9, -0.7], ['singer', 1.9, 0.3]];
     roles.forEach(([role, mx, mz], i) => {
-      const av = new Avatar(outfit(4242 + i * 13));
+      const av = new Avatar({ ...outfit(4242 + i * 13), lod: 'low' });
       av.racket.visible = false;
       av.root.position.set(mx, H, mz);
       this.g.add(av.root);
@@ -2045,7 +2045,7 @@ function sono(parent, x, y, z) {
   g.add(mesh(box, black, { shadow: true }), mesh(cones, cone), mesh(stands, grille), mesh(deck, grille), mesh(disc, new THREE.MeshStandardMaterial({ color: 0x9aa0a8, metalness: 0.8, roughness: 0.3 })));
   const led = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.02), new THREE.MeshBasicMaterial({ color: 0x29b6f6 }));
   led.position.set(0, 0.7, 0.36); g.add(led);
-  const dj = new Avatar({ ...makeAppearance('black', 9191), name: '' });
+  const dj = new Avatar({ lod: 'low', ...makeAppearance('black', 9191), name: '' });
   dj.racket.visible = false; dj.root.position.set(0, 0.03, -0.7); g.add(dj.root);
   return g;
 }
@@ -2056,7 +2056,7 @@ class Dancers {
     this.list = [];
     const kits = ['red', 'blue', 'green', 'orange', 'white', 'black'];
     for (let i = 0; i < n; i++) {
-      const av = new Avatar({ ...makeAppearance(kits[i % kits.length], 9100 + i * 37), name: '' });
+      const av = new Avatar({ lod: 'low', ...makeAppearance(kits[i % kits.length], 9100 + i * 37), name: '' });
       av.racket.visible = false;
       av.root.position.set(x + (i % 3 - 1) * 1.1 + (Math.random() - 0.5) * 0.4, 0, z + Math.floor(i / 3) * 1.2 + Math.random() * 0.3);
       av.root.rotation.y = Math.PI + (Math.random() - 0.5) * 0.6;
@@ -2125,7 +2125,7 @@ class BigScreen {
 /** Barman : essuie le comptoir, tire une bière, sert. */
 class Barman {
   constructor(parent, x, z, rotY) {
-    this.av = new Avatar({ ...makeAppearance('black', 777 + Math.round(z), { name: '' }), headwear: null });
+    this.av = new Avatar({ lod: 'low', ...makeAppearance('black', 777 + Math.round(z), { name: '' }), headwear: null });
     this.av.racket.visible = false;
     this.av.root.position.set(x, 0, z); this.av.root.rotation.y = rotY;
     parent.add(this.av.root);
@@ -2152,7 +2152,7 @@ class Strollers {
     this.list = [];
     const kits = ['red', 'blue', 'green', 'orange', 'white', 'black'];
     for (let i = 0; i < n; i++) {
-      const av = new Avatar({ ...makeAppearance(kits[i % kits.length], 5200 + i * 53), name: '', headwear: null });
+      const av = new Avatar({ lod: 'low', ...makeAppearance(kits[i % kits.length], 5200 + i * 53), name: '', headwear: null });
       av.racket.visible = false;
       const s0 = this.spots[(i * 5) % this.spots.length];
       av.root.position.set(s0[0], 0, s0[1]);

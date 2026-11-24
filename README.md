@@ -511,3 +511,8 @@ padel-sim/
 ### 0.53
 - Nouveau mode Aventure (chapitre 1 « Le commencement ») : coup de fil d'Eliott, premier entraînement avec le coach Rémi, Raf, Jean et Eliott (deux exercices, tie-break contre Jean, super tie-break truqué avec Eliott), cinématique, puis choix du partenaire pour le tournoi de Ceyreste. Jauges de relation (Eliott, Jean, Raf) et estime du coach ; le joueur part de rien et progresse.
 - Tennis de La Ciotat : plus de bâches publicitaires autour des courts ni de tonnelles ; un panneau près du club-house.
+
+### 0.54
+- Cheveux en mèches (« hair cards ») : des centaines de petites mèches texturées plantées sur le crâne, orientées selon la coupe (raie, frange, gravité, ondulations, boucles) ; fini les coupes lisses.
+- Barbes et moustaches en poils drus (plus de coques noires), ombre de barbe peinte sous les poils.
+- Yeux : blanc moins éclatant. Personnages de décor allégés (moins de mèches).
