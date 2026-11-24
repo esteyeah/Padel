@@ -507,3 +507,7 @@ padel-sim/
 - La Ciotat : le court de tennis qui chevauchait le court 3 est reculé.
 - Trophées : cérémonie de remise après une finale gagnée (coupe en argent courte et sobre en amateur, coupe dorée et confettis en national/mondial, raquette en or géante à la Riviera) ; vitrine à trophées dans la carrière.
 - Aperçu du hangar dans les menus : la caméra reste à l'intérieur.
+
+### 0.53
+- Nouveau mode Aventure (chapitre 1 « Le commencement ») : coup de fil d'Eliott, premier entraînement avec le coach Rémi, Raf, Jean et Eliott (deux exercices, tie-break contre Jean, super tie-break truqué avec Eliott), cinématique, puis choix du partenaire pour le tournoi de Ceyreste. Jauges de relation (Eliott, Jean, Raf) et estime du coach ; le joueur part de rien et progresse.
+- Tennis de La Ciotat : plus de bâches publicitaires autour des courts ni de tonnelles ; un panneau près du club-house.

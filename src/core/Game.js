@@ -567,6 +567,11 @@ export class Game {
       this.afterPoint('replay', 1.4);
       return;
     }
+    // match « truqué » (aventure) : le joueur ne peut pas atteindre la balle de match
+    if (this.opts.rig && this.human && d.winner === this.human.side) {
+      const sc = this.score, mine = sc.points[this.human.side > 0 ? 0 : 1];
+      if (sc.tiebreak && mine >= sc.tbTarget - 2) d.winner = -this.human.side;
+    }
     const res = this.score.pointTo(d.winner);
     this.hud.updateScore(this.score);
     this.tally.points[d.winner > 0 ? 0 : 1]++;

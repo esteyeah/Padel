@@ -51,7 +51,7 @@ export const VENUES = {
     label: 'Tennis de La Ciotat', desc: 'Quatre courts de padel couleur terre battue au cœur d\'un club de tennis : tonnelles, tribune en gradins jusqu\'au club-house, pins et parking.',
     turf: { base: '#c8643f', hue: 16, sat: 55, light: 48 }, apron: 0xb9a48a, frame: 0x1c1d20, wire: 0x2a2b2f,
     panoramic: false, doors: true, outside: true, lamps: 'municipal', crowd: 0.25, ambiance: 'day',
-    ads: [['TENNIS CLUB', ['#111214', '#1c1d20'], '#ffffff', '#e0e0e0'], ['PADEL', ['#111214', '#1c1d20'], '#ffffff', '#ff8a50']],
+    ads: [],
   },
   club: {
     label: 'Padel Arena Club', desc: 'Le club du coin : tribune, club-house et courts voisins.',
@@ -1028,18 +1028,6 @@ function decorLaCiotat(out, renderer) {
   flat(out, 3.4, 48, 0, 0, 0x8e9a8a, -0.008);
   flat(out, 30, 3.4, 0, 0, 0x8e9a8a, -0.007);
 
-  // tonnelles bleu marine avec chaises et table basse (entre les courts)
-  const navy = new THREE.MeshStandardMaterial({ color: 0x1f2a4d, roughness: 0.75, side: THREE.DoubleSide });
-  const leg = new THREE.MeshStandardMaterial({ color: 0x2a2c30, metalness: 0.6, roughness: 0.4 });
-  const wicker = new THREE.MeshStandardMaterial({ color: 0x9a6a3f, roughness: 0.85 });
-  for (const tz of [-6.2, 3.2]) {
-    const g = new THREE.Group(); g.position.set(0, 0, tz); out.group.add(g);
-    g.add(mesh([at(new THREE.ConeGeometry(2.2, 0.8, 4, 1, true), 0, 2.75, 0, 0, Math.PI / 4)], navy, { shadow: true }));
-    g.add(mesh([at(new THREE.BoxGeometry(3.1, 0.25, 3.1), 0, 2.25, 0)], navy));
-    g.add(mesh([-1.5, 1.5].flatMap((x) => [-1.5, 1.5].map((z) => at(new THREE.CylinderGeometry(0.03, 0.03, 2.3, 6), x, 1.15, z))), leg));
-    g.add(mesh([at(new THREE.BoxGeometry(0.9, 0.35, 0.5), 0, 0.18, 0)], wicker, { shadow: true }));
-    for (const [cx, cz, ry] of [[-0.9, 0.6, Math.PI], [0.9, 0.6, Math.PI], [-0.9, -0.6, 0], [0.9, -0.6, 0]]) out.crowdSeats.push({ x: cx, y: 0.03, z: tz + cz, ry });
-  }
   // bancs blancs le long des allées
   const white = new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 });
   const benchGeo = [];
@@ -1098,6 +1086,7 @@ function decorLaCiotat(out, renderer) {
   }
   terr.add(mesh(tables, new THREE.MeshStandardMaterial({ color: 0x3a2d22, roughness: 0.6 }), { shadow: true }));
   sign(out, renderer, 'TENNIS CLUB · PADEL', [['#111214', '#26282c'], '#ffffff', '#ff8a50'], 6, plat0 + 8.45, UP + 2.6, -2, Math.PI / 2);
+  sign(out, renderer, 'PADEL · RÉSERVATIONS AU CLUB-HOUSE', [['#111214', '#26282c'], '#ffffff', '#e0e0e0'], 6, plat0 + 0.35, UP + 1.35, -11, Math.PI / 2);
 
   // --- verdure autour du club-house, surtout sur sa droite (vu depuis les courts)
   {

@@ -60,6 +60,7 @@ export class Menu {
         title: null, tiles: true,
         rows: [
           { type: 'tile', label: 'Carrière', sub: 'Du tournoi de quartier au n° 1 mondial', cls: 'hero', run: () => { this.hide(); this.onCareer?.(); } },
+          { type: 'tile', label: 'Aventure', sub: 'Une histoire, des choix, des rivaux', run: () => this.open('adventure') },
           { type: 'tile', label: 'Exhibition', sub: 'Un match rapide, vos réglages', run: () => this.open('exhibition') },
           { type: 'tile', label: 'En ligne', sub: 'Matchs et tournois contre d\'autres joueurs', run: () => this.open('online') },
           { type: 'tile', label: 'Entraînement', sub: 'Ateliers libres', run: () => this.open('training') },
@@ -80,6 +81,7 @@ export class Menu {
       match: { title: 'Paramètres de la partie', back: 'exhibition', rows: [...MATCH.map(choice), { type: 'action', label: 'Valider', value: '', run: () => this.open('exhibition') }] },
       character: { title: 'Personnage', back: 'exhibition', grid: true, rows: [] },
       online: { title: 'En ligne', back: 'home', custom: true, rows: [] },
+      adventure: { title: 'Aventure', back: 'home', custom: true, rows: [] },
       venue: { title: 'Lieu', back: 'exhibition', grid: 'venue', rows: [] },
       court: { title: 'Court', back: 'venue', grid: 'court', rows: [] },
       training: {
@@ -132,7 +134,7 @@ export class Menu {
 
   render() {
     const s = this.screens[this.cur];
-    if (s.custom) { if (this.online) this.online.render(this.body); return; }
+    if (s.custom) { const u = this.cur === 'adventure' ? this.adventure : this.online; if (u) u.render(this.body); return; }
     if (s.grid) return this.renderGrid(s);
     const rows = this.visibleRows(s);
     s.sel = Math.min(s.sel, rows.length - 1);
@@ -433,7 +435,7 @@ export class Menu {
     // Start depuis le menu : paramètres
     if (this.input.pressed.START && this.cur !== 'settings' && this.cur !== 'controls') { this.open('settings'); return; }
     const s = this.screens[this.cur];
-    if (s.custom) { this.online?.update(m); return; }
+    if (s.custom) { (this.cur === 'adventure' ? this.adventure : this.online)?.update(m); return; }
     if (s.grid) return this.updateGrid(s, m);
     const rows = this.visibleRows(s);
     const n = rows.length;

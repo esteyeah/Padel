@@ -24,6 +24,7 @@ import { flatStats } from './config.js';
 import { loadRocks } from './render/Rocks.js';
 import { OnlineUI } from './net/Online.js';
 import { askPad } from './ui/Ask.js';
+import { AdventureUI } from './adventure/Adventure.js';
 
 const params = new URLSearchParams(location.search);
 await loadRocks();
@@ -113,6 +114,13 @@ const online = new OnlineUI({
   abortMatch: (msg) => { hud.banner('MATCH INTERROMPU', msg || '', 2.5); setTimeout(() => { if (game.opts?.net) game.leaveOnline(); }, 2500); },
 });
 menu.online = online;
+menu.adventure = new AdventureUI({
+  startGame: (opts) => { menu.hide(); sfx.musicEnabled = menu.values().music !== 'off'; sfx.unlock(); r3d.setQuality(menu.values().quality); game.start(opts); },
+  back: () => menu.open('home'),
+  rerender: () => { if (menu.visible && menu.cur === 'adventure') menu.render(); },
+  show: () => { menu.show(); menu.open('adventure'); },
+  getLook: () => { const c = Career.load(storage); return c ? c.lookFor() : null; },
+});
 menu.onCode = (code) => { const ok = tryUnlockCode(code); if (ok) refreshVenues(); return ok; };
 
 let storage = null;
