@@ -457,3 +457,7 @@ body.cinema #hud { visibility: hidden; }
 #sheet .br div { display: grid; gap: 6px; }
 #sheet .br span { border-bottom: 1px solid #999; padding: 2px 4px; font-size: 13px; }
 #sheet .br span.me { background: #fff3a6; font-weight: 800; }
+#stat { position: fixed; right: 18px; top: 18px; z-index: 25; padding: 8px 14px; border-radius: 10px; background: rgba(8,12,24,0.82); border: 1px solid rgba(125,249,255,0.45); color: #fff; text-align: right; opacity: 0; transform: translateY(-8px); transition: opacity .25s, transform .25s; pointer-events: none; }
+#stat.show { opacity: 1; transform: none; }
+#stat b { display: block; font: 800 30px var(--cond); color: var(--cyan); letter-spacing: .5px; }
+#stat small { font: 600 12px var(--sans); color: var(--dim); }

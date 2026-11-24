@@ -449,6 +449,12 @@ export class Game {
     this._lastSpeed = this.ball.state.v.length();
     this._lastHitT = this.recorder.t;
     this.sfx.hit(info.speed);
+    // stats à l'écran : vitesse des gros coups
+    const kmh = Math.round((info.speed || 0) * 3.6);
+    if (!this.attract && !this.drill && (type === 'smash' || type === 'serve' || type === 'drive') && kmh >= (type === 'smash' ? 70 : 95)) {
+      this.hud.stat?.(`${kmh} km/h`, `${type === 'smash' ? 'Smash' : type === 'serve' ? 'Service' : 'Frappe'} de ${player.name}`);
+      if (kmh > (this.stats.fastest || 0) && player === this.human) this.stats.fastest = kmh;
+    }
     this.hud.shotInfo(`${player.name} · ${info.label}${info.speed ? ` · ${Math.round(info.speed * 3.6)} km/h` : ''}`, player.side);
     if (player === this.human) {
       this.input.rumble(0.25 + info.power * 0.5, 0.5, 60 + info.power * 60);
@@ -636,6 +642,12 @@ export class Game {
       this._hlPending = true;
       this._lastReason = d.reason;
       this.cameraRig.kick(0.08);
+    }
+    // stats à l'écran : longueur des échanges, série de points
+    if (!this.attract && !this.drill) {
+      if (this.rallyHits >= 8) this.hud.stat?.(`${this.rallyHits} frappes`, this.rallyHits >= this.tally.longestRally ? 'Plus long échange du match' : 'Long échange');
+      this._streak = this._streakSide === d.winner ? (this._streak || 0) + 1 : 1; this._streakSide = d.winner;
+      if (this._streak >= 4 && this.rallyHits < 8) this.hud.stat?.(`${this._streak} points d'affilée`, this.teamName(d.winner));
     }
     const excite = Math.min(1, this.rallyHits / 14 + (res.game ? 0.35 : 0) + (res.set ? 0.3 : 0));
     if (this.rallyHits >= 6 || res.game) this.sfx.crowd(excite);
@@ -940,9 +952,10 @@ export class Game {
       const tx = p.pos.x + 0.9 * s, tz = p.pos.z - s * 2.8;
       const k = cs.cp ? 1 - Math.exp(-dt * 3) : 1;
       cs.cp ??= cam.position.clone();
-      cs.cp.x += (tx - cs.cp.x) * k; cs.cp.y += (1.75 - cs.cp.y) * k; cs.cp.z += (tz - cs.cp.z) * k;
+      const SY = this.opts.sceneY || 0;
+      cs.cp.x += (tx - cs.cp.x) * k; cs.cp.y += (1.75 + SY - cs.cp.y) * k; cs.cp.z += (tz - cs.cp.z) * k;
       cam.position.copy(cs.cp);
-      cam.lookAt(p.pos.x, 1.45, p.pos.z);
+      cam.lookAt(p.pos.x, 1.45 + SY, p.pos.z);
       this.cameraRig.pos.copy(cam.position);
     }
   }

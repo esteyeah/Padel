@@ -8,7 +8,7 @@ import { DRILLS } from '../core/Drills.js';
 import { VENUE_COURTS } from '../render/Venues.js';
 import * as THREE from 'three';
 // lieux de discussion hors du court (coordonnées du décor) : entre deux courts, bord de court / buvette
-const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0] }, hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [0, -21.5] }, national: { between: [14, 0], talk: [14, 4] }, pro: { between: [12, 0], talk: [12, 4] }, prestige: { between: [-13, 0], talk: [-26, 26] } };
+const SPOTS = { laciotat: { between: [0, -12], talk: [0, 1.2] }, ceyreste: { between: [-21.5, -3], talk: [-23.5, 18] }, municipal: { between: [-8.5, 0], talk: [-8.5, 4], bus: [-9, -6] }, beach: { talk: [-9, 4], between: [-9, 0] }, hangar: { between: [0, -12.5], talk: [-12.6, 4], bar: [0, -21.5] }, national: { between: [14, 0], talk: [14, 4] }, pro: { between: [12, 0], talk: [12, 4] }, prestige: { between: [-13, 0], talk: [-26, 26], loge: [0, -19.7, 3.45] } };
 const toWorld = (venue, [x, z]) => { const c = (VENUE_COURTS[venue] || [[0, 0]])[0]; return [x - c[0], z - c[1]]; };
 import { CELEBRITIES, COACH, genericNpc, makeNpc, PRO_PAIRS, ADV_NPCS } from '../career/data/roster.js';
 import { unlockAdv } from '../career/data/shop.js';
@@ -110,6 +110,7 @@ export class AdventureUI {
 
   // ------------------------------------------------------------------ personnages
   me(lane = 0) {
+    if (lane && this.s?.lane) lane = this.s.lane;
     const look = this.getLook?.() || DEFAULT_LOOK;
     const print = (this.s.name.split(' ').pop() || 'JOUEUR').toUpperCase().slice(0, 12);
     return { name: this.short.toUpperCase(), human: true, hand: 1, lane, stats: { ...this.s.stats }, appearance: { ...resolveLook(look), name: print } };
@@ -192,7 +193,8 @@ export class AdventureUI {
     }
     const near = val(st.near, c), far = val(st.far, c);
     const doubles = st.format !== '1v1';
-    const lanesN = doubles ? [1, -1] : [0], lanesF = doubles ? [1, -1] : [0];
+    const myLane = this.s.lane || 1;
+    const lanesN = doubles ? [myLane, -myLane] : [0], lanesF = doubles ? [1, -1] : [0];
     const mk = (id, i, kit, side) => {
       let sp = this.spec(id, kit, side > 0 ? lanesN[i] : lanesF[i], { ovr: st.randomOvr });
       if (st.weak?.includes(id)) sp = { ...sp, stats: flatStats(0.12), bot: { ...sp.bot, diff: { ...sp.bot.diff, level: 0.1, speedMul: 0.72, reaction: 0.5, planError: 0.6, margin: 1.2 } } };
@@ -238,14 +240,17 @@ export class AdventureUI {
 
   /** Place les personnages hors du court (entre deux courts, à la buvette…) et ajoute les accessoires. */
   stage(g, st) {
-    const sp = st.spot && SPOTS[st.venue]?.[st.spot];
+    // personne ne joue : tout le monde discute hors du court (bord de court par défaut)
+    const sp = SPOTS[st.venue || 'municipal']?.[st.spot || 'talk'];
     const props = st.props || {};
     const all = [...g.players.map((p) => ({ av: p.avatar, p, id: p === g.players[0] ? 'me' : null })), ...(g.actors || []).map((a) => ({ av: a.avatar, a, id: a.id }))];
     if (g.players[1]) { const o = val(st.cast, this.ctx).find((x) => x !== 'me'); all[1].id = o; }
     if (sp) {
       const [cx, cz] = toWorld(st.venue, sp);
-      g.players.forEach((p, i) => { p.pos.set(cx + (i ? 0.25 : -0.25), 0, cz + (i ? -1.1 : 1.1)); });
-      (g.actors || []).forEach((a, i) => { const ang = -1.2 + (i / Math.max(1, g.actors.length - 1)) * 2.4; a.pos.set(cx + Math.sin(ang) * 1.9, 0, cz + Math.cos(ang) * 0.4); });
+      const Y = sp[2] || 0, tight = 0.6;   // deux personnes qui se parlent se tiennent côte à côte
+      g.players.forEach((p, i) => { p.pos.set(cx + (i ? 0.25 : -0.25), 0, cz + (i ? -tight : tight)); p.avatar.root.position.y = Y; });
+      (g.actors || []).forEach((a, i) => { const ang = -1.2 + (i / Math.max(1, g.actors.length - 1)) * 2.4; a.pos.set(cx + Math.sin(ang) * (Y ? 2.2 : 1.6), 0, cz + Math.cos(ang) * 0.5); a.avatar.root.position.y = Y; });
+      g.opts.sceneY = Y;
     }
     if (st.bus && sp) {
       // minibus blanc du club garé à côté du groupe
@@ -336,6 +341,7 @@ export class AdventureUI {
     } else if (st.type === 'end') {
       if (st.next) add(`Continuer : ${esc(CHAPTERS[st.chapter + 1] || 'la suite')}`, () => this.goto(st.next), 'primary');
     }
+    add(`Côté de jeu : ${(this.s.lane || 1) > 0 ? 'droite (drive)' : 'gauche (revers)'}`, () => { this.s.lane = -(this.s.lane || 1); this.save(); this.rerender(); }, 'small');
     add('Changer de sauvegarde', () => { this.slot = null; this.s = null; this.rerender(); }, 'small');
     add('Effacer cette sauvegarde et recommencer', () => { this.s = null; try { localStorage.removeItem(KEY(this.slot)); } catch { /* ignoré */ } this.newGame(); }, 'small');
     return A;

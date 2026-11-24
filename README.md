@@ -563,3 +563,8 @@ padel-sim/
 - Accueil : nouvelles tuiles « Boutique » et « Mon joueur » (apparence, tenue, équipement), qui ouvrent directement la boutique et l'éditeur de la carrière.
 - Aventure : champion du monde = 50 000 € pour la boutique et la Raquette du Mondial (édition unique, gros bonus).
 - Flavien 51, Chico 47.
+
+### 0.65
+- Aventure : le maire dans le minibus explique son invitation (son ami Ruffier) ; Ruffier vous reçoit dans la loge VIP et explique en détail le format en 3 points ; cinématiques plus longues avec plus de dialogues ; les discussions se font toujours hors du court, les personnages côte à côte ; choix du côté de jeu (droite / gauche) dans le menu de l'Aventure.
+- Stéphane Ruffier chauve et barbu.
+- Statistiques à l'écran dans tous les modes : vitesse des gros smashs, services et frappes (km/h), longueur des longs échanges, séries de points d'affilée.

@@ -12,6 +12,8 @@ export const CH7 = {
       { who: 'narr', text: 'Le Centre national. Des tribunes pleines, des caméras, des pros et des célébrités dans le même tableau.' },
       { who: 'mayor', text: 'Un enfant de Ceyreste au national ! J\'ai prévenu La Provence, ils envoient un journaliste.' },
       { who: c.partner6, text: c.s.rep <= -10 ? 'Le public siffle quand on entre… notre réputation nous suit.' : 'Le public nous applaudit ! Tu entends ?' },
+      { who: 'me', text: 'Zlatan et Zidane au premier tour… on ne pouvait pas rêver plus fou.' },
+      { who: 'mayor', text: 'Si vous battez Zlatan, je fais graver vos noms sur la fontaine du village !' },
     ],
     next: 'c7_r1',
   },

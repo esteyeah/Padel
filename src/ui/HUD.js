@@ -54,6 +54,14 @@ export class HUD {
     this.bannerT = dur;
   }
 
+  /** Petite statistique affichée en haut à droite (vitesse de smash, longueur d'échange…). */
+  stat(big, small = '') {
+    if (!this.statEl) { this.statEl = document.createElement('div'); this.statEl.id = 'stat'; document.body.appendChild(this.statEl); }
+    this.statEl.innerHTML = `<b>${big}</b><small>${small}</small>`;
+    this.statEl.classList.remove('show'); void this.statEl.offsetWidth; this.statEl.classList.add('show');
+    clearTimeout(this._statT); this._statT = setTimeout(() => this.statEl.classList.remove('show'), 2600);
+  }
+
   shotInfo(text, side) {
     this.shotEl.textContent = text;
     this.shotEl.className = `show ${side > 0 ? 'near' : 'far'}`;
