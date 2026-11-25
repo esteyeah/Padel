@@ -14,26 +14,34 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 
 /** Étalonnage « retransmission sportive » : contraste, saturation, légère teinte et vignettage. */
 const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, contrast: { value: 1.08 }, saturation: { value: 1.12 }, tint: { value: new THREE.Vector3(1.0, 1.0, 1.0) }, vignette: { value: 0.28 } },
+  uniforms: { tDiffuse: { value: null }, contrast: { value: 1.08 }, saturation: { value: 1.12 }, tint: { value: new THREE.Vector3(1.0, 1.0, 1.0) }, vignette: { value: 0.28 }, time: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `
-    uniform sampler2D tDiffuse; uniform float contrast; uniform float saturation; uniform vec3 tint; uniform float vignette;
+    uniform sampler2D tDiffuse; uniform float contrast; uniform float saturation; uniform vec3 tint; uniform float vignette; uniform float time;
     varying vec2 vUv;
     void main() {
       vec4 c = texture2D(tDiffuse, vUv);
       vec3 col = c.rgb * tint;
       float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
       col = mix(vec3(l), col, saturation);
-      col = (col - 0.5) * contrast + 0.5;
+      // courbe en S douce (contraste façon pellicule) plutôt qu'un contraste linéaire
+      vec3 s = col * col * (3.0 - 2.0 * col);
+      col = mix(col, s, (contrast - 1.0) * 2.5);
+      // ombres légèrement froides, hautes lumières légèrement chaudes (rendu caméra)
+      float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+      col += (1.0 - lum) * vec3(-0.006, 0.0, 0.012) + lum * vec3(0.01, 0.004, -0.008);
+      // grain très léger
+      float n = fract(sin(dot(vUv * 1000.0 + time, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+      col += n * 0.012;
       vec2 d = vUv - 0.5;
       col *= 1.0 - vignette * smoothstep(0.25, 0.85, dot(d, d) * 2.2);
       gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
     }`,
 };
 const GRADE = {
-  day: { contrast: 1.07, saturation: 1.1, tint: [1.0, 1.0, 1.0], vignette: 0.22 },
-  sunset: { contrast: 1.1, saturation: 1.15, tint: [1.04, 0.99, 0.93], vignette: 0.32 },
-  night: { contrast: 1.1, saturation: 1.12, tint: [0.97, 0.99, 1.04], vignette: 0.34 },
+  day: { contrast: 1.06, saturation: 1.0, tint: [1.0, 1.0, 0.99], vignette: 0.2 },
+  sunset: { contrast: 1.08, saturation: 1.05, tint: [1.04, 0.99, 0.93], vignette: 0.3 },
+  night: { contrast: 1.08, saturation: 1.0, tint: [0.97, 0.99, 1.04], vignette: 0.32 },
 };
 import { buildArena } from './Arena.js';
 
@@ -151,7 +159,7 @@ export class Renderer3D {
     this.arena.updateWallFade(this.camera.position, dt);
     this.arena.update(dt);
     const c = this.ensureComposer();
-    if (c) c.render(dt);
+    if (c) { if (this.grade) this.grade.uniforms.time.value = (this.grade.uniforms.time.value + dt * 7.3) % 100; c.render(dt); }
     else this.renderer.render(this.scene, this.camera);
   }
 }

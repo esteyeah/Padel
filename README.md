@@ -3,6 +3,10 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.70 — Réalisme graphique
+- Étalonnage façon pellicule : courbe en S, ombres froides / lumières chaudes, grain léger animé, saturation plus naturelle.
+- Visages : crâne mieux proportionné, visage moins bombé, mâchoire et menton plus dessinés, joues creusées, philtrum, arcades marquées.
+
 ## Lancer le jeu
 
 ```bash

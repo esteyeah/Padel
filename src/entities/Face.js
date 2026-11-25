@@ -23,7 +23,7 @@ const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a
  * p : { jaw (largeur de mâchoire), chin, nose (taille du nez), cheek, brow }
  */
 function shape(d, p) {
-  let x = d.x * 0.86, y = d.y * 1.05, z = d.z * 0.97;
+  let x = d.x * 0.9, y = d.y * 1.0, z = d.z * 0.98;
   // mâchoire plus étroite vers le bas, menton en avant
   if (d.y < 0) {
     const k = Math.pow(-d.y, 1.3);
@@ -31,14 +31,20 @@ function shape(d, p) {
     if (d.z < 0) z *= 1 - 0.25 * k;
   }
   // arrière du crâne plus rond, front légèrement plat
-  z += 0.05 * g2(d, [0, 0.25, -0.92], 0.6);
+  z += 0.07 * g2(d, [0, 0.35, -0.9], 0.6);                                   // crâne plus développé à l'arrière
+  y += 0.03 * g2(d, [0, 0.95, -0.2], 0.5);                                   // dessus du crâne
   if (d.z > 0.6 && d.y > 0.2) z -= 0.03 * smooth(0.2, 0.7, d.y) * (d.z - 0.6);
+  // visage plus plat de face (moins « œuf »), joues plus marquées sur les côtés
+  if (d.z > 0.72) z -= 0.07 * (d.z - 0.72);
+  x *= 1 + 0.04 * g2(d, [0.75, -0.1, 0.55], 0.35) + 0.04 * g2(d, [-0.75, -0.1, 0.55], 0.35);
   let r = 1;
-  r += 0.05 * p.chin * g2(d, [0, -0.8, 0.58], 0.36);
-  r += 0.04 * (g2(d, [0.55, -0.62, 0.5], 0.25) + g2(d, [-0.55, -0.62, 0.5], 0.25));   // angles de la mâchoire                    // menton
+  r += 0.065 * p.chin * g2(d, [0, -0.8, 0.58], 0.3);                                      // menton plus dessiné
+  r += 0.06 * p.jaw * (g2(d, [0.6, -0.58, 0.38], 0.24) + g2(d, [-0.6, -0.58, 0.38], 0.24));    // angles de mâchoire carrés
+  r -= 0.028 * (g2(d, [0.5, -0.36, 0.76], 0.17) + g2(d, [-0.5, -0.36, 0.76], 0.17));          // joues creusées sous les pommettes
+  r += 0.012 * Math.exp(-((d.x / 0.035) ** 2)) * g2(d, [0, -0.33, 0.95], 0.06);               // philtrum   // angles de la mâchoire                    // menton
   r += 0.06 * p.cheek * (g2(d, [0.58, -0.02, 0.79], 0.28) + g2(d, [-0.58, -0.02, 0.79], 0.28));   // pommettes
   r -= 0.1 * (g2(d, [0.33, 0.1, 0.92], 0.16) + g2(d, [-0.33, 0.1, 0.92], 0.16));                 // orbites
-  r += 0.075 * p.brow * (g2(d, [0.31, 0.27, 0.9], 0.17) + g2(d, [-0.31, 0.27, 0.9], 0.17));         // arcades
+  r += 0.09 * p.brow * (g2(d, [0.31, 0.27, 0.9], 0.17) + g2(d, [-0.31, 0.27, 0.9], 0.17));         // arcades
   // nez : arête qui sort de plus en plus vers la pointe, puis ailes
   if (d.z > 0.5) {
     const ridge = Math.exp(-((d.x / 0.085) ** 2)) * smooth(0.28, -0.05, d.y) * smooth(-0.42, -0.2, d.y);
