@@ -884,6 +884,11 @@ export class Game {
     cs.choosing = null;
     // tout le groupe marche (ex. l'hôtesse qui vous emmène à la loge)
     if (L.walk) { const d = L.walk.dur || 3; cs.walkT = d; cs.walkV = [L.walk.dx / d, L.walk.dz / d]; }
+    // geste de la main (salut), raquette tendue
+    const byRef = (r) => (r === 'me' ? this.players[0] : r === 'p1' ? this.players[1] : this.actors?.find((a) => a.id === r));
+    if (cs.giving) { cs.giving.avatar.racket.visible = false; cs.giving._touch = false; this.players[0].avatar.racket.visible = true; cs.giving = null; }
+    cs.waving = L.wave ? byRef(L.wave) : null;
+    if (L.give) { const t = byRef(L.give); if (t) { cs.giving = t; t._touch = true; t.avatar.racket.visible = true; const me = this.players[0]; t.pos.set(me.pos.x + 0.55, 0, me.pos.z - 0.25); } }
     // un personnage touche le bras du joueur (drague…)
     if (L.touch) { const t = this.actors?.find((a) => a.id === L.touch) || this.players.find((q) => q !== this.players[0]); if (t) { t._touch = true; const me = this.players[0]; t.pos.set(me.pos.x + 0.42, 0, me.pos.z - 0.18); } }
     this.hud.sheet?.(L.sheet || null);
@@ -955,16 +960,28 @@ export class Game {
       walking = Math.hypot(vx, vz); wyaw = Math.atan2(vx, vz);
     }
     const me0 = this.players[0];
-    const yawOf = (q, base, sway) => (walking ? wyaw : q._touch ? Math.atan2(me0.pos.x - q.pos.x, me0.pos.z - q.pos.z) : base + sway);
+    const C = this.opts.sceneCenter;
+    const yawOf = (q, base, sway) => {
+      if (walking) return wyaw;
+      if (q._touch) return Math.atan2(me0.pos.x - q.pos.x, me0.pos.z - q.pos.z);
+      if (C) { const t = q === p || !p ? { x: C[0], z: C[1] } : p.pos; return Math.atan2(t.x - q.pos.x, t.z - q.pos.z) + sway * 0.5; }   // regarde celui qui parle
+      return base + sway;
+    };
+    const wave = (q) => (cs.waving === q ? { kind: 'over', charge: 0.35 + 0.3 * Math.sin(cs.t * 9) } : q._touch ? { kind: 'fore', charge: 0.05 } : null);
     for (const q of this.players) {
-      q.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(q, q.side > 0 ? Math.PI : 0, q === p ? Math.sin(cs.t * 1.3) * 0.15 : 0), look: 0, ready: false, armed: q._touch ? { kind: 'fore', charge: 0.05 } : null, swing: null });
+      q.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(q, q.side > 0 ? Math.PI : 0, q === p ? Math.sin(cs.t * 1.3) * 0.15 : 0), look: 0, ready: false, armed: wave(q), swing: null });
     }
-    for (const ac of this.actors || []) ac.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(ac, ac.side > 0 ? Math.PI : 0, ac === p ? Math.sin(cs.t * 1.1) * 0.2 : 0), look: 0, ready: false, armed: ac._touch ? { kind: 'fore', charge: 0.05 } : null, swing: null });
+    for (const ac of this.actors || []) ac.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(ac, ac.side > 0 ? Math.PI : 0, ac === p ? Math.sin(cs.t * 1.1) * 0.2 : 0), look: 0, ready: false, armed: wave(ac), swing: null });
     this.render(dt);
     if (p) {
       // caméra par-dessus l'épaule de l'autre, cadrée sur celui qui parle
       const s = p.side, cam = this.cameraRig.camera;
-      const tx = p.pos.x + 0.9 * s, tz = p.pos.z - s * 2.8;
+      let tx = p.pos.x + 0.9 * s, tz = p.pos.z - s * 2.8;
+      if (C) {
+        // caméra au-delà du centre du cercle, face à celui qui parle
+        const dx = C[0] - p.pos.x, dz = C[1] - p.pos.z, L2 = Math.hypot(dx, dz) || 1;
+        tx = C[0] + (dx / L2) * 1.4 + (dz / L2) * 0.5; tz = C[1] + (dz / L2) * 1.4 - (dx / L2) * 0.5;
+      }
       const k = cs.cp ? 1 - Math.exp(-dt * 3) : 1;
       cs.cp ??= cam.position.clone();
       const SY = this.opts.sceneY || 0;

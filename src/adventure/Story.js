@@ -41,14 +41,14 @@ const CH1 = {
     next: 'c_invite',
   },
   c_invite: {
-    type: 'choice', venue: 'municipal', cast: ['me', 'eliott'], who: 'eliott', text: 'Alors, tu viens jeudi ?',
+    type: 'choice', phone: true, who: 'eliott', text: 'Alors, tu viens jeudi ?',
     options: [
       { label: 'Carrément, j\'ai toujours voulu essayer !', effects: { eliott: 8 }, after: [{ who: 'eliott', text: 'YES ! Jeudi, 19 h, au tennis municipal. Je te prête une raquette !' }], next: 'arrive' },
       { label: 'Le padel ? C\'est pas du tennis pour les flemmards ?', effects: { eliott: -2 }, set: { mocked: true }, after: [{ who: 'eliott', text: 'Pour les flemmards ?! Tu vas courir comme jamais. Des vitres, des smashs qui sortent du terrain… Jeudi, 19 h. Pas d\'excuse !' }], next: 'arrive' },
     ],
   },
   arrive: {
-    type: 'scene', venue: 'municipal', ambiance: 'sunset', cast: ['me', 'coach', 'raf', 'jean', 'eliott'],
+    type: 'scene', venue: 'municipal', ambiance: 'sunset', noRacket: true, cast: ['me', 'coach', 'raf', 'jean', 'eliott'],
     effects: (c) => (c.f.mocked ? { raf: -4, jean: -3, coach: -4 } : {}),
     lines: (c) => [
       { who: 'coach', text: 'C\'est toi, le remplaçant de Louka ? Bienvenue. Moi c\'est Roméo. Ici on bosse, on s\'amuse aussi, mais d\'abord on bosse.' },
@@ -57,7 +57,10 @@ const CH1 = {
       c.f.mocked
         ? { who: 'eliott', text: 'Tadaaa ! Je vous présente ma recrue. Au téléphone, il m\'a dit que le padel c\'était « du tennis pour les flemmards ». Je vous le laisse !' }
         : { who: 'eliott', text: 'Tadaaa ! Je vous présente ma recrue. Il est nul, mais il est motivé !' },
+      { who: 'me', text: `*fait un signe de la main* Salut tout le monde ! Moi c'est ${c.s.name.split(' ')[0]}. Merci de m'accueillir.`, wave: 'me' },
       ...(c.f.mocked ? [{ who: 'raf', text: 'Du tennis pour les flemmards ?! Toi, je vais te faire courir.' }, { who: 'coach', text: 'On en reparlera après les exercices. Le flemmard.' }] : [{ who: 'me', text: 'Merci pour la présentation, Eliott…' }]),
+      { who: 'eliott', text: 'Et comme promis : tiens, ta raquette ! C\'est mon ancienne, elle a gagné… zéro tournoi. Mais elle porte bonheur.', give: 'eliott' },
+      { who: 'me', text: '*prend la raquette et la soupèse* Merci ! Elle est plus lourde que je pensais.' },
       { who: 'coach', text: 'Allez, au boulot. On commence par le service.' },
     ],
     next: 'drill1',

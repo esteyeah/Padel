@@ -113,7 +113,7 @@ export class AdventureUI {
     if (st?.venue) this.s.venue = st.venue;
     this.save();
     // les cinématiques s'enchaînent directement dans le jeu
-    if (autoplay && (st?.type === 'scene' || st?.type === 'choice')) { this.play(st); return; }
+    if (autoplay && (st?.type === 'scene' || (st?.type === 'choice' && !st.phone))) { this.play(st); return; }
     this.rerender();
   }
 
@@ -157,7 +157,8 @@ export class AdventureUI {
     });
     const conv1 = (L) => {
       const label = L.who === 'me' ? this.short : LABEL[L.who] || L.who;
-      const base = { label: L.label || label, text: L.text, sheet: L.sheet, walk: L.walk, touch: L.touch };
+      const ref = (w) => (!w ? null : w === 'me' ? 'me' : w === other ? 'p1' : w);
+      const base = { label: L.label || label, text: L.text, sheet: L.sheet, walk: L.walk, touch: L.touch, wave: ref(L.wave), give: ref(L.give) };
       if (L.who === 'me') return { side: 1, ...base };
       if (L.who === other) return { name: otherSpec.name, ...base };
       if (extras.includes(L.who)) return { actor: L.who, ...base };
@@ -257,15 +258,25 @@ export class AdventureUI {
     if (g.players[1]) { const o = val(st.cast, this.ctx).find((x) => x !== 'me'); all[1].id = o; }
     if (sp) {
       const [cx, cz] = toWorld(st.venue, sp);
-      const Y = sp[2] || 0, tight = 0.6;   // deux personnes qui se parlent se tiennent côte à côte
-      g.players.forEach((p, i) => { p.pos.set(cx + (i ? 0.25 : -0.25), 0, cz + (i ? -tight : tight)); p.avatar.root.position.y = Y; });
-      (g.actors || []).forEach((a, i) => { const ang = -1.2 + (i / Math.max(1, g.actors.length - 1)) * 2.4; a.pos.set(cx + Math.sin(ang) * (Y ? 2.4 : 2.3), 0, cz + Math.cos(ang) * 0.6); a.avatar.root.position.y = Y; });
+      // tout le monde en cercle, face au centre : on se voit, personne ne se marche dessus
+      const Y = sp[2] || 0;
+      const people = [...g.players, ...(g.actors || [])];
+      const N = people.length, R = N <= 2 ? 0.75 : 0.95 + 0.22 * N;
+      people.forEach((q, i) => {
+        // toi en face, ton interlocuteur principal de l'autre côté (devant le minibus…), les autres sur les côtés
+        const k = i - 2, na = N - 2;
+        const a = i === 0 ? 0 : i === 1 ? Math.PI : (k % 2 ? -1 : 1) * (Math.PI * ((Math.floor(k / 2) + 1) / (Math.ceil(na / 2) + 1)));
+        q.pos.set(cx + Math.sin(a) * R, 0, cz + Math.cos(a) * R);
+        q.avatar.root.position.y = Y;
+      });
       g.opts.sceneY = Y;
+      g.opts.sceneCenter = [cx, cz]; g.opts.sceneR = R;
     }
+    if (st.noRacket) g.players[0].avatar.racket.visible = false;   // on n'a pas encore de raquette
     if (st.bus && sp) {
       // minibus blanc du club garé à côté du groupe
       const [cx, cz] = toWorld(st.venue, sp);
-      const bus = new THREE.Group(); bus.position.set(cx, 0, cz - 2.9); bus.rotation.y = Math.PI / 2; bus.userData.adv = true;   // garé juste derrière le groupe, de profil
+      const bus = new THREE.Group(); bus.position.set(cx, 0, cz - (g.opts.sceneR || 1) - 2.3); bus.rotation.y = Math.PI / 2; bus.userData.adv = true;   // garé juste derrière le groupe, de profil
       const body = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.4, metalness: 0.2 }), glass = new THREE.MeshStandardMaterial({ color: 0x1a2533, roughness: 0.1, metalness: 0.5 }), dark = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.7 });
       const b1 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 5.4), body); b1.position.y = 1.4; bus.add(b1);
       for (const sx of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.7), glass); w.position.set(sx * 1.01, 1.9, -0.2); w.rotation.y = sx * Math.PI / 2; bus.add(w); }
@@ -344,6 +355,14 @@ export class AdventureUI {
       const pages = val(st.pages, c);
       if (this.page < pages.length - 1) add('Suivant', () => { this.page++; this.rerender(); }, 'primary');
       else add('Continuer', () => this.goto(val(st.next, c)), 'primary');
+    } else if (st.type === 'choice' && st.phone) {
+      // choix au téléphone (pas encore sur place) : réponse dans le menu
+      for (const op of val(st.options, c)) add(esc(op.label), () => {
+        this.apply(val(op.effects, this.ctx), val(op.set, this.ctx), op.rep);
+        this.s.log.push({ step: this.s.step, choice: op.label });
+        const after = (val(op.after, c) || []).map((L) => ({ who: L.who === 'me' ? this.short : LABEL[L.who] || L.who, text: L.text }));
+        if (after.length) { this.react = { pages: after, next: op.next }; this.page = 0; this.sel = 0; this.save(); this.rerender(); } else this.goto(op.next);
+      }, 'choice');
     } else if (st.type === 'scene' || st.type === 'choice') {
       add('Reprendre la scène', () => this.play(st), 'primary');
     } else if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') {
@@ -365,7 +384,7 @@ export class AdventureUI {
     if (this.react) { const p = this.react.pages[this.page]; return `<div class="adv-line"><b>${esc(p.who)}</b><p>${esc(p.text)}</p></div>`; }
     const st = this.step;
     if (st.type === 'text') { const pages = val(st.pages, c), p = pages[this.page]; return `<div class="adv-line"><b>${esc(p.who)}</b><p>${esc(p.text)}</p><small>${this.page + 1} / ${pages.length}</small></div>`; }
-    if (st.type === 'choice') return `<div class="adv-line choice"><b>${esc(st.who)}</b><p>${esc(val(st.text, c))}</p></div>`;
+    if (st.type === 'choice') return `<div class="adv-line choice"><b>${st.phone ? '📞 ' : ''}${esc(LABEL[val(st.who, c)] || val(st.who, c))}</b><p>${esc(val(st.text, c))}</p></div>`;
     if (st.type === 'scene') return '<div class="adv-line"><b>Cinématique</b><p>La scène va se jouer sur le court.</p></div>';
     if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') return `<div class="adv-line"><b>${st.type === 'watch' ? 'Au bord du court' : 'À toi de jouer'}</b><p>${esc(st.intro || val(st.label, c))}</p></div>`;
     if (st.type === 'end') return `<div class="adv-line end"><b>${st.final ? 'FIN DE L\'AVENTURE' : `FIN DU CHAPITRE ${st.chapter}`}</b><p>${esc(val(st.text, c))}</p>${this.s.lastUnlocks?.length ? `<p><b>Débloqué en exhibition :</b><br>${this.s.lastUnlocks.map((t) => `🔓 ${esc(t)}`).join('<br>')}</p>` : ''}</div>`;

@@ -577,3 +577,6 @@ padel-sim/
 
 ### 0.68
 - Aventure : vérification de tous les lieux de scène ; les verres se prennent à la buvette (terrasse du club-house à La Ciotat et à Ceyreste, bar à champagne du Riviera, comptoir du Hangar devant Flavien), jamais sur un court ; lieux hors court corrigés au Centre national et au stade du Mondial.
+
+### 0.69
+- Aventure : la réponse au coup de fil d'Eliott se fait au téléphone (menu), plus sur un court ; dans les cinématiques, tout le monde se tient en cercle face aux autres (plus personne ne se marche dessus), la caméra se place face à celui qui parle ; ton joueur salue de la main en se présentant ; Eliott te tend ta première raquette ; le maire parle devant le minibus.
