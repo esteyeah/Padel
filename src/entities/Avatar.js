@@ -832,9 +832,10 @@ export class Avatar {
     if (s.casual && (st.mode === 'idle' || st.mode === 'run')) {
       // bras le long du corps qui se balancent à l'opposé des jambes ; pliés en courant
       const runK = clamp((s.speed - 2.2) / 1.6, 0, 1), walkK = clamp(s.speed / 1.4, 0, 1);
-      const sw = Math.sin(this.phase) * (0.16 * walkK + 0.12 * runK);
-      P.H.set(-0.23 - 0.02 * runK, -0.5 + 0.22 * runK + Math.abs(sw) * 0.1, 0.02 - sw + 0.08 * runK);
-      P.LH.set(0.23 + 0.02 * runK, -0.5 + 0.22 * runK + Math.abs(sw) * 0.1, 0.02 + sw + 0.08 * runK);
+      const sw = Math.sin(this.phase) * (0.2 * walkK + 0.12 * runK);
+      // coudes légèrement fléchis, la main avance un peu vers l'intérieur
+      P.H.set(-0.22 - 0.02 * runK + Math.max(0, -sw) * 0.06, -0.46 + 0.2 * runK + Math.abs(sw) * 0.16, 0.06 - sw + 0.08 * runK);
+      P.LH.set(0.22 + 0.02 * runK - Math.max(0, sw) * 0.06, -0.46 + 0.2 * runK + Math.abs(sw) * 0.16, 0.06 + sw + 0.08 * runK);
       P.D.set(-0.05, -1, 0.25); P.F.set(1, 0, 0);
       P.twist = sw * 0.35; P.hips = -sw * 0.25; P.lean = 0.03 + 0.12 * runK;
       // petites occupations quand on est à l'arrêt
@@ -926,10 +927,27 @@ export class Avatar {
       // pendant le split-step : genoux repliés en l'air, pieds écartés à la réception
       if (this._tuck > 0) { L.hip.rotation.x -= this._tuck * 0.35; L.knee.rotation.x += this._tuck * 0.7; L.ankle.rotation.x -= this._tuck * 0.25; L.hip.rotation.z += L.sx * this._tuck * 0.08; }
       else if (this.split > 0) L.hip.rotation.z += L.sx * 0.1;
+      if (s.casual && !this._tuck) {
+        // marche « de ville » : genou qui se plie quand la jambe passe devant, léger fléchi à l'appui, poussée du pied
+        const w = clamp(s.speed / 1.3, 0, 1), rK = clamp((s.speed - 2.2) / 1.6, 0, 1);
+        const cs = Math.cos(ph + off), swingK = Math.max(0, cs);
+        L.hip.rotation.x = -0.03 - sw * (0.3 * w + 0.22 * rK) - swingK * (0.1 * w + 0.35 * rK);
+        L.knee.rotation.x = 0.06 + Math.pow(swingK, 1.4) * (0.95 * w + 0.85 * rK) + 0.12 * Math.max(0, sw) * w + 0.15 * rK;
+        L.ankle.rotation.x = -0.03 + swingK * (0.22 * w + 0.2 * rK) - Math.max(0, -sw) * (0.2 * w) * (1 - swingK);
+        L.hip.rotation.z = L.sx * 0.03;
+      }
     }
-    drop += Math.abs(Math.cos(ph)) * (0.014 * g + 0.03 * run) * this.sty.bounce;
-    this.pelvis.position.y = THIGH + SHIN + 0.085 - drop;
-    this.pelvis.rotation.z = Math.sin(ph) * (0.03 + this.sty.sway) * g;
+    if (s.casual) {
+      // la tête monte au passage de la jambe d'appui, le bassin bascule et tourne avec les pas
+      const w = clamp(s.speed / 1.3, 0, 1), rK = clamp((s.speed - 2.2) / 1.6, 0, 1);
+      drop = 0.012 + (1 - Math.abs(Math.sin(ph))) * (0.022 * w + 0.03 * rK);
+      this.pelvis.position.y = THIGH + SHIN + 0.085 - drop;
+      this.pelvis.rotation.z = Math.sin(ph) * 0.045 * w;
+    } else {
+      drop += Math.abs(Math.cos(ph)) * (0.014 * g + 0.03 * run) * this.sty.bounce;
+      this.pelvis.position.y = THIGH + SHIN + 0.085 - drop;
+      this.pelvis.rotation.z = Math.sin(ph) * (0.03 + this.sty.sway) * g;
+    }
     const moving = !s.swing && !s.armed;
     if (moving) this.pelvis.rotation.y += Math.sin(ph) * 0.09 * g * fwdA;
     // pas d'allègement : envol bref puis réception jambes fléchies

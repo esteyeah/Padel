@@ -997,7 +997,15 @@ export class Game {
       for (const h of [0.45, 0.95]) {
         R.rc.set(new THREE.Vector3(p.x, R.y + h, p.z), dir); R.rc.far = d + 0.32;
         const hit = R.rc.intersectObjects(R.col, false)[0];
-        if (hit) { const n = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : null; if (!n || Math.abs(n.y) < 0.7) return true; }
+        if (!hit) continue;
+        const n = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : null;
+        if (n && Math.abs(n.y) >= 0.7) continue;
+        // marche, bordure, rocher : si le dessus est à moins de 50 cm, on monte dessus
+        const q = hit.point.clone().addScaledVector(dir, 0.12);
+        R.rc.set(new THREE.Vector3(q.x, R.y + 0.55, q.z), new THREE.Vector3(0, -1, 0)); R.rc.far = 0.75;
+        const top = R.rc.intersectObjects(R.col, false)[0];
+        if (top && top.point.y <= R.y + 0.5 && h < 0.9) continue;
+        return true;
       }
       return false;
     };
@@ -1012,7 +1020,7 @@ export class Game {
       if (d < 0.7 && d > 1e-3) { p.x = ac.pos.x + dx / d * 0.7; p.z = ac.pos.z + dz / d * 0.7; }
     }
     // hauteur du sol réel (terrasse en contrebas, escaliers, gradins)
-    R.rc.set(new THREE.Vector3(p.x, R.y + 0.45, p.z), new THREE.Vector3(0, -1, 0)); R.rc.far = 3;
+    R.rc.set(new THREE.Vector3(p.x, R.y + 0.55, p.z), new THREE.Vector3(0, -1, 0)); R.rc.far = 3;
     const g0 = R.rc.intersectObjects(R.col, false).find((h) => !h.face || h.face.normal.clone().transformDirection(h.object.matrixWorld).y > 0.5);
     const gy = g0 ? g0.point.y : R.y;
     R.y += (gy - R.y) * (gy < R.y ? 1 - Math.exp(-dt * 10) : 1 - Math.exp(-dt * 14));

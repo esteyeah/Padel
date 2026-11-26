@@ -3,6 +3,11 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.78 — Escalier de Ceyreste et démarche
+- Ceyreste : la rambarde au-dessus de l'escalier est ouverte et les rochers qui bouchaient le haut des marches ont été déplacés : on remonte de la terrasse.
+- Promenade : on monte sur les marches et petits obstacles (moins de 50 cm) au lieu de buter contre.
+- Démarche plus souple : genou qui se plie quand la jambe passe devant, léger fléchi à l'appui, poussée du pied, bassin qui bascule, coudes légèrement fléchis et vrai balancement des bras.
+
 ## v0.77 — Club vivant : matchs, pétanque, jeux et entraînement
 - Promenade : sol réel (on descend l'escalier vers la terrasse de Ceyreste), on bute sur les rambardes, grillages et vitres ; zone agrandie à tout le lieu.
 - Démarche naturelle hors du court : bras le long du corps qui se balancent, buste droit, cadence de marche réaliste, course bras pliés.

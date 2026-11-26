@@ -819,8 +819,9 @@ function ceyresteDetails(out, renderer, DEPTH) {
 
   // --- jardin de rochers calcaires blancs et gravier, sur le talus devant la terrasse
   flat(out, 3.2, 16, -25.7, 12, 0xd2c6b0, 0.02, TX.groundTex(renderer, 'dirt', 2, 8));
-  limestone(out, [[-26.6, 7.5, 0.55], [-26.2, 9.0, 0.7], [-25.8, 10.6, 0.5], [-26.7, 12.1, 0.8], [-25.9, 13.8, 0.6], [-26.4, 15.4, 0.75], [-25.2, 16.6, 0.45], [-24.8, 8.4, 0.4], [-25.0, 14.6, 0.5], [-24.2, 11.6, 0.35],
-    [-26.9, 6.2, 0.45], [-25.4, 9.8, 0.3], [-26.0, 17.4, 0.5], [-24.6, 12.9, 0.28], [-25.6, 7.0, 0.32], [-27.0, 10.0, 0.4], [-26.9, 14.3, 0.35]]);
+  // (rien devant le haut de l'escalier, z < 8 : on doit pouvoir remonter de la terrasse)
+  limestone(out, [[-26.2, 9.0, 0.7], [-25.8, 10.6, 0.5], [-26.7, 12.1, 0.8], [-25.9, 13.8, 0.6], [-26.4, 15.4, 0.75], [-25.2, 16.6, 0.45], [-24.8, 8.4, 0.4], [-25.0, 14.6, 0.5], [-24.2, 11.6, 0.35],
+    [-25.4, 9.8, 0.3], [-26.0, 17.4, 0.5], [-24.6, 12.9, 0.28], [-27.0, 10.0, 0.4], [-26.9, 14.3, 0.35]]);
   bushGroup(out, [[-24.6, 10.0, 0.6], [-24.4, 15.8, 0.5]], 0x6f8a3c);
 
   // --- large allée en béton entre le club-house et le premier court bleu
@@ -1196,7 +1197,9 @@ function decorCeyreste(out, renderer) {
   // garde-corps en bois au bord du talus
   const rail = [];
   for (let z = deck.z0; z <= deck.z1; z += 2.5) { if (Math.abs(z - 6) > 1.5) rail.push(at(new THREE.BoxGeometry(0.08, 1, 0.08), deck.x1 + 0.1, 0.5, z)); }
-  rail.push(at(new THREE.BoxGeometry(0.06, 0.06, dd), deck.x1 + 0.1, 0.98, dcz));
+  // lisse supérieure en deux morceaux : ouverture au-dessus de l'escalier (z = 4,5 à 7,5)
+  rail.push(at(new THREE.BoxGeometry(0.06, 0.06, 4.5 - deck.z0), deck.x1 + 0.1, 0.98, (deck.z0 + 4.5) / 2));
+  rail.push(at(new THREE.BoxGeometry(0.06, 0.06, deck.z1 - 7.5), deck.x1 + 0.1, 0.98, (deck.z1 + 7.5) / 2));
   out.group.add(mesh(rail, new THREE.MeshStandardMaterial({ color: 0x6b4426, roughness: 0.9 })));
 
   // --- club-house en contrebas : murs ocre clair, toit de tuiles
