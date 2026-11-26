@@ -116,6 +116,8 @@ export class BotController {
     const g = this.game, p = this.player;
     const partner = g.partnerOf(p);
     // avec un humain : on suit sa position (monter et descendre ensemble)
+    if (p.tactic === 'net') return g.lastShot?.type === 'lob' && g.lastShot.side !== p.side ? 6.5 : 3.6;
+    if (p.tactic === 'back') return 8.2;
     if (partner?.isHuman) return Math.abs(partner.pos.z) < 5.5 ? 3.8 : 8.0;
     let d = this.profile.homeDepth;
     // style varié : on monte quand les adversaires reculent, on recule quand ils montent
@@ -283,6 +285,9 @@ export class BotController {
       button = 'B'; type = 'lob'; power = rnd(0.35, 0.65); depth = rnd(7.8, 9.1 - m * 0.4);
     } else if (oppDepth > 7 && r < pr.dropRate + D.aggression * 0.08) {
       button = 'X'; type = 'drop'; power = rnd(0.3, 0.6); depth = rnd(1.6, 2.8);
+    } else if (oppDepth < 4.6 && myDepth > 6.5 && r < 0.3 + D.aggression * 0.1) {
+      // chiquita : balle douce et basse dans les pieds des volleyeurs
+      button = 'X'; type = 'slice'; power = rnd(0.28, 0.42); depth = rnd(2.6, 3.6);
     } else if (r < 0.32) {
       button = 'X'; type = 'slice'; power = rnd(0.35, 0.75); depth = rnd(6.4, 8.2 - m * 0.4);
     }
@@ -296,6 +301,12 @@ export class BotController {
     }
     x += rnd(-0.5, 0.5);
     if (Math.random() < 0.15) { const o = opps[Math.floor(Math.random() * opps.length)]; x = o.pos.x + rnd(-0.6, 0.6); } // jouer sur un adversaire
+    // adversaire malin : en double, il cible souvent le joueur le plus faible (ou le plus fatigué)
+    if (opps.length > 1 && Math.random() < 0.15 + D.aggression * 0.25) {
+      const rate = (o) => { const st = o.stats || {}; const v = Object.values(st).filter((n) => typeof n === 'number'); return (v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0.5) * (0.6 + 0.4 * (o.energy ?? 1)); };
+      const weak = opps.reduce((a, b) => (rate(b) < rate(a) ? b : a));
+      if (rate(weak) < rate(opps.find((o) => o !== weak)) - 0.03) x = weak.pos.x + rnd(-0.7, 0.7);
+    }
     x = clamp(x, -lim, lim);
     return { button, type, power, target: { x, z: oppSide * depth } };
   }

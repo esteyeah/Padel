@@ -3,6 +3,12 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.74 — Gameplay et corps
+- Consignes au partenaire bot (T au clavier, RB à la manette — Y en mode gâchettes) : il te suit, monte au filet ou reste au fond.
+- Chiquita : un coup doux joué depuis le fond quand les deux adversaires sont au filet part bas dans leurs pieds. Les bots l'utilisent aussi.
+- Adversaires plus malins : en double, ils ciblent souvent le joueur le plus faible ou le plus fatigué.
+- Corps : muscles du cou en V, pomme d'Adam, trapèzes, pointe du coude ; la peau brille de sueur quand le joueur se fatigue.
+
 ## v0.73 — Corps, lumière et décors vivants
 - Corps : reliefs anatomiques (mollets à deux chefs, rotule, vaste interne, tibia, tendon d'Achille, deltoïdes, biceps, triceps, avant-bras), plus de résolution ; plis du maillot à la taille.
 - Lumière : contre-jour qui détoure les joueurs, rebond bleuté du court, soleil plus chaud, ombres bleutées plus contrastées, halo plus présent au coucher du soleil et la nuit, ombres portées sur une zone plus large.

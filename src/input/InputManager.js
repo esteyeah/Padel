@@ -43,6 +43,7 @@ const KEYMAP = {
   VIEW: ['KeyC'],
   SPRINT: ['ShiftLeft', 'ShiftRight'],
   HELP: ['KeyH'],
+  TACTIC: ['KeyT'],
 };
 const HELP_BTN = 11;         // clic du stick droit : afficher / masquer les aides
 const SPRINT_BTN = 10;       // clic du stick gauche : petit sprint
@@ -50,7 +51,7 @@ const VIEW_BTN = 8;          // View / Select / Share : changer de caméra
 const COMBO_KEY = 'KeyU';    // contre-vitre au clavier
 const GAME_KEYS = new Set([
   'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD',
-  'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyO', 'KeyH', 'KeyC', 'Enter', 'Escape', 'ShiftLeft', 'ShiftRight',
+  'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyO', 'KeyH', 'KeyT', 'KeyC', 'Enter', 'Escape', 'ShiftLeft', 'ShiftRight',
 ]);
 const STORAGE_KEY = 'padel-arena.controls';
 const TRIGGER_THRESHOLD = 0.35;
@@ -114,6 +115,9 @@ export class InputManager {
     this.version++;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ preset: this.preset, mapping: this.mapping })); } catch { /* ignoré */ }
   }
+
+  /** Bouton des consignes au partenaire : RB, ou Y si RB sert déjà à frapper (mode gâchettes). */
+  tacticButton() { return Object.values(this.mapping).includes(5) ? 3 : 5; }
 
   setPreset(name) {
     if (!PRESETS[name]) return;
@@ -206,10 +210,10 @@ export class InputManager {
     this.aim.x = ax; this.aim.y = ay;
 
     // --- actions
-    for (const name of ['A', 'B', 'X', 'Y', 'START', 'VIEW', 'SPRINT', 'HELP']) {
+    for (const name of ['A', 'B', 'X', 'Y', 'START', 'VIEW', 'SPRINT', 'HELP', 'TACTIC']) {
       let h = KEYMAP[name].some((c) => k.has(c));
       if (pad) {
-        const idx = name === 'START' ? START_BTN : name === 'VIEW' ? VIEW_BTN : name === 'SPRINT' ? SPRINT_BTN : name === 'HELP' ? HELP_BTN : this.mapping[name];
+        const idx = name === 'START' ? START_BTN : name === 'VIEW' ? VIEW_BTN : name === 'SPRINT' ? SPRINT_BTN : name === 'HELP' ? HELP_BTN : name === 'TACTIC' ? this.tacticButton() : this.mapping[name];
         if (isDown(pad.buttons[idx])) h = true;
       }
       this.pressed[name] = h && !this._prev[name];

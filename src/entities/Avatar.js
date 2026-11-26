@@ -719,6 +719,19 @@ export class Avatar {
   /** Pas d'allègement : petit saut d'équilibre quand l'adversaire frappe. */
   splitStep() { this.split = 0.32; }
 
+  /** Sueur : la peau brille davantage quand le joueur se fatigue (0 à 1). */
+  setSweat(k) {
+    k = Math.max(0, Math.min(1, k));
+    if (Math.abs(k - (this._sweat ?? -1)) < 0.02) return;
+    this._sweat = k;
+    for (const m of [this.mat.skin, this.mat.faceSkin]) {
+      if (!m) continue;
+      m.userData.r0 ??= m.roughness;
+      m.roughness = m.userData.r0 - 0.22 * k;
+      m.clearcoat = 0.35 * k; m.clearcoatRoughness = 0.35;
+    }
+  }
+
   /** Réaction après un point : 'joy' (poing levé), 'sad' (mains sur les hanches, tête basse). */
   setMood(kind, dur = 2.2) { this.mood = kind; this.moodT = dur; this.moodDur = dur; }
 

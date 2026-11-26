@@ -308,6 +308,14 @@ export class Player {
       ? { ...a.target }
       : targetFromAim(this.aim, type, this.side, g.referee.serveBox, this.pos);
     if (this.isOutside()) target = { x: clamp(target.x, -3, 3), z: -this.side * clamp(Math.abs(target.z), 5.5, 8.5) };
+    // chiquita (joueur humain) : coup doux depuis le fond quand les deux adversaires sont au filet
+    if (this.isHuman && !a.target && (type === 'slice' || type === 'drive') && power < 0.5 && Math.abs(this.pos.z) > 6.3) {
+      const opps = g.opponentsOf?.(this) || [];
+      if (opps.length && opps.every((o) => Math.abs(o.pos.z) < 4.8)) {
+        target.z = -this.side * (2.7 + this.aim.y * 0.4 + Math.random() * 0.4);
+        g.hud?.shotInfo?.('CHIQUITA', this.side);
+      }
+    }
     if (type === 'wall') q -= 0.12;                        // contre-vitre : geste difficile
     const prec = skill;
     const consistency = Math.min(1, skill * 0.9 + (this.isHuman ? 0.3 : 0));
@@ -386,6 +394,7 @@ export class Player {
   laneX() { return this.side * this.lane * 2.4; }
 
   updateVisual(dt, g) {
+    this.avatar.setSweat?.((1 - this.energy) * 1.3 - 0.15);
     const bp = g.ball.state.p;
     const s = this.side;
     // orientation : vers le filet, tournée vers la balle quand elle est dans notre camp

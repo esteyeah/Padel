@@ -128,6 +128,8 @@ export class HUD {
       <div>${k(L.aim)} visée</div>
       <div>${k(L.A)} coup droit / revers</div>
       <div>${k(L.X)} coupé · bas = amortie</div>
+      <div>${k(this.input.padType === 'keyboard' ? 'T' : (this.input.tacticButton?.() === 3 ? 'Y' : 'RB'))} consigne au partenaire (suivre / filet / fond)</div>
+      <div>coup doux depuis le fond contre deux volleyeurs = chiquita</div>
       <div>${k(L.Y)} smash / bandeja</div>
       <div>${k(L.B)} lob</div>
       <div>${k(L.C)} contre-vitre</div>

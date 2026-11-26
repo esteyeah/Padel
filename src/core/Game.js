@@ -827,6 +827,16 @@ export class Game {
       else if (this.career) { if (inp.menu.confirm) { this.finishCareer(); return; } }
       else if (inp.menu.confirm) this.start({ ...this.opts });
       else if (inp.menu.back) this.exitToMenu();
+    } else if (!this.attract && !this.drill && !this.cutscene && inp.pressed.TACTIC && this.human && this.doubles && !this.netLink) {
+      // consignes au partenaire : suivre / monter au filet / rester au fond
+      const mate = this.partnerOf(this.human);
+      if (mate && !mate.isHuman) {
+        const order = [null, 'net', 'back'];
+        mate.tactic = order[(order.indexOf(mate.tactic ?? null) + 1) % order.length];
+        const txt = { null: 'te suit', net: 'monte au filet', back: 'reste au fond' }[mate.tactic];
+        this.hud.shotInfo(`${mate.name} ${txt}`, this.human.side);
+        this.hud.speech?.(mate.name, mate.tactic === 'net' ? 'Je monte !' : mate.tactic === 'back' ? 'Je reste derrière.' : 'Je te suis.', mate.side);
+      }
     } else if (!this.attract && inp.pressed.VIEW) {
       this.hud.shotInfo(`Caméra : ${this.cameraRig.cycle()}`, 1);
     } else if (!this.attract && inp.pressed.START) {

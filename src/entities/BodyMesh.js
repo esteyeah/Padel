@@ -150,7 +150,15 @@ export function buildSkinnedBody(av, mat, a) {
   const tA = P0.clone().add(new THREE.Vector3(0, -0.15, 0)), tB = P0.clone().add(new THREE.Vector3(0, 0.59, 0));
   const torsoWeights = (t) => torsoW(-0.15 + t * 0.74);
   // peau (cou + haut des épaules), short, maillot
-  add(mat.skin, sweep({ A: tA, B: tB, u: X, v: Z, sec: torsoSec(0), weights: torsoWeights, cuts: 30, ring: 28, t0: 0.62, t1: 1.08 }));
+  // cou : sterno-cléido-mastoïdiens en V, pomme d'Adam (hommes), pente des trapèzes
+  const neckD = (t, c, sn) => {
+    const y = -0.15 + t * 0.74;
+    const scm = 0.005 * gs(y, 0.57, 0.04) * Math.exp(-(((Math.abs(c) - (0.55 - (y - 0.53) * 4)) / 0.18) ** 2)) * Math.max(0, sn);
+    const adam = fem ? 0 : 0.006 * gs(y, 0.565, 0.014) * Math.max(0, sn) ** 14;
+    const trap = (0.012 + MU * 0.008) * gs(y, 0.51, 0.035) * c * c * (sn < 0.3 ? 1 : 0.4);
+    return scm + adam + trap;
+  };
+  add(mat.skin, sweep({ A: tA, B: tB, u: X, v: Z, sec: torsoSec(0), weights: torsoWeights, cuts: 36, ring: 32, t0: 0.62, t1: 1.08, detail: neckD }));
   if (!a.skirt) add(mat.shorts, sweep({ A: tA, B: tB, u: X, v: Z, sec: torsoSec(0.012), weights: torsoWeights, cuts: 10, ring: 28, t0: 0.0, t1: 0.3 }));
   add(mat.shirt, sweep({ A: tA, B: tB, u: X, v: Z, sec: (t) => { const q = torsoSec(0.009)(t); const y = -0.15 + t * 0.74, f = 0.012 * Math.exp(-(((y - 0.46) / 0.06) ** 2)); return [q[0] + f, q[1] + f * 0.4, q[2] + f * 0.4, q[3]]; }, weights: torsoWeights, cuts: 40, ring: 36, t0: 0.16, t1: 0.95, detail: (t, c, sn) => 0.0028 * Math.sin(t * 95 + c * 2.5 + sn) * gs(t, 0.42, 0.1) * (0.5 + 0.5 * Math.abs(c)) + 0.002 * Math.sin(Math.atan2(sn, c) * 9) * gs(t, 0.3, 0.06) }));
   // col du maillot
@@ -211,7 +219,7 @@ export function buildSkinnedBody(av, mat, a) {
     const upperW = (t) => [[ch, 1 - smooth(-0.15, 0.18, t)], [s, smooth(-0.15, 0.18, t) * (1 - smooth(0.88, 1.06, t))], [e, smooth(0.88, 1.06, t)]];
     // bras : deltoïde arrondi, biceps devant, triceps derrière
     const MA = 0.7 + MU * 0.9 - BL * 0.3;
-    const upperD = (t, c, sn) => MA * (0.008 * gs(t, 0.12, 0.14) + 0.009 * gs(t, 0.55, 0.18) * Math.max(0, sn) ** 2 + 0.006 * gs(t, 0.38, 0.2) * Math.max(0, -sn) ** 2);
+    const upperD = (t, c, sn) => MA * (0.008 * gs(t, 0.12, 0.14) + 0.009 * gs(t, 0.55, 0.18) * Math.max(0, sn) ** 2 + 0.006 * gs(t, 0.38, 0.2) * Math.max(0, -sn) ** 2) + 0.006 * gs(t, 1.0, 0.05) * Math.max(0, -sn) ** 4;   // + pointe du coude
     add(mat.tattoo || mat.skin, sweep({ A: S, B: E, u: sideAxis, v: frontAxis, sec: upperSec(0), weights: upperW, t0: 0.18, t1: 1.06, cuts: 18, ring: 20, detail: upperD }));
     // manche courte
     // manche : démarre dans l'épaule (épaulement plus gros) pour couvrir la jonction avec le torse
