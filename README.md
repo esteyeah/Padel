@@ -3,6 +3,10 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.80 — Pétanque
+- Le maire est un pointeur redoutable : très précis, et il joue souvent la plombée.
+- L'ancien cochonnet est retiré du terrain à chaque nouvelle mène.
+
 ## v0.79 — Clavier AZERTY et pétanque améliorée
 - Clavier : les lettres suivent la touche réellement tapée — ZQSD en AZERTY, WASD en QWERTY, et K, J, I, L, U, O, H, T, C sont les mêmes lettres partout.
 - Pétanque :

@@ -497,7 +497,7 @@ export class AdventureUI {
             onChoose: (c, g) => {
               const id = opps[c];
               if (!id) return [];
-              const st = { jean: { skill: 0.85, style: 'pointeur' }, raf: { skill: 0.7, style: 'tireur' }, eliott: { skill: 0.35, style: 'pointeur' }, mayor: { skill: 0.75, style: 'pointeur' } }[id];
+              const st = { jean: { skill: 0.85, style: 'pointeur' }, raf: { skill: 0.7, style: 'tireur' }, eliott: { skill: 0.35, style: 'pointeur' }, mayor: { skill: 0.97, style: 'pointeur', plomb: 0.45 } }[id];
               g.roam.pending = (gg) => gg.startPetanque(id, st);
               return [line(id, { jean: 'Avec plaisir. Je te préviens, je mesure tout au mètre.', raf: 'Tu vas voir, je tire comme un pro.', eliott: 'Super ! Je sais pas jouer, mais je suis motivé !', mayor: 'Ah, la pétanque ! Le vrai sport de Ceyreste.' }[id])];
             },

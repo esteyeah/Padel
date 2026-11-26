@@ -20,7 +20,8 @@ export class Petanque {
    * @param opp     acteur adversaire { avatar, pos, label }
    * @param skill   0..1 adresse de l'adversaire ; style : 'pointeur' | 'tireur'
    */
-  constructor(g, area, me, opp, { skill = 0.6, style = 'pointeur', target = 7, onEnd } = {}) {
+  constructor(g, area, me, opp, { skill = 0.6, style = 'pointeur', target = 7, plomb = 0.25, onEnd } = {}) {
+    this.plombRate = plomb;
     Object.assign(this, { g, area, me, opp, skill, style, target, onEnd });
     this.group = new THREE.Group(); this.group.position.y = area.y || 0; g.scene.add(this.group);
     this.matMe = new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.95, roughness: 0.22 });
@@ -38,6 +39,7 @@ export class Petanque {
   // ------------------------------------------------------------------ mène
   newMene() {
     for (const b of this.balls || []) this.group.remove(b.mesh);
+    if (this.coch) this.group.remove(this.coch.mesh);   // l'ancien cochonnet disparaît aussi
     this.balls = [];
     this.left = [3, 3];
     this.aim = 0; this.power = 0; this.charging = null;
@@ -100,11 +102,11 @@ export class Petanque {
     const tgt = tir ? best.p : this.coch.p;
     const dx = tgt.x - this.circle.x, dz = (tgt.y - this.circle.z) * this.dir;
     const d = Math.hypot(dx, dz);
-    const aim = Math.atan2(dx, dz) + gauss() * 0.05 * (1.3 - this.skill);
+    const aim = Math.atan2(dx, dz) + gauss() * 0.05 * (1.3 - this.skill) * (this.skill > 0.9 ? 0.55 : 1);   // un grand pointeur ne rate presque jamais
     // force nécessaire pour atteindre la cible (inverse de throwBall), avec l'erreur du joueur
     const need = d;                                   // vol + roulement = distance visée
-    const power = Math.max(0, Math.min(1, (need - 1.5) / 8.5 + gauss() * 0.06 * (1.3 - this.skill)));
-    const plomb = !tir && this.skill > 0.6 && Math.random() < 0.25;
+    const power = Math.max(0, Math.min(1, (need - 1.5) / 8.5 + gauss() * 0.06 * (1.3 - this.skill) * (this.skill > 0.9 ? 0.55 : 1)));
+    const plomb = !tir && this.skill > 0.6 && Math.random() < this.plombRate;
     this.msg(tir ? `${this.opp.label} tire !` : plomb ? `${this.opp.label} joue une plombée` : `${this.opp.label} pointe`);
     this.throwBall(1, aim, power, tir ? 'tir' : plomb ? 'plomb' : 'point');
   }
