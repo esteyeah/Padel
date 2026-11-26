@@ -47,13 +47,13 @@ const GradeShader = {
     }`,
 };
 const GRADE = {
-  day: { contrast: 1.06, saturation: 1.0, tint: [1.0, 1.0, 0.99], vignette: 0.2 },
+  day: { contrast: 1.09, saturation: 1.05, tint: [1.02, 1.0, 0.97], vignette: 0.2 },
   sunset: { contrast: 1.08, saturation: 1.05, tint: [1.04, 0.99, 0.93], vignette: 0.3 },
   night: { contrast: 1.08, saturation: 1.0, tint: [0.97, 0.99, 1.04], vignette: 0.32 },
 };
 import { buildArena } from './Arena.js';
 
-const BLOOM = { night: { strength: 0.42, threshold: 0.82 }, day: { strength: 0.1, threshold: 0.95 }, sunset: { strength: 0.25, threshold: 0.88 } };
+const BLOOM = { night: { strength: 0.45, threshold: 0.8 }, day: { strength: 0.14, threshold: 0.92 }, sunset: { strength: 0.34, threshold: 0.82 } };
 
 export class Renderer3D {
   constructor(canvas, { quality = 'high' } = {}) {
@@ -165,10 +165,35 @@ export class Renderer3D {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Vent : les feuillages (arbres, palmiers, haies) se balancent doucement. */
+  windPatch() {
+    const W = this.wind || (this.wind = { value: 0 });
+    this.scene.traverse((o) => {
+      const m = o.material;
+      if (!m || m.name !== 'foliage' || m.userData.wind) return;
+      m.userData.wind = true;
+      m.onBeforeCompile = (sh) => {
+        sh.uniforms.uWind = W;
+        sh.vertexShader = 'uniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+          float wph = 0.0;
+          #ifdef USE_INSTANCING
+            wph = float(gl_InstanceID) * 1.37;
+          #endif
+          float wh = clamp(position.y, 0.0, 6.0);
+          transformed.x += sin(uWind * 1.3 + wph + position.z * 0.4) * 0.018 * wh;
+          transformed.z += sin(uWind * 1.05 + wph * 1.7 + position.x * 0.4) * 0.012 * wh;
+          transformed += normal * sin(uWind * 6.0 + position.x * 9.0 + position.y * 7.0 + wph) * 0.012;`);
+      };
+      m.needsUpdate = true;
+    });
+  }
+
   render(dt = 1 / 60) {
     this.arena.updateWallFade(this.camera.position, dt);
     this.arena.update(dt);
     const c = this.ensureComposer();
+    this._windT = (this._windT || 0) - 1; if (this._windT <= 0) { this._windT = 120; this.windPatch(); }
+    if (this.wind) this.wind.value += dt;
     if (c) { if (this.grade) this.grade.uniforms.time.value = (this.grade.uniforms.time.value + dt * 7.3) % 100; c.render(dt); }
     else this.renderer.render(this.scene, this.camera);
   }

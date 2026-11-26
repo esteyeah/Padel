@@ -453,7 +453,7 @@ export function buildSurroundings(root, renderer, { lampMat, wireMap, turfMap, s
     // jamais sur un court (central ou voisins) ni juste contre ses vitres
     .filter(([x, z]) => ![[0, 0], [-15.5, 0], [17.5, 0]].some(([cx, cz]) => Math.abs(x - cx) < HW + 1.5 && Math.abs(z - cz) < HL + 1.5));
   const trunks = new THREE.InstancedMesh(tpl.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), spots.length);
-  const crowns = new THREE.InstancedMesh(tpl.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), spots.length);
+  const crowns = new THREE.InstancedMesh(tpl.crown, new THREE.MeshStandardMaterial({ name: 'foliage', map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), spots.length);
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
   spots.forEach(([x, z], i) => {
     q.setFromEuler(new THREE.Euler(0, Math.random() * Math.PI * 2, 0));

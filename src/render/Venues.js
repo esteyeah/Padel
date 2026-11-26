@@ -931,7 +931,7 @@ function decorPrestige(out, renderer) {
   for (let z = -30; z <= 30; z += 7.5) for (const x of [-39.5, 39.5]) pts.push([x, z]);
   for (const x of [-14, 14]) pts.push([x, -28], [x, 28]);
   const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
-  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
+  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ name: 'foliage', map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
   const M = new THREE.Matrix4();
   pts.forEach(([x, z], i) => { M.makeTranslation(x, 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
   out.group.add(trunks, crowns);
@@ -1152,7 +1152,7 @@ function decorLaCiotat(out, renderer) {
   const palm = palmTemplate();
   const pts = [[22.4, 4.5], [31.5, 12.5], [31.5, -16.5]];
   const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
-  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
+  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ name: 'foliage', map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
   const M = new THREE.Matrix4();
   pts.forEach(([x, z], i) => { M.makeScale(0.7, 0.7, 0.7).setPosition(x, x > plat0 ? UP : 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
   out.group.add(trunks, crowns);
@@ -1294,7 +1294,7 @@ function decorNational(out, renderer) {
   sign(out, renderer, 'COURT N° 2', [['#0b2a5b', '#1565c0'], '#ffffff', '#ffd400'], 4, 28, 4.6, -(HL + 6.6), 0);
   const pts = [[-20, -16], [19.5, -17], [-22, 10], [19.5, 15], [-14, 18], [36, 17]];
   const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
-  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
+  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ name: 'foliage', map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
   const M = new THREE.Matrix4();
   pts.forEach(([x, z], i) => { M.makeTranslation(x, 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
   out.group.add(trunks, crowns);
@@ -1410,7 +1410,7 @@ function decorMyClub(out, renderer, club) {
     const palm = palmTemplate(), pts = [];
     for (let i = 0; i < 6; i++) pts.push([-22 + i * 8.8, -16.5]);
     const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
-    const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
+    const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ name: 'foliage', map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
     const M = new THREE.Matrix4();
     pts.forEach(([x, z], i) => { M.makeTranslation(x, 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
     trunks.castShadow = crowns.castShadow = true;
@@ -1824,7 +1824,7 @@ function decorBeach(out, renderer) {
   const palm = palmTemplate();
   const pts = [[-16, -16], [16, -16], [-20, 4], [20, 4], [-9, -24], [9, -24], [-26, -30], [27, -28]];
   const trunks = new THREE.InstancedMesh(palm.trunk, new THREE.MeshStandardMaterial({ map: trunkTex(), roughness: 0.95 }), pts.length);
-  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
+  const crowns = new THREE.InstancedMesh(palm.crown, new THREE.MeshStandardMaterial({ name: 'foliage', map: frondTex(), alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85 }), pts.length);
   const M = new THREE.Matrix4();
   pts.forEach(([x, z], i) => { M.makeTranslation(x, 0, z); trunks.setMatrixAt(i, M); crowns.setMatrixAt(i, M); });
   trunks.castShadow = crowns.castShadow = true;

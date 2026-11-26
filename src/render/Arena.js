@@ -111,12 +111,21 @@ export function buildArena(scene, renderer, quality = 'high') {
   key.castShadow = true;
   key.shadow.mapSize.set(quality === 'high' ? 4096 : 2048, quality === 'high' ? 4096 : 2048);
   key.shadow.radius = 3;
-  Object.assign(key.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 2, far: 45 });
+  Object.assign(key.shadow.camera, { left: -17, right: 17, top: 17, bottom: -17, near: 2, far: 55 });
   key.shadow.bias = -0.0004;
   key.shadow.normalBias = 0.015;   // évite l'acné d'ombre sur les corps
   key.shadow.normalBias = 0.025;
   scene.add(key, key.target);
   arena.keyLight = key;
+  // contre-jour : liseré lumineux sur les silhouettes (cheveux, épaules), sans ombre
+  const rim = new THREE.DirectionalLight(0xffe2c0, 0.9);
+  rim.position.set(-6, 9, -22);
+  scene.add(rim);
+  arena.rimLight = rim;
+  // lumière renvoyée par le sol du court (rebond bleuté, très douce, par en dessous)
+  const bounce = new THREE.DirectionalLight(0x9cc4ff, 0.25);
+  bounce.position.set(0, -6, 3);
+  scene.add(bounce);
 
   // ---------------------------------------------------------------- environnement (reflets)
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -156,16 +165,16 @@ export function buildArena(scene, renderer, quality = 'high') {
   const AMB = {
     night: {
       sky: [0x040914, 0x15254a, 0x5a4256], fog: [0x0d1428, 45, 170], hemi: [0x8fa6ff, 0x1a1f2a, 0.55],
-      key: [0xfff2e0, 1.7, [3.5, 16, 5]], spots: true, lamp: 6, ads: 0.35, windows: 0.55, stars: true, exposure: 1.3, env: 0.55,
+      key: [0xfff2e0, 1.7, [3.5, 16, 5]], rim: [0xbfd0ff, 0.7], spots: true, lamp: 6, ads: 0.35, windows: 0.55, stars: true, exposure: 1.3, env: 0.55,
     },
     day: {
-      sky: [0x2c6fd8, 0x7db3ee, 0xe4edf3], fog: [0xc9d8e8, 80, 260], hemi: [0xd6e6ff, 0x8a8068, 0.75],
-      key: [0xfff1dc, 4.4, [13, 13, 8]], spots: false, lamp: 0.3, ads: 0.12, windows: 0.0, stars: false, exposure: 1.0, env: 1.0,
-      hdr: { bg: 'sky', env: 'park', bgIntensity: 1.0, envIntensity: 0.9, rot: 0.6 },
+      sky: [0x2c6fd8, 0x7db3ee, 0xe4edf3], fog: [0xc9d8e8, 80, 260], hemi: [0xb8d2ff, 0x9a8466, 0.6],
+      key: [0xffe8cc, 4.8, [13, 13, 8]], rim: [0xfff0d8, 1.0], spots: false, lamp: 0.3, ads: 0.12, windows: 0.0, stars: false, exposure: 0.98, env: 1.0,
+      hdr: { bg: 'sky', env: 'park', bgIntensity: 1.0, envIntensity: 0.72, rot: 0.6 },
     },
     sunset: {
       sky: [0x3b4f86, 0xd98a5a, 0xffc98a], fog: [0xd9a27a, 70, 240], hemi: [0xffd2a8, 0x4a3a30, 0.5],
-      key: [0xffb36b, 3.6, [-16, 6.5, 6]], spots: true, lamp: 3, ads: 0.25, windows: 0.4, stars: false, exposure: 1.05, env: 0.9,
+      key: [0xffb36b, 3.9, [-16, 6.5, 6]], rim: [0xff9a50, 1.8], spots: true, lamp: 3, ads: 0.25, windows: 0.4, stars: false, exposure: 1.05, env: 0.9,
       hdr: { bg: 'sunrise', env: 'sunrise', bgIntensity: 0.9, envIntensity: 0.85, rot: 2.2 },
     },
   };
@@ -175,6 +184,9 @@ export function buildArena(scene, renderer, quality = 'high') {
     scene.fog.color.setHex(a.fog[0]); scene.fog.near = a.fog[1]; scene.fog.far = a.fog[2];
     hemi.color.setHex(a.hemi[0]); hemi.groundColor.setHex(a.hemi[1]); hemi.intensity = a.hemi[2];
     key.color.setHex(a.key[0]); key.intensity = a.key[1]; key.position.set(...a.key[2]);
+    if (a.rim) { rim.color.setHex(a.rim[0]); rim.intensity = a.rim[1]; }
+    // contre-jour opposé au soleil (vu depuis la caméra, les bords des joueurs s'illuminent)
+    rim.position.set(-a.key[2][0] * 0.5, Math.max(6, a.key[2][1] * 0.7), -22);
     arena.stars.visible = a.stars;
     renderer.toneMappingExposure = a.exposure;
     scene.environmentIntensity = a.env;

@@ -3,6 +3,11 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.73 — Corps, lumière et décors vivants
+- Corps : reliefs anatomiques (mollets à deux chefs, rotule, vaste interne, tibia, tendon d'Achille, deltoïdes, biceps, triceps, avant-bras), plus de résolution ; plis du maillot à la taille.
+- Lumière : contre-jour qui détoure les joueurs, rebond bleuté du court, soleil plus chaud, ombres bleutées plus contrastées, halo plus présent au coucher du soleil et la nuit, ombres portées sur une zone plus large.
+- Décors : arbres, palmiers et haies se balancent au vent.
+
 ## v0.72 — Visages vivants et réactions
 - Les personnages clignent des yeux, la bouche bouge quand ils parlent dans les cinématiques, ils plissent les yeux et serrent les dents à l'effort (charge, frappe).
 - Cornée brillante sur les yeux, peau avec marbrures, pores et petites taches.

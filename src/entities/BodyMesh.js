@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
+const gs = (t, m, w) => Math.exp(-(((t - m) / w) ** 2));
 const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 /** Interpolation douce d'une table [[t, ...valeurs]]. */
@@ -31,7 +32,7 @@ function profile(table, t) {
  *  sec(t) -> [w, dFront, dBack, vOffset, uOffset]
  *  weights(t, ang) -> [[os, poids], ...]
  */
-function sweep({ A, B, u, v, sec, weights, cuts = 14, ring = 18, t0 = 0, t1 = 1 }) {
+function sweep({ A, B, u, v, sec, weights, cuts = 14, ring = 18, t0 = 0, t1 = 1, detail = null }) {
   const pos = [], idx = [], si = [], sw = [], uvs = [];
   const axis = new THREE.Vector3().subVectors(B, A);
   // sens des faces selon l'orientation du repère de section
@@ -44,7 +45,9 @@ function sweep({ A, B, u, v, sec, weights, cuts = 14, ring = 18, t0 = 0, t1 = 1 
       const ang = (j / ring) * Math.PI * 2;
       const c = Math.cos(ang), s = Math.sin(ang);
       const d = s >= 0 ? df : db;
-      p.copy(A).addScaledVector(axis, t).addScaledVector(u, w * c + uo).addScaledVector(v, d * s + vo);
+      // relief musculaire : décalage radial (c : côté u, s : côté v / avant)
+      const dd = detail ? detail(t, c, s) : 0;
+      p.copy(A).addScaledVector(axis, t).addScaledVector(u, (w + dd) * c + uo).addScaledVector(v, (d + dd) * s + vo);
       pos.push(p.x, p.y, p.z);
       uvs.push(j / ring, t * axis.length() * 3);
       const ws = weights(t, ang).filter((x) => x[1] > 1e-4).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -149,7 +152,7 @@ export function buildSkinnedBody(av, mat, a) {
   // peau (cou + haut des épaules), short, maillot
   add(mat.skin, sweep({ A: tA, B: tB, u: X, v: Z, sec: torsoSec(0), weights: torsoWeights, cuts: 30, ring: 28, t0: 0.62, t1: 1.08 }));
   if (!a.skirt) add(mat.shorts, sweep({ A: tA, B: tB, u: X, v: Z, sec: torsoSec(0.012), weights: torsoWeights, cuts: 10, ring: 28, t0: 0.0, t1: 0.3 }));
-  add(mat.shirt, sweep({ A: tA, B: tB, u: X, v: Z, sec: (t) => { const q = torsoSec(0.009)(t); const y = -0.15 + t * 0.74, f = 0.012 * Math.exp(-(((y - 0.46) / 0.06) ** 2)); return [q[0] + f, q[1] + f * 0.4, q[2] + f * 0.4, q[3]]; }, weights: torsoWeights, cuts: 26, ring: 28, t0: 0.16, t1: 0.95 }));
+  add(mat.shirt, sweep({ A: tA, B: tB, u: X, v: Z, sec: (t) => { const q = torsoSec(0.009)(t); const y = -0.15 + t * 0.74, f = 0.012 * Math.exp(-(((y - 0.46) / 0.06) ** 2)); return [q[0] + f, q[1] + f * 0.4, q[2] + f * 0.4, q[3]]; }, weights: torsoWeights, cuts: 40, ring: 36, t0: 0.16, t1: 0.95, detail: (t, c, sn) => 0.0028 * Math.sin(t * 95 + c * 2.5 + sn) * gs(t, 0.42, 0.1) * (0.5 + 0.5 * Math.abs(c)) + 0.002 * Math.sin(Math.atan2(sn, c) * 9) * gs(t, 0.3, 0.06) }));
   // col du maillot
   const collar = new THREE.TorusGeometry(0.068 + BL * 0.012, 0.008, 8, 32).rotateX(Math.PI / 2 - 0.22).scale(1.12, 1, 0.98);
   const CW = W(av.chest, 0, 0.275, -0.004);
@@ -167,7 +170,11 @@ export function buildSkinnedBody(av, mat, a) {
       return [w + inf, df + inf, db + inf, t > 0.75 ? (t - 0.75) * 0.03 : 0, L.sx * (t < 0.1 ? 0.012 * (0.1 - t) : 0)];
     };
     const thighW = (t) => [[pel, 1 - smooth(-0.05, 0.16, t)], [hip, smooth(-0.05, 0.16, t) * (1 - smooth(0.86, 1.05, t))], [knee, smooth(0.86, 1.05, t)]];
-    add(mat.skin, sweep({ A: H, B: K, u: X, v: Z, sec: thighSec(0), weights: thighW, t0: 0.28, t1: 1.08, cuts: 14 }));
+    // cuisse : vaste interne (goutte au-dessus du genou), droit fémoral, rotule
+    const MD = 0.7 + MU * 0.8 - BL * 0.3;
+    const thighD = (t, c, sn) => MD * (0.011 * gs(t, 0.8, 0.1) * Math.max(0, sn) * Math.max(0, -c * L.sx) + 0.006 * gs(t, 0.45, 0.2) * Math.max(0, sn) ** 2
+      + 0.005 * gs(t, 0.4, 0.25) * Math.max(0, c * L.sx)) + 0.007 * gs(t, 0.98, 0.05) * Math.max(0, sn) ** 4;
+    add(mat.skin, sweep({ A: H, B: K, u: X, v: Z, sec: thighSec(0), weights: thighW, t0: 0.28, t1: 1.08, cuts: 22, ring: 22, detail: thighD }));
     if (!a.skirt) {
       // short ample, ourlet en léger évasement
       add(mat.shorts, sweep({ A: H, B: K, u: X, v: Z, sec: (t) => { const s = thighSec(0.016)(t); const f = smooth(0.25, 0.42, t) * 0.012; return [s[0] + f, s[1] + f, s[2] + f, 0, s[4]]; }, weights: thighW, t0: -0.12, t1: 0.44, cuts: 10 }));
@@ -180,7 +187,10 @@ export function buildSkinnedBody(av, mat, a) {
       return [w + inf, df + inf, db + inf, vo];
     };
     const shinW = (t) => [[hip, 1 - smooth(-0.06, 0.12, t)], [knee, smooth(-0.06, 0.12, t) * (1 - smooth(0.9, 1.04, t))], [ankle, smooth(0.9, 1.04, t)]];
-    add(mat.skin, sweep({ A: K, B: A, u: X, v: Z, sec: shinSec(0), weights: shinW, t0: -0.08, t1: 1.02, cuts: 16 }));
+    // mollet : deux chefs du gastrocnémien (l'interne plus bas et plus gros), tibia saillant devant, tendon d'Achille
+    const shinD = (t, c, sn) => MD * (0.013 * gs(t, 0.3, 0.13) * Math.max(0, -sn) * (0.7 + 0.5 * Math.max(0, -c * L.sx)) + 0.006 * gs(t, 0.24, 0.1) * Math.max(0, -sn) * Math.max(0, c * L.sx))
+      + 0.003 * gs(t, 0.4, 0.3) * Math.max(0, sn) ** 8 - 0.006 * gs(t, 0.82, 0.08) * Math.max(0, -sn) * Math.abs(c) + 0.004 * gs(t, 0.97, 0.04) * Math.abs(c) ** 6;
+    add(mat.skin, sweep({ A: K, B: A, u: X, v: Z, sec: shinSec(0), weights: shinW, t0: -0.08, t1: 1.02, cuts: 24, ring: 22, detail: shinD }));
     add(mat.sock, sweep({ A: K, B: A, u: X, v: Z, sec: shinSec(0.004), weights: shinW, t0: 0.74, t1: 1.06, cuts: 6 }));
     // chaussure modelée
     buildShoe(add, mat, ankle, A);
@@ -199,7 +209,10 @@ export function buildSkinnedBody(av, mat, a) {
       return [w + inf, df + inf, db + inf];
     };
     const upperW = (t) => [[ch, 1 - smooth(-0.15, 0.18, t)], [s, smooth(-0.15, 0.18, t) * (1 - smooth(0.88, 1.06, t))], [e, smooth(0.88, 1.06, t)]];
-    add(mat.tattoo || mat.skin, sweep({ A: S, B: E, u: sideAxis, v: frontAxis, sec: upperSec(0), weights: upperW, t0: 0.18, t1: 1.06, cuts: 12 }));
+    // bras : deltoïde arrondi, biceps devant, triceps derrière
+    const MA = 0.7 + MU * 0.9 - BL * 0.3;
+    const upperD = (t, c, sn) => MA * (0.008 * gs(t, 0.12, 0.14) + 0.009 * gs(t, 0.55, 0.18) * Math.max(0, sn) ** 2 + 0.006 * gs(t, 0.38, 0.2) * Math.max(0, -sn) ** 2);
+    add(mat.tattoo || mat.skin, sweep({ A: S, B: E, u: sideAxis, v: frontAxis, sec: upperSec(0), weights: upperW, t0: 0.18, t1: 1.06, cuts: 18, ring: 20, detail: upperD }));
     // manche courte
     // manche : démarre dans l'épaule (épaulement plus gros) pour couvrir la jonction avec le torse
     add(mat.shirt, sweep({ A: S, B: E, u: sideAxis, v: frontAxis, sec: (t) => { const q = upperSec(0.012)(t); const f = smooth(0.2, 0.42, t) * 0.006 + (1 - smooth(-0.12, 0.12, t)) * 0.007; return [q[0] + f, q[1] + f, q[2] + f]; }, weights: upperW, t0: -0.12, t1: 0.44, cuts: 10 }));
@@ -210,7 +223,9 @@ export function buildSkinnedBody(av, mat, a) {
       return [w, df, db];
     };
     const foreW = (t) => [[s, 1 - smooth(-0.08, 0.1, t)], [e, smooth(-0.08, 0.1, t)]];
-    add(mat.tattoo || mat.skin, sweep({ A: E, B: handEnd, u: sideAxis, v: frontAxis, sec: foreSec, weights: foreW, t0: -0.06, t1: 0.98, cuts: 12 }));
+    // avant-bras : masse musculaire près du coude, poignet plat, os du poignet
+    const foreD = (t, c, sn) => MA * 0.007 * gs(t, 0.22, 0.15) * (0.6 + 0.4 * Math.abs(c)) + 0.002 * gs(t, 0.9, 0.05) * Math.abs(c) ** 6;
+    add(mat.tattoo || mat.skin, sweep({ A: E, B: handEnd, u: sideAxis, v: frontAxis, sec: foreSec, weights: foreW, t0: -0.06, t1: 0.98, cuts: 18, ring: 20, detail: foreD }));
     buildHand(add, mat, e, el, dir, isRight, a);
   };
   arm(av.lShoulder, av.lElbow, NY, X, Z, false);

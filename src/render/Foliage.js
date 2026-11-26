@@ -74,7 +74,7 @@ export function foliage(blobs, { density = 34, card = 0.9, shade = 0.55 } = {}) 
   const cardGeo = cards.length ? mergeGeometries(cards.map((g) => g.toNonIndexed())) : null;
   return { core, cards: cardGeo };
 }
-export const leafMat = (kind, tint) => new THREE.MeshStandardMaterial({ map: leafTexture(kind), color: tint, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85, vertexColors: true });
+export const leafMat = (kind, tint) => new THREE.MeshStandardMaterial({ name: 'foliage', map: leafTexture(kind), color: tint, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.85, vertexColors: true });
 
 
 /** Haie taillée : volume arrondi couvert de feuilles. Renvoie un Group. */
