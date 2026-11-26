@@ -3,6 +3,16 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.77 — Club vivant : matchs, pétanque, jeux et entraînement
+- Promenade : sol réel (on descend l'escalier vers la terrasse de Ceyreste), on bute sur les rambardes, grillages et vitres ; zone agrandie à tout le lieu.
+- Démarche naturelle hors du court : bras le long du corps qui se balancent, buste droit, cadence de marche réaliste, course bras pliés.
+- Les gens s'occupent : Eliott et Louka discutent ensemble, Jean et Raf répètent leurs gestes, le coach fait les cent pas, le maire est au téléphone, Gégé et Flavien boivent un verre ; ils se tournent vers toi quand tu approches.
+- Matchs en cours sur les autres courts selon le lieu (célébrités au Riviera, tes amis contre Camille et Timéo à Ceyreste, Nathan à La Ciotat et Ceyreste) ; approche-toi pour les regarder en vrai.
+- Court libre : « s'entraîner sur ce court » (services, lobs, smash par 3).
+- Échanges de balles proposés par Jean, Raf, Louka ou le coach (tie-break, effet sur la relation).
+- Pierre-feuille-ciseaux en deux manches gagnantes contre Eliott.
+- Pétanque jouable à Ceyreste : visée, force, pointer (A) ou tirer (B), chocs entre boules, points à chaque mène, partie en 5 ; contre Raf, Eliott ou le maire (et Jean s'il ne joue pas) — le résultat change vos relations.
+
 ## v0.76 — Promenades au club et temps libre renouvelé
 - Aventure : « Se promener au club » — tu marches librement (caméra à l'épaule, stick droit pour tourner, sprint), tu croises la bande, le coach et les figures du lieu (le maire à Ceyreste, Gégé à La Ciotat, Flavien au Hangar, l'hôtesse au Riviera, Léa à la plage) et tu leur parles avec A ; chacun a plusieurs conversations différentes selon votre relation. B / Échap pour repartir.
 - Temps libre : une seule fois par chapitre (3 activités) au lieu d'avant chaque match.

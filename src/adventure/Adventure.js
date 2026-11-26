@@ -421,48 +421,175 @@ export class AdventureUI {
     return SPOTS[v] && v !== 'national' && v !== 'pro' ? v : 'ceyreste';
   }
   roam() {
-    const c = this.ctx, f = this.s.flags, venue = this.roamVenue(), ch = chapterOf(this.s.step);
+    const f = this.s.flags, venue = this.roamVenue(), ch = chapterOf(this.s.step);
     const S = SPOTS[venue];
-    const ids = ['jean', 'raf'];
-    if (!f.rivalEliott || (this.s.rel.eliott || 0) > -30) ids.unshift('eliott');
+    const c0 = (VENUE_COURTS[venue] || [[0, 0]])[0];
+    const courts = (VENUE_COURTS[venue] || [[0, 0]]).map((q) => ({ x: q[0] - c0[0], z: q[1] - c0[1], rot: Math.abs(Math.sin(q[2] || 0)) > 0.5 }));
+    // matchs en cours sur les courts voisins, selon le lieu
+    const R = () => 'random';
+    const MATCHES = {
+      prestige: [[['zidane', 'zlatan'], ['payet', 'nasri'], 'Zidane et Zlatan contre Payet et Nasri'], [['tapia', 'coello'], ['benarfa', 'lacheau'], 'Tapia et Coello en démonstration'], [['mandanda', 'hanouna'], ['sichez', 'random'], 'Mandanda et Hanouna']],
+      ceyreste: [[['raf', 'jean'], ['camille', 'timeo'], 'Raf et Jean contre Camille et Timéo'], [['nathan', R()], [R(), R()], 'Nathan Subrero et des habitués']],
+      laciotat: [[['nathan', R()], ['camille', 'timeo'], 'Nathan contre Camille et Timéo'], [[R(), R()], [R(), R()], 'Des joueurs du club']],
+    }[venue] || [[[R(), R()], [R(), R()], 'Des joueurs du club']];
+    const used = MATCHES.slice(0, Math.max(0, courts.length - 1));
+    const playing = new Set(used.flatMap((m) => [...m[0], ...m[1]]));
+    const ambient = used.map((m, i) => ({ court: courts[i + 1], label: m[2], ids: [m[0], m[1]], looks: [...m[0], ...m[1]].map((id, k) => this.spec(id, k < 2 ? 'blue' : 'red', 0, { ovr: 40 }).appearance) }));
+    const freeCourts = courts.filter((_, i) => !(i >= 1 && i <= used.length));
+    // qui se promène, et ce qu'il fait
+    const ids = [];
+    if ((!f.rivalEliott || (this.s.rel.eliott || 0) > -30)) ids.push('eliott');
+    for (const id of ['jean', 'raf']) if (!playing.has(id)) ids.push(id);
     if (f.metLouka) ids.push('louka');
     if (f.knowsRomeo || ch >= 2) ids.push('coach');
     const local = { ceyreste: 'mayor', laciotat: 'gege', hangar: 'flavien', prestige: 'hostess', beach: 'lea' }[venue];
     if (local) ids.push(local);
-    // points de rendez-vous au sol (on ignore les terrasses surélevées)
     const pts = ['talk', 'between', 'bar', 'bus', 'entrance'].map((k) => S[k]).filter((q) => q && !(q[2] > 0.2 || q[2] < -0.2)).map((q) => toWorld(venue, q));
     const start = pts[0];
+    const ACT = { eliott: 'chat', louka: 'chat', jean: 'swing', raf: 'swing', coach: 'wander', mayor: 'phone', gege: 'drink', flavien: 'drink', hostess: 'wander', lea: 'phone' };
+    const acts = {};
     const actors = ids.map((id, i) => {
       const base = pts[(i + 1) % pts.length] || start;
-      const ang = i * 2.4, r = 1.8 + (i % 3) * 1.1;
+      let x = base[0] + Math.sin(i * 2.4) * (2 + (i % 3)), z = base[1] + Math.cos(i * 2.4) * (2 + (i % 3));
+      // Eliott et Louka discutent ensemble
+      if (id === 'louka' && ids.includes('eliott')) { const e = ids.indexOf('eliott'); const b = pts[(e + 1) % pts.length] || start; x = b[0] + Math.sin(e * 2.4) * (2 + (e % 3)) + 1.1; z = b[1] + Math.cos(e * 2.4) * (2 + (e % 3)); }
+      acts[id] = { act: ACT[id] || 'idle', faceTo: id === 'eliott' && ids.includes('louka') ? 'louka' : id === 'louka' ? 'eliott' : null, wander: ACT[id] === 'wander' ? { x: x + 5, z: z - 3 } : null };
       const sp = this.spec(id, i % 2 ? 'red' : 'blue', 0, { idle: true });
-      return { id, label: LABEL[id] || NAME[id] || id, side: 1, x: base[0] + Math.sin(ang) * r, z: base[1] + Math.cos(ang) * r, yaw: ang + Math.PI, appearance: { ...sp.appearance, name: sp.name } };
+      return { id, label: LABEL[id] || NAME[id] || id, side: 1, x, z, yaw: i * 1.3, appearance: { ...sp.appearance, name: sp.name } };
     });
-    const xs = [...pts.map((q) => q[0]), ...actors.map((a) => a.x)], zs = [...pts.map((q) => q[1]), ...actors.map((a) => a.z)];
-    const bounds = [Math.min(...xs) - 6, Math.max(...xs) + 6, Math.min(...zs) - 6, Math.max(...zs) + 6];
-    const c0 = (VENUE_COURTS[venue] || [[0, 0]])[0];
-    const courts = (VENUE_COURTS[venue] || [[0, 0]]).map((q) => ({ x: q[0] - c0[0], z: q[1] - c0[1], rot: Math.abs(Math.sin(q[2] || 0)) > 0.5 }));
+    const xs = [...pts.map((q) => q[0]), ...courts.map((q) => q.x)], zs = [...pts.map((q) => q[1]), ...courts.map((q) => q.z)];
+    const bounds = [Math.min(...xs) - 9, Math.max(...xs) + 9, Math.min(...zs) - 9, Math.max(...zs) + 9];
+    // terrain de pétanque (Ceyreste)
+    const petanque = venue === 'ceyreste' ? { x: -36 - c0[0], z: 1.2 - c0[1], y: -0.9, w: 4, l: 10 } : null;
     const me = this.me(0);
-    const conv = (L) => (L.who === 'me' ? { side: 1, label: this.short, text: L.text } : { actor: L.who, label: LABEL[L.who] || NAME[L.who] || L.who, text: L.text });
+    const line = (who, text, extra = {}) => (who === 'me' ? { side: 1, label: this.short, text, ...extra } : { actor: who, label: LABEL[who] || NAME[who] || who, text, ...extra });
+    const conv = (L) => line(L.who, L.text);
+    const ov = (t) => ({ ...t });
     this.startGame({
       mode: 'career', sceneOnly: true, format: '1v1', sets: 1, matchTiebreak: 7, venue, ambiance: ['ceyreste', 'laciotat', 'beach'].includes(venue) ? 'sunset' : 'day',
       lineup: { near: [{ ...me, lane: 0 }], far: [{ ...this.spec('random', 'red', 0), lane: 0 }] }, actors, party: false,
       roam: {
-        bounds, courts, startYaw: 0,
+        bounds, startYaw: 0, acts, ambient, freeCourts, petanque,
         talk: (id, again) => {
           const rel = this.s.rel[id] || 0;
           const pool = ROAM_TALK[id] ? ROAM_TALK[id]({ rel, ch, f, short: this.short, venue }) : [[{ who: id, text: 'Belle journée, hein ?' }]];
           const k = ((this.s.done ??= {})['talk_' + id] || 0);
           this.s.done['talk_' + id] = k + 1;
-          const lines = pool[k % pool.length];
+          const lines = pool[k % pool.length].map(conv);
           if (!again && !(this.s.talkCh ??= {})[id + ch] && PEOPLE[id]) { this.apply({ [id]: 2 }); this.s.talkCh[id + ch] = 1; }
+          // propositions : pierre-feuille-ciseaux avec Eliott, quelques échanges sur un court avec d'autres
+          if (id === 'eliott' && rel > -10 && k % 2 === 0) lines.push(line('eliott', 'Hé, pierre-feuille-ciseaux en trois manches ? Le perdant paie les boissons !', { choices: [{ label: 'Allez, je te prends !' }, { label: 'Pas maintenant' }], onChoose: (c) => (c === 0 ? [this.rps(0, 0, 0)] : [line('eliott', 'Trouillard ! Je plaisante. Enfin… un peu.')]) }));
+          if (['jean', 'raf', 'coach', 'louka'].includes(id) && !(id === 'raf' && rel < -20) && (k % 2 === 1 || id === 'coach')) {
+            const who = { jean: 'Jean', raf: 'Raf', coach: 'Le coach', louka: 'Louka' }[id];
+            lines.push(line(id, id === 'raf' ? 'Tiens, un court est libre. Tu veux que je te donne une petite leçon ?' : id === 'coach' ? 'Le court est libre. Montre-moi ce que tu as appris : quelques échanges, un tie-break.' : id === 'louka' ? 'Mon genou tient. On tape quelques balles ? Doucement, hein.' : 'Un court s\'est libéré. On fait quelques échanges ?', {
+              choices: [{ label: 'Avec plaisir' }, { label: 'Une autre fois' }],
+              onChoose: (c, g) => { if (c === 0) { g.roam.pending = (gg) => gg.endRoam(() => this.rally(id)); return [line(id, 'Allez, on y va.')]; } return [line(id, `${who === 'Raf' ? 'Tu as peur, c\'est ça.' : 'Pas de souci, une autre fois.'}`)]; },
+            }));
+          }
           this.save();
-          return lines.map(conv);
+          return lines;
         },
+        petanqueLines: () => {
+          const opps = ['jean', 'raf', 'eliott', 'mayor'].filter((x) => ids.includes(x)).slice(0, 3);
+          if (!opps.length) return [line('me', 'Personne pour jouer… Il faudra revenir avec quelqu\'un.')];
+          return [line('me', 'Une partie de pétanque ? Contre qui ?', {
+            choices: [...opps.map((x) => ({ label: LABEL[x] || NAME[x] })), { label: 'Finalement non' }],
+            onChoose: (c, g) => {
+              const id = opps[c];
+              if (!id) return [];
+              const st = { jean: { skill: 0.85, style: 'pointeur' }, raf: { skill: 0.7, style: 'tireur' }, eliott: { skill: 0.35, style: 'pointeur' }, mayor: { skill: 0.75, style: 'pointeur' } }[id];
+              g.roam.pending = (gg) => gg.startPetanque(id, st);
+              return [line(id, { jean: 'Avec plaisir. Je te préviens, je mesure tout au mètre.', raf: 'Tu vas voir, je tire comme un pro.', eliott: 'Super ! Je sais pas jouer, mais je suis motivé !', mayor: 'Ah, la pétanque ! Le vrai sport de Ceyreste.' }[id])];
+            },
+          })];
+        },
+        onPetanque: (id, won, score) => {
+          const eff = won ? { jean: { jean: 4 }, raf: { raf: -3 }, eliott: { eliott: 2 }, mayor: {} }[id] : { jean: { jean: 3 }, raf: { raf: 5 }, eliott: { eliott: 5 }, mayor: {} }[id];
+          this.apply(eff || {}, {}, id === 'mayor' && won ? 1 : 0);
+          this.s.log.push({ step: this.s.step, choice: `Pétanque contre ${LABEL[id] || id} : ${won ? 'gagné' : 'perdu'} ${score[0]}-${score[1]}` });
+          this.save();
+          const say = won
+            ? { jean: 'Bien joué. Ton dernier point, c\'était du grand art.', raf: 'Le terrain est pourri. Les boules sont pourries. Revanche.', eliott: 'Je savais que tu étais bon, mais là…', mayor: 'Bravo ! Je dirai à tout le village que tu m\'as battu.' }[id]
+            : { jean: 'Belle partie. Tu progresses, la prochaine sera serrée.', raf: 'Treize à rien… bon, cinq à rien. C\'est pareil. Le roi de la pétanque, c\'est moi.', eliott: 'J\'AI GAGNÉ ?! J\'ai gagné ! Je vais le dire à tout le monde !', mayor: 'Ne le prends pas mal, j\'ai quarante ans de boulodrome.' }[id];
+          return [line(id, `${say} (${score[0]} - ${score[1]})`)];
+        },
+        trainLines: () => [line('me', 'Un court libre. Qu\'est-ce que je travaille ?', {
+          choices: [{ label: 'Services' }, { label: 'Lobs' }, { label: 'Smash par 3' }, { label: 'Rien, je continue' }],
+          onChoose: (c, g) => { const d = ['serve', 'lob', 'smash'][c]; if (d) g.roam.pending = (gg) => gg.endRoam(() => this.trainDrill(d)); return []; },
+        })],
+        onWatch: (info) => this.watchAmbient(info, venue),
       },
       onStarted: (g) => { g.players[0].pos.set(start[0], 0, start[1] + 1.5); g.players[0].avatar.racket.visible = false; },
       onSceneEnd: () => this.show(),
     });
+  }
+
+  /** Pierre-feuille-ciseaux en trois manches gagnantes… deux, contre Eliott. */
+  rps(round, mine, his) {
+    const N = ['Pierre', 'Feuille', 'Ciseaux'];
+    const L = (who, text, extra = {}) => (who === 'me' ? { side: 1, label: this.short, text, ...extra } : { actor: who, label: 'Eliott', text, ...extra });
+    return L('eliott', round === 0 ? 'Un, deux, trois… pierre, feuille, ciseaux !' : `${mine} - ${his}. Manche suivante : pierre, feuille, ciseaux !`, {
+      choices: N.map((n) => ({ label: n })),
+      onChoose: (k) => {
+        const e = Math.floor(Math.random() * 3);
+        const res = k === e ? 0 : (k - e + 3) % 3 === 1 ? 1 : -1;
+        const m2 = mine + (res > 0 ? 1 : 0), h2 = his + (res < 0 ? 1 : 0);
+        const out = [L('me', `${N[k]} !`), L('eliott', `${N[e]} ! ${res === 0 ? 'Égalité, on rejoue !' : res > 0 ? pick(['Nooon !', 'Tu triches, c\'est sûr.', 'Je l\'ai pas vu venir…']) : pick(['HA ! Je lis en toi comme dans un livre !', 'Trop facile !', 'Le maître, c\'est moi.'])}`)];
+        if (m2 >= 2 || h2 >= 2) {
+          const won = m2 > h2;
+          this.apply({ eliott: won ? 2 : 4 });
+          this.s.log.push({ step: this.s.step, choice: `Pierre-feuille-ciseaux contre Eliott : ${won ? 'gagné' : 'perdu'} ${m2}-${h2}` });
+          this.save();
+          out.push(L('eliott', won ? 'Bon… je paie les boissons. Mais je veux ma revanche la semaine prochaine.' : 'C\'est ta tournée ! Un sirop de menthe, s\'il te plaît. Grand.'));
+        } else out.push(this.rps(round + 1, m2, h2));
+        return out;
+      },
+    });
+  }
+
+  /** Quelques échanges (tie-break) contre un ami sur un court libre. */
+  rally(id) {
+    const venue = this.roamVenue();
+    const opp = this.spec(id, 'red', 0, { ovr: 40 });
+    this.startGame({
+      mode: 'career', format: '1v1', sets: 1, gamesPerSet: 6, golden: true, matchTiebreak: 7, venue, ambiance: 'day',
+      title: 'QUELQUES ÉCHANGES', subtitle: `Contre ${LABEL[id] || NAME[id] || id}`, replays: false, sudden: false, party: false,
+      lineup: { near: [this.me(0)], far: [opp] },
+      onEnd: (r) => {
+        if (r && !r.quit) {
+          const eff = r.won ? { jean: { jean: 3 }, raf: { raf: -2 }, coach: { coach: 5 }, louka: { louka: 4 } }[id] : { jean: { jean: 2 }, raf: { raf: 4 }, coach: { coach: 1 }, louka: { louka: 3 } }[id];
+          this.apply(eff || {});
+          this.s.stats.drive = Math.min(0.95, (this.s.stats.drive || 0.3) + 0.006);
+          this.s.log.push({ step: this.s.step, choice: `Échanges contre ${LABEL[id] || id} : ${r.won ? 'gagné' : 'perdu'}` });
+          this.save();
+        }
+        this.show();
+      },
+      onQuit: () => this.show(),
+    });
+  }
+
+  /** Entraînement en solo sur un court libre, choisi pendant la promenade. */
+  trainDrill(d) {
+    const coach = this.spec('coach', 'black', 0, { idle: true });
+    const cut = drillCutscene(d, this.short.toUpperCase());
+    this.startGame({
+      mode: 'drill', drill: d, format: '1v1', sets: 1, gamesPerSet: 6, golden: true, matchTiebreak: 0, firstServer: 1,
+      venue: this.roamVenue(), ambiance: 'day', cutscene: cut, lineup: { near: [this.me(0)], far: [coach] },
+      onEnd: (r) => {
+        if (r && !r.quit) { const attr = DRILLS[d]?.attr || 'drive'; this.s.stats[attr] = Math.min(0.95, (this.s.stats[attr] || 0.3) + 0.008 + 0.004 * (r.medal || 0)); this.s.fatigue = Math.min(1, (this.s.fatigue || 0) + 0.08); this.save(); }
+        this.show();
+      },
+      onQuit: () => this.show(),
+    });
+  }
+
+  /** On regarde pour de vrai un des matchs aperçus pendant la promenade. */
+  watchAmbient(info, venue) {
+    const kit = (k) => (k < 2 ? 'blue' : 'red');
+    const lineup = { near: info.ids[0].map((id, k) => ({ ...this.spec(id, kit(k), k ? -1 : 1, { ovr: 40 }), human: false })), far: info.ids[1].map((id, k) => ({ ...this.spec(id, kit(k + 2), k ? -1 : 1, { ovr: 40 }), human: false })) };
+    this.startGame({ mode: 'demo', format: '2v2', sets: 1, matchTiebreak: 10, venue, ambiance: 'day', title: 'MATCH', subtitle: `${info.label} · A pour partir`, lineup, watchFor: 60, replays: false, party: false,
+      spectators: [this.me(0).appearance], onEnd: () => this.show() });
   }
 
   journal() {

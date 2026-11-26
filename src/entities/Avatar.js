@@ -776,7 +776,8 @@ export class Avatar {
       this._flushOn = k > 0;
     }
     const run = Math.min(1, s.speed / 4.5);
-    this.phase += dt * (6 + s.speed * 2.1) * (this.sty?.tempo || 1);
+    // démarche décontractée (promenade) : cadence naturelle, environ 2 pas par seconde en marchant
+    this.phase += dt * (s.casual ? (s.speed > 0.1 ? 2.2 + s.speed * 2.6 : 0) : (6 + s.speed * 2.1) * (this.sty?.tempo || 1));
     const ph = this.phase;
     const fwdK = s.speed > 0.1 ? s.fwd / s.speed : 0;
     const sideK = s.speed > 0.1 ? s.side / s.speed : 0;
@@ -828,11 +829,29 @@ export class Avatar {
     this.body.position.x += (tx - this.body.position.x) * lk;
     this.body.position.z += (tz - this.body.position.z) * lk;
     const P = armPose(st);
+    if (s.casual && (st.mode === 'idle' || st.mode === 'run')) {
+      // bras le long du corps qui se balancent à l'opposé des jambes ; pliés en courant
+      const runK = clamp((s.speed - 2.2) / 1.6, 0, 1), walkK = clamp(s.speed / 1.4, 0, 1);
+      const sw = Math.sin(this.phase) * (0.16 * walkK + 0.12 * runK);
+      P.H.set(-0.23 - 0.02 * runK, -0.5 + 0.22 * runK + Math.abs(sw) * 0.1, 0.02 - sw + 0.08 * runK);
+      P.LH.set(0.23 + 0.02 * runK, -0.5 + 0.22 * runK + Math.abs(sw) * 0.1, 0.02 + sw + 0.08 * runK);
+      P.D.set(-0.05, -1, 0.25); P.F.set(1, 0, 0);
+      P.twist = sw * 0.35; P.hips = -sw * 0.25; P.lean = 0.03 + 0.12 * runK;
+      // petites occupations quand on est à l'arrêt
+      if (s.speed < 0.3 && s.pose) {
+        const t = this.phase2 = (this.phase2 || 0) + dt;
+        if (s.pose === 'hips') { P.LH.set(0.2, -0.2, -0.04); P.H.set(-0.21, -0.22, -0.02); }
+        else if (s.pose === 'phone') { P.LH.set(0.09, 0.42, 0.03); }
+        else if (s.pose === 'drink') { const sip = Math.max(0, Math.sin(t * 0.9)) ** 6; P.LH.set(0.12 - 0.06 * sip, -0.12 + 0.52 * sip, 0.2 + 0.02 * sip); }
+        else if (s.pose === 'chat') { P.H.set(-0.22, -0.2 + 0.12 * Math.max(0, Math.sin(t * 2.3)), 0.18); P.LH.set(0.22, -0.25 + 0.1 * Math.max(0, Math.sin(t * 1.7 + 1)), 0.16); }
+        else if (s.pose === 'arms') { P.LH.set(0.04, -0.08, 0.16); P.H.set(-0.04, -0.06, 0.17); }
+      }
+    }
     // personnalisation du geste
     const Y = this.sty;
-    if (st.mode === 'idle') { P.H.y += Y.racketH; P.H.z += Y.racketOut; P.LH.y += Y.racketH * 0.8; P.LH.z += Y.racketOut; }
+    if (st.mode === 'idle' && !s.casual) { P.H.y += Y.racketH; P.H.z += Y.racketOut; P.LH.y += Y.racketH * 0.8; P.LH.z += Y.racketOut; }
     // raquette tenue d'une seule main, bras libre relâché le long du corps (style décontracté)
-    if (Y.oneHand && (st.mode === 'idle' || st.mode === 'run')) {
+    if (Y.oneHand && !s.casual && (st.mode === 'idle' || st.mode === 'run')) {
       P.LH.set(0.24, -0.5, 0.02);
       if (st.mode === 'idle') { P.H.set(-0.26, -0.42, 0.14); P.D.set(-0.15, -0.35, 0.92); P.F.set(1, 0, 0.1); }
     }

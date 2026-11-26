@@ -13,6 +13,8 @@ import { FIXED_DT, COURT, DIFFICULTY, PROFILES, flatStats, clamp } from '../conf
 import { Ball } from '../entities/Ball.js';
 import { Player, targetFromAim } from '../entities/Player.js';
 import { Avatar } from '../entities/Avatar.js';
+import { AmbientMatch } from './AmbientMatch.js';
+import { Petanque } from './Petanque.js';
 import { ReplayRecorder, ReplayPlayer } from './Replay.js';
 import { makeAppearance, resolveLook, KITS } from '../entities/Appearance.js';
 import { HumanController } from '../controllers/HumanController.js';
@@ -932,73 +934,194 @@ export class Game {
   // =========================================================================
   //  Promenade libre (aventure) : on marche dans le club et on parle aux gens
   // =========================================================================
+  /** Décor solide pour la promenade : on marche sur le sol réel, on bute sur les barrières et les vitres. */
+  roamColliders() {
+    const skip = new Set();
+    for (const q of [...this.players, ...(this.actors || [])]) skip.add(q.avatar.root);
+    for (const m of this.roam.matches || []) for (const p of m.players) skip.add(p.av.root);
+    for (const sp of this.spectators || []) skip.add(sp.root);
+    const list = [];
+    const walk = (o) => {
+      if (skip.has(o) || o.visible === false) return;
+      if (o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh && o !== this.ball?.mesh) {
+        const m = o.material;
+        const name = Array.isArray(m) ? '' : m?.name;
+        o.geometry.computeBoundingSphere?.();
+        const big = (o.geometry.boundingSphere?.radius || 0) * Math.max(o.scale.x, o.scale.y, o.scale.z) > 120;
+        if (name !== 'foliage' && !big) list.push(o);
+      }
+      for (const c of o.children) walk(c);
+    };
+    walk(this.scene);
+    return list;
+  }
+
   updateRoam(dt) {
     const R = this.roam, me = this.players[0], inp = this.input, cam = this.cameraRig.camera;
     this.ball.setVisible(false);
     if (this.players[1]) { this.players[1].avatar.root.visible = false; this.players[1].pos.set(0, -50, 0); }
+    if (!R.ready) {
+      R.ready = true;
+      // matchs d'ambiance sur les autres courts
+      R.matches = (R.ambient || []).map((m) => Object.assign(new AmbientMatch(this.scene, m.court, m.looks), { info: m }));
+      for (const ac of this.actors || []) {
+        const a = R.acts?.[ac.id] || {};
+        ac.act = a.act || 'idle'; ac.home = { x: ac.pos.x, z: ac.pos.z }; ac.wp = a.wander; ac.wt = Math.random() * 4; ac.faceTo = a.faceTo;
+        if (ac.act === 'swing') ac.avatar.racket.visible = true;
+        if (ac.act === 'drink') { const beer = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.17, 12), new THREE.MeshStandardMaterial({ color: 0xd99a1c, roughness: 0.15, transparent: true, opacity: 0.85 })); beer.position.set(0, -0.3, 0.02); ac.avatar.lElbow?.add(beer); }
+        if (ac.act === 'phone') { const ph = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.14, 0.01), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 })); ph.position.set(0, -0.28, 0.03); ac.avatar.lElbow?.add(ph); }
+      }
+      R.col = this.roamColliders();
+      R.rc = new THREE.Raycaster();
+      R.y = 0;
+    }
+    // pétanque en cours : le mini-jeu prend la main
+    if (R.pet) {
+      if (inp.pressed.START) { R.pet.dispose(); R.pet = null; for (const o of R.petDeco || []) o.visible = true; this.hud.hint(''); this.hud.setPower(null); }
+      else { R.pet.update(dt, inp); R.pet.animate(dt); this.roamNpcs(dt, true); for (const m of R.matches) m.update(dt); this.hud.update(dt); return; }
+    }
     if (inp.pressed.START || inp.menu.back) { this.endRoam(); return; }
     R.yaw = (R.yaw ?? R.startYaw ?? 0) - (inp.aim.x || 0) * dt * 2.4;
     const fx = -Math.sin(R.yaw), fz = -Math.cos(R.yaw), rx = Math.cos(R.yaw), rz = -Math.sin(R.yaw);
     let vx = rx * inp.move.x + fx * inp.move.y, vz = rz * inp.move.x + fz * inp.move.y;
     const L = Math.hypot(vx, vz); if (L > 1) { vx /= L; vz /= L; }
-    const sp = (inp.held.SPRINT ? 4.2 : 2.3);
+    const sp = inp.held.SPRINT ? 4.0 : 1.55;
     R.v = R.v || { x: 0, z: 0 };
-    const k = 1 - Math.exp(-dt * 8);
+    const k = 1 - Math.exp(-dt * 7);
     R.v.x += (vx * sp - R.v.x) * k; R.v.z += (vz * sp - R.v.z) * k;
     const p = me.pos;
-    p.x += R.v.x * dt; p.z += R.v.z * dt;
-    // limites de la zone et obstacles (courts vitrés, personnages)
+    // collisions : rayons devant soi (genoux, taille, rambarde) ; on glisse le long des obstacles
+    const blocked = (dx, dz) => {
+      const d = Math.hypot(dx, dz); if (d < 1e-5) return false;
+      const dir = new THREE.Vector3(dx / d, 0, dz / d);
+      for (const h of [0.45, 0.95]) {
+        R.rc.set(new THREE.Vector3(p.x, R.y + h, p.z), dir); R.rc.far = d + 0.32;
+        const hit = R.rc.intersectObjects(R.col, false)[0];
+        if (hit) { const n = hit.face ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld) : null; if (!n || Math.abs(n.y) < 0.7) return true; }
+      }
+      return false;
+    };
+    const mx = R.v.x * dt, mz = R.v.z * dt;
+    if (!blocked(mx, mz)) { p.x += mx; p.z += mz; }
+    else if (!blocked(mx, 0)) p.x += mx;
+    else if (!blocked(0, mz)) p.z += mz;
     const [x0, x1, z0, z1] = R.bounds;
     p.x = Math.max(x0, Math.min(x1, p.x)); p.z = Math.max(z0, Math.min(z1, p.z));
-    for (const c of R.courts || []) {
-      const hx = c.rot ? 10.6 : 5.6, hz = c.rot ? 5.6 : 10.6;
-      const dx = p.x - c.x, dz = p.z - c.z;
-      if (Math.abs(dx) < hx && Math.abs(dz) < hz) { if (hx - Math.abs(dx) < hz - Math.abs(dz)) p.x = c.x + Math.sign(dx || 1) * hx; else p.z = c.z + Math.sign(dz || 1) * hz; }
-    }
     for (const ac of this.actors || []) {
       const dx = p.x - ac.pos.x, dz = p.z - ac.pos.z, d = Math.hypot(dx, dz);
-      if (d < 0.75 && d > 1e-3) { p.x = ac.pos.x + dx / d * 0.75; p.z = ac.pos.z + dz / d * 0.75; }
+      if (d < 0.7 && d > 1e-3) { p.x = ac.pos.x + dx / d * 0.7; p.z = ac.pos.z + dz / d * 0.7; }
     }
+    // hauteur du sol réel (terrasse en contrebas, escaliers, gradins)
+    R.rc.set(new THREE.Vector3(p.x, R.y + 0.45, p.z), new THREE.Vector3(0, -1, 0)); R.rc.far = 3;
+    const g0 = R.rc.intersectObjects(R.col, false).find((h) => !h.face || h.face.normal.clone().transformDirection(h.object.matrixWorld).y > 0.5);
+    const gy = g0 ? g0.point.y : R.y;
+    R.y += (gy - R.y) * (gy < R.y ? 1 - Math.exp(-dt * 10) : 1 - Math.exp(-dt * 14));
     const speed = Math.hypot(R.v.x, R.v.z);
     if (speed > 0.15) R.face = Math.atan2(R.v.x, R.v.z);
-    me.avatar.root.position.set(p.x, 0, p.z);
-    me.avatar.animate(dt, { speed, fwd: speed, side: 0, yaw: R.face ?? R.yaw + Math.PI, look: 0, ready: false, armed: null, swing: null });
-    // personnages : ils se tournent vers toi quand tu approches
-    let near = null, best = 1.9;
-    for (const ac of this.actors || []) {
-      const dx = p.x - ac.pos.x, dz = p.z - ac.pos.z, d = Math.hypot(dx, dz);
-      ac.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: d < 4.5 ? Math.atan2(dx, dz) : ac.baseYaw, look: 0, ready: false, armed: null, swing: null });
-      if (d < best) { best = d; near = ac; }
-    }
-    this.hud.hint(near ? `${this.input.padType === 'keyboard' ? 'K' : 'A'} : parler à ${near.label || near.id}` : `Promenade · ${this.input.padType === 'keyboard' ? 'Échap' : 'B'} pour partir`);
-    if (near && inp.pressed.A) {
-      const lines = R.talk?.(near.id, R.talked.has(near.id)) || [];
-      R.talked.add(near.id);
-      if (lines.length) {
-        this.hud.hint('');
-        const C = [(p.x + near.pos.x) / 2, (p.z + near.pos.z) / 2];
-        this.opts.sceneCenter = C; this.opts.sceneR = 0.8;
-        // les deux se font face pendant la discussion
-        me.avatar.root.position.set(p.x, 0, p.z);
-        this.cutscene = { lines, i: -1, t: 0, onEnd: () => { this.opts.sceneCenter = null; this.cameraRig.snap = true; } };
-        document.body.classList.add('cinema');
-        this.nextLine();
-        return;
+    me.avatar.root.position.set(p.x, R.y, p.z);
+    me.avatar.animate(dt, { speed, fwd: speed, side: 0, yaw: R.face ?? R.yaw + Math.PI, look: 0, ready: false, armed: null, swing: null, casual: true });
+    for (const m of R.matches) m.update(dt);
+    const near = this.roamNpcs(dt, false);
+    // ce qu'on peut faire ici
+    let action = null;
+    const key = this.input.padType === 'keyboard' ? 'K' : 'A';
+    if (near) action = { label: `parler à ${near.label || near.id}`, run: () => this.roamTalk(near) };
+    else if (R.petanque && Math.abs(p.x - R.petanque.x) < R.petanque.w / 2 + 1.2 && Math.abs(p.z - R.petanque.z) < R.petanque.l / 2 + 1.2) action = { label: 'jouer à la pétanque', run: () => this.roamLines(R.petanqueLines?.() || []) };
+    else {
+      const m = R.matches.find((q) => q.contains(p.x, p.z, 3.5) && !q.contains(p.x, p.z, -0.5));
+      if (m) action = { label: `regarder le match (${m.info.label})`, run: () => this.endRoam(() => R.onWatch?.(m.info)) };
+      else {
+        const free = (R.freeCourts || []).find((c) => Math.abs(p.x - c.x) < (c.rot ? 10 : 5) && Math.abs(p.z - c.z) < (c.rot ? 5 : 10));
+        if (free) action = { label: 's\'entraîner sur ce court', run: () => this.roamLines(R.trainLines?.() || []) };
       }
     }
+    this.hud.hint(action ? `${key} : ${action.label}` : `Promenade · ${this.input.padType === 'keyboard' ? 'Échap' : 'B'} pour partir · Maj pour courir`);
+    if (action && inp.pressed.A) { action.run(); return; }
     // caméra à l'épaule, derrière le joueur
-    const want = new THREE.Vector3(p.x - fx * 3.4, 2.1, p.z - fz * 3.4);
+    const want = new THREE.Vector3(p.x - fx * 3.4, R.y + 2.0, p.z - fz * 3.4);
     R.cam = R.cam || want.clone();
     R.cam.lerp(want, 1 - Math.exp(-dt * 6));
     cam.position.copy(R.cam);
-    cam.lookAt(p.x + fx * 1.2, 1.25, p.z + fz * 1.2);
-    this.cameraRig.pos?.copy?.(cam.position);
+    cam.lookAt(p.x + fx * 1.2, R.y + 1.25, p.z + fz * 1.2);
     this.effects.setReticle(0, 0, false); this.effects.setPlayerRing(null);
     this.hud.update(dt);
   }
 
-  endRoam() {
-    const cb = this.opts.onSceneEnd;
+  /** Les personnages vivent leur vie : discussions, boisson, téléphone, gestes de frappe, balades. */
+  roamNpcs(dt, frozen, C = null) {
+    const p = this.players[0].pos;
+    let near = null, best = 1.9;
+    for (const ac of this.actors || []) {
+      if (frozen && this.roam.pet && (ac === this.roam.pet.opp)) continue;
+      if (C && Math.hypot(ac.pos.x - C[0], ac.pos.z - C[1]) < 2.2) continue;
+      const dx = p.x - ac.pos.x, dz = p.z - ac.pos.z, d = Math.hypot(dx, dz);
+      let speed = 0, yaw = ac.baseYaw, swing = null, pose = null, talking = false;
+      ac.wt -= dt;
+      if (d < 2.6 && !frozen) yaw = Math.atan2(dx, dz);                       // tu t'approches : on te regarde
+      else if (ac.act === 'wander' && ac.wp) {
+        // marche tranquille d'un point à l'autre, pause, puis repart
+        const tgt = ac.leg ? ac.wp : ac.home;
+        const ex = tgt.x - ac.pos.x, ez = tgt.z - ac.pos.z, de = Math.hypot(ex, ez);
+        if (de > 0.3 && ac.wt <= 0) { speed = 1.1; ac.pos.x += ex / de * speed * dt; ac.pos.z += ez / de * speed * dt; yaw = Math.atan2(ex, ez); }
+        else if (de <= 0.3 && ac.wt <= 0) { ac.leg = !ac.leg; ac.wt = 3 + Math.random() * 4; }
+        else pose = 'arms';
+      } else {
+        const other = ac.faceTo && this.actors.find((x) => x.id === ac.faceTo);
+        if (other) yaw = Math.atan2(other.pos.x - ac.pos.x, other.pos.z - ac.pos.z);
+        if (ac.act === 'chat') { pose = 'chat'; talking = Math.sin(this.time * 0.6 + ac.home.x) > 0; }
+        else if (ac.act === 'drink') pose = 'drink';
+        else if (ac.act === 'phone') pose = 'phone';
+        else if (ac.act === 'swing') {
+          // gestes à vide, comme pour répéter son coup
+          if (!ac.sw && ac.wt <= 0) { ac.sw = { kind: Math.random() < 0.3 ? 'over' : Math.random() < 0.5 ? 'fore' : 'back', style: 'drive', t: 0, dur: 0.5, contactH: 1.0, contactPos: null, jump: 0 }; ac.wt = 1.8 + Math.random() * 2; }
+          if (ac.sw) { ac.sw.t += dt; swing = ac.sw; if (ac.sw.t >= ac.sw.dur) ac.sw = null; }
+        } else pose = 'arms';
+      }
+      ac.avatar.talking = talking;
+      ac.avatar.root.position.set(ac.pos.x, ac.avatar.root.position.y, ac.pos.z);
+      ac.avatar.animate(dt, { speed, fwd: speed, side: 0, yaw, look: 0, ready: false, armed: null, swing, casual: !swing, pose });
+      if (d < best && !frozen) { best = d; near = ac; }
+    }
+    return near;
+  }
+
+  /** Conversation pendant la promenade (avec choix possibles ; une activité peut suivre). */
+  roamTalk(near) {
+    const R = this.roam;
+    const lines = R.talk?.(near.id, R.talked.has(near.id)) || [];
+    R.talked.add(near.id);
+    this.roamLines(lines, near);
+  }
+  roamLines(lines, near = null) {
+    if (!lines.length) return;
+    const R = this.roam, p = this.players[0].pos;
+    this.hud.hint('');
+    const o = near ? near.pos : p;
+    this.opts.sceneCenter = [(p.x + o.x) / 2, (p.z + o.z) / 2]; this.opts.sceneR = 0.8; this.opts.sceneY = R.y || 0;
+    this.cutscene = { lines, i: -1, t: 0, onEnd: () => {
+      this.opts.sceneCenter = null; this.opts.sceneY = 0; this.cameraRig.snap = true;
+      const next = R.pending; R.pending = null;
+      if (next) next(this);
+    } };
+    document.body.classList.add('cinema');
+    this.nextLine();
+  }
+
+  /** Lance la pétanque contre un personnage présent. */
+  startPetanque(id, opts = {}) {
+    const R = this.roam, ac = (this.actors || []).find((a) => a.id === id);
+    if (!ac || !R.petanque) return;
+    // les boules de décor posées sur le terrain disparaissent le temps de la partie
+    const deco = [];
+    this.scene.traverse((o) => { const m = o.material; if (o.isMesh && m && !Array.isArray(m) && ((m.metalness === 0.95 && m.color?.getHex() === 0xb8bcc2) || m.color?.getHex() === 0xe0b020 || m.color?.getHex() === 0xff3d00) && o.parent !== R.pet?.group) { deco.push(o); o.visible = false; } });
+    R.petDeco = deco;
+    R.pet = new Petanque(this, R.petanque, this.players[0], ac, { ...opts, onEnd: (won, score) => { for (const o of deco) o.visible = true; R.pet = null; R.y = R.petanque.y || 0; this.hud.hint(''); const lines = R.onPetanque?.(id, won, score) || []; if (lines.length) this.roamLines(lines, ac); } });
+  }
+
+  endRoam(next = null) {
+    const cb = next || this.opts.onSceneEnd;
+    for (const m of this.roam?.matches || []) m.dispose();
+    this.roam?.pet?.dispose();
     this.roam = null;
     document.body.classList.remove('roaming');
     this.clearActors();
@@ -1073,9 +1196,16 @@ export class Game {
     const wave = (q) => (cs.waving === q ? { kind: 'over', charge: 0.35 + 0.3 * Math.sin(cs.t * 9) } : q._touch ? { kind: 'fore', charge: 0.05 } : null);
     for (const q of [...this.players, ...(this.actors || [])]) q.avatar.talking = q === p && cs.t < (cs.talkFor || 0);
     for (const q of this.players) {
-      q.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(q, q.side > 0 ? Math.PI : 0, q === p ? Math.sin(cs.t * 1.3) * 0.15 : 0), look: 0, ready: false, armed: wave(q), swing: null });
+      q.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(q, q.side > 0 ? Math.PI : 0, q === p ? Math.sin(cs.t * 1.3) * 0.15 : 0), look: 0, ready: false, armed: wave(q), swing: null, casual: !!this.roam, pose: this.roam && q === p ? 'chat' : null });
     }
-    for (const ac of this.actors || []) ac.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(ac, ac.side > 0 ? Math.PI : 0, ac === p ? Math.sin(cs.t * 1.1) * 0.2 : 0), look: 0, ready: false, armed: wave(ac), swing: null });
+    // en promenade, seuls ceux qui participent à la discussion se tournent vers elle ; les autres continuent leur vie
+    if (this.roam) this.roamNpcs(dt, true, C);
+    for (const ac of this.actors || []) {
+      const inScene = !this.roam || !C || Math.hypot(ac.pos.x - C[0], ac.pos.z - C[1]) < 2.2;
+      if (!inScene) continue;
+      ac.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(ac, ac.side > 0 ? Math.PI : 0, ac === p ? Math.sin(cs.t * 1.1) * 0.2 : 0), look: 0, ready: false, armed: wave(ac), swing: null, casual: !!this.roam, pose: this.roam && ac === p ? 'chat' : null });
+    }
+    for (const m of this.roam?.matches || []) m.update(dt);
     this.render(dt);
     if (p) {
       // caméra par-dessus l'épaule de l'autre, cadrée sur celui qui parle
