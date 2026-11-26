@@ -73,9 +73,18 @@ export class HUD {
     this.hintEl.classList.toggle('show', !!text);
   }
 
-  setPower(v, label) {
-    if (v == null) { this.powerEl.classList.remove('show'); return; }
+  setPower(v, label, smash = false) {
+    if (v == null) { this.powerEl.classList.remove('show', 'smash', 'inzone', 'late'); return; }
     this.powerEl.classList.add('show');
+    // smash par 3 / par 4 : jauge agrandie, zone verte, curseur ; « RELÂCHE ! » quand on est dedans
+    const inz = smash && v >= 0.82 && v <= 0.95;
+    this.powerEl.classList.toggle('smash', smash);
+    this.powerEl.classList.toggle('inzone', inz);
+    this.powerEl.classList.toggle('late', smash && v > 0.95);
+    if (smash) {
+      this.powerEl.querySelector('.cursor').style.left = `${Math.round(v * 1000) / 10}%`;
+      label = inz ? 'RELÂCHE !' : v > 0.95 ? 'TROP TARD' : 'ATTENDS LE VERT…';
+    }
     this.powerEl.querySelector('.fill').style.width = `${Math.round(v * 100)}%`;
     this.powerEl.querySelector('.label').textContent = label;
     this.powerEl.classList.toggle('max', v >= 0.99);

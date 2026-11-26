@@ -1199,7 +1199,7 @@ export class Game {
       const t = targetFromAim(h.aim, type, h.side, this.referee.serveBox, h.pos);
       this.effects.setReticle(t.x, t.z, (serving || incoming) && !h.isOutside());
       this.effects.setPlayerRing(h.pos);
-      this.hud.setPower(h.armed ? h.armed.power : null, h.armed ? this.previewLabel(h) : '');
+      this.hud.setPower(h.armed ? h.armed.power : null, h.armed ? this.previewLabel(h) : '', h.armed?.button === 'D' && h.armed.held);
       this.hud.setEnergy(h.energy);
     } else {
       this.effects.setReticle(0, 0, false);

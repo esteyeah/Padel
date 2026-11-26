@@ -14,14 +14,22 @@ import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 
 /** Étalonnage « retransmission sportive » : contraste, saturation, légère teinte et vignettage. */
 const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, contrast: { value: 1.08 }, saturation: { value: 1.12 }, tint: { value: new THREE.Vector3(1.0, 1.0, 1.0) }, vignette: { value: 0.28 }, time: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, contrast: { value: 1.08 }, saturation: { value: 1.12 }, tint: { value: new THREE.Vector3(1.0, 1.0, 1.0) }, vignette: { value: 0.28 }, time: { value: 0 }, texel: { value: new THREE.Vector2(1 / 1920, 1 / 1080) }, sharpen: { value: 0.35 }, ca: { value: 0.0012 } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `
-    uniform sampler2D tDiffuse; uniform float contrast; uniform float saturation; uniform vec3 tint; uniform float vignette; uniform float time;
+    uniform sampler2D tDiffuse; uniform float contrast; uniform float saturation; uniform vec3 tint; uniform float vignette; uniform float time; uniform vec2 texel; uniform float sharpen; uniform float ca;
     varying vec2 vUv;
     void main() {
       vec4 c = texture2D(tDiffuse, vUv);
-      vec3 col = c.rgb * tint;
+      // netteté (masque flou) : détails des visages, du grillage et des textures plus nets
+      vec3 blur = (texture2D(tDiffuse, vUv + vec2(texel.x, 0.0)).rgb + texture2D(tDiffuse, vUv - vec2(texel.x, 0.0)).rgb
+                 + texture2D(tDiffuse, vUv + vec2(0.0, texel.y)).rgb + texture2D(tDiffuse, vUv - vec2(0.0, texel.y)).rgb) * 0.25;
+      vec3 base = c.rgb + (c.rgb - blur) * sharpen;
+      // très légère aberration chromatique sur les bords (objectif de caméra)
+      vec2 dc = (vUv - 0.5) * ca * dot(vUv - 0.5, vUv - 0.5) * 8.0;
+      base.r = mix(base.r, texture2D(tDiffuse, vUv + dc).r, 0.6);
+      base.b = mix(base.b, texture2D(tDiffuse, vUv - dc).b, 0.6);
+      vec3 col = max(base, 0.0) * tint;
       float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
       col = mix(vec3(l), col, saturation);
       // courbe en S douce (contraste façon pellicule) plutôt qu'un contraste linéaire
@@ -112,6 +120,7 @@ export class Renderer3D {
     c.addPass(this.bloom);
     c.addPass(new OutputPass());
     this.grade = new ShaderPass(GradeShader);
+    this.grade.uniforms.texel.value.set(1 / size.x, 1 / size.y);
     c.addPass(this.grade);
     this.composer = c;
     this.applyBloom(this.arena.ambiance);
@@ -148,6 +157,7 @@ export class Renderer3D {
     const w = innerWidth, h = innerHeight;
     this.renderer.setSize(w, h);
     this.composer?.setSize(w, h);
+    if (this.grade) { const pr = this.renderer.getPixelRatio(); this.grade.uniforms.texel.value.set(1 / (w * pr), 1 / (h * pr)); }
     this.camera.aspect = w / h;
     // en portrait (mobile), on élargit le champ pour garder le court entier
     this.camera.fov = this.camera.aspect < 1 ? 70 : this.camera.aspect < 1.4 ? 54 : 46;

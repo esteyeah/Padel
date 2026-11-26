@@ -11,11 +11,11 @@
 import * as THREE from 'three';
 import { BUTTONS } from '../entities/Player.js';
 import { BotController } from '../controllers/BotController.js';
-import { DIFFICULTY, PROFILES } from '../config.js';
+import { DIFFICULTY, PROFILES, PLAYER } from '../config.js';
 
-const SNAP_HZ = 30;
-const INPUT_HZ = 45;
-const DELAY = 0.075;          // retard d'affichage des invités (interpolation entre deux états)
+const SNAP_HZ = 45;
+const INPUT_HZ = 60;
+const DELAY = 0.06;          // retard d'affichage des invités (interpolation entre deux états)
 
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -50,6 +50,26 @@ export class RemoteController {
     this.pending = {};
     return { move: { ...this.move }, held: this.held, pressed };
   }
+}
+
+/** Déplacement inertiel local (même calcul que Player.update, sans les boutons). */
+function predictMove(p, dt, intent, g) {
+  let mx = intent.move?.x || 0, mz = intent.move?.z || 0;
+  const ml = Math.hypot(mx, mz);
+  if (ml > 1) { mx /= ml; mz /= ml; }
+  let maxS = p.maxSpeed();
+  if (intent.held?.SPRINT && p.energy > 0.12 && (mx || mz)) maxS *= 1.3;
+  if (p.armed?.held) maxS *= PLAYER.armedSpeedMul;
+  if (p.swing && p.swing.t < 0.18) maxS *= 0.45;
+  const tvx = mx * maxS, tvz = mz * maxS;
+  let ax = tvx - p.vel.x, az = tvz - p.vel.z;
+  const al = Math.hypot(ax, az);
+  const braking = tvx * p.vel.x + tvz * p.vel.z < (p.vel.x ** 2 + p.vel.z ** 2) * 0.6;
+  const maxA = (braking ? PLAYER.decel : PLAYER.accel) * dt;
+  if (al > maxA) { ax *= maxA / al; az *= maxA / al; }
+  p.vel.x += ax; p.vel.z += az;
+  p.pos.x += p.vel.x * dt; p.pos.z += p.vel.z * dt;
+  p.constrain(g);
 }
 
 /** Joueur affiché chez un invité (piloté par les états reçus). */
@@ -161,7 +181,10 @@ export class NetClient {
     if (m.t === 'snap') {
       this.snaps.push(m);
       if (this.snaps.length > 20) this.snaps.shift();
-      if (this.clock == null || Math.abs(this.clock - (m.T - DELAY)) > 0.5) this.clock = m.T - DELAY;
+      // horloge d'affichage : recalée en continu (avant, le retard pouvait grimper jusqu'à 0,5 s)
+      const target = m.T - DELAY;
+      if (this.clock == null || Math.abs(this.clock - target) > 0.25) this.clock = target;
+      else this.clock += (target - this.clock) * 0.15;
     } else if (m.t === 'ev') this.event(m.e);
     else if (m.t === 'end') {
       Object.assign(g.score, m.s);
@@ -193,10 +216,15 @@ export class NetClient {
       const c = h.controller;
       c.capture(dt, g);
       for (const b of BUTTONS) if (g.input.pressed[b]) this.pressed[b] = true;
+      const it = c.getIntent();
+      for (const b in it.pressed || {}) if (it.pressed[b]) this.pressed[b] = true;
+      this.move = it.move;
+      // prédiction locale : notre joueur bouge tout de suite, sans attendre l'aller-retour réseau
+      if (this.pred) predictMove(h, dt, it, g);
       this.inT -= dt;
-      if (this.inT <= 0) {
+      const urgent = Object.keys(this.pressed).length > 0;   // un appui de bouton part immédiatement
+      if (this.inT <= 0 || urgent) {
         this.inT = 1 / INPUT_HZ;
-        const it = c.getIntent();
         const held = Object.keys(it.held || {}).filter((k) => it.held[k]);
         this.net.send({ t: 'in', m: [r3(it.move.x), r3(it.move.z)], h: held, p: Object.keys(this.pressed), a: [r2(g.input.aim.x), r2(g.input.aim.y)] });
         this.pressed = {};
@@ -233,10 +261,20 @@ export class NetClient {
     g.players.forEach((p, i) => {
       const A = a.ps[i], B = b.ps[i];
       if (!A || !B) return;
-      p.pos.set(L(A[0], B[0]), L(A[1], B[1]), L(A[2], B[2]));
-      p.vel.set(L(A[3], B[3]), 0, L(A[4], B[4]));
+      if (p === g.human) {
+        // réconciliation douce : l'état de l'hôte (en retard) corrige la prédiction sans à-coups
+        const last = this.snaps[this.snaps.length - 1].ps[i];
+        const lag = Math.min(0.25, (this.net.rtt || 0.08) * 0.5);
+        const tx = last[0] + last[3] * lag, tz = last[2] + last[4] * lag;
+        const ex = tx - p.pos.x, ez = tz - p.pos.z, err = Math.hypot(ex, ez);
+        if (!this.pred || err > 1.5 || b.st !== 'rally') { p.pos.set(L(A[0], B[0]), L(A[1], B[1]), L(A[2], B[2])); p.vel.set(L(A[3], B[3]), 0, L(A[4], B[4])); this.pred = b.st === 'rally'; }
+        else { const kk = 1 - Math.exp(-dt * 3); p.pos.x += ex * kk; p.pos.z += ez * kk; p.pos.y = B[1]; }
+      } else {
+        p.pos.set(L(A[0], B[0]), L(A[1], B[1]), L(A[2], B[2]));
+        p.vel.set(L(A[3], B[3]), 0, L(A[4], B[4]));
+      }
       if (p !== g.human) { p.aim.x = B[5]; p.aim.y = B[6]; }
-      p.armed = B[7] ? { button: B[7][0], power: B[7][1], shotType: B[7][2] } : null;
+      p.armed = B[7] ? { button: B[7][0], power: B[7][1], shotType: B[7][2], held: true } : null;
       const sw = B[8];
       if (!sw) p.swing = null;
       else if (!p.swing || p.swing._nid !== sw.id) {

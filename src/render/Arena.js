@@ -113,6 +113,7 @@ export function buildArena(scene, renderer, quality = 'high') {
   key.shadow.radius = 3;
   Object.assign(key.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 2, far: 45 });
   key.shadow.bias = -0.0004;
+  key.shadow.normalBias = 0.015;   // évite l'acné d'ombre sur les corps
   key.shadow.normalBias = 0.025;
   scene.add(key, key.target);
   arena.keyLight = key;

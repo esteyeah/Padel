@@ -70,9 +70,18 @@ kbd {
 }
 #power.show { opacity: 1; }
 #power .label { font: 800 16px var(--cond); letter-spacing: 3px; text-align: center; margin-bottom: 4px; text-shadow: 0 2px 8px #000; }
-#power .bar { height: 10px; border-radius: 5px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.3); overflow: hidden; }
+#power .bar { position: relative; height: 10px; border-radius: 5px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.3); overflow: hidden; }
 #power .fill { height: 100%; width: 0; background: linear-gradient(90deg, #4fc3ff, #ffd400 70%, #ff5252); }
 #power.max .fill { box-shadow: 0 0 12px #ff5252; }
+#power .zone { display: none; position: absolute; top: -1px; bottom: -1px; left: 82%; width: 13%; background: rgba(60,255,110,0.45); border: 2px solid #3cff6e; border-radius: 3px; z-index: 2; box-shadow: 0 0 10px #3cff6e; }
+#power .cursor { display: none; position: absolute; top: -6px; bottom: -6px; width: 4px; margin-left: -2px; background: #fff; border-radius: 2px; z-index: 3; box-shadow: 0 0 6px #000; }
+#power.smash .bar { height: 22px; border-radius: 6px; }
+#power.smash .zone, #power.smash .cursor { display: block; }
+#power.smash .label { font-size: 20px; }
+#power.smash.inzone .zone { background: rgba(60,255,110,0.9); animation: zonePulse 0.18s infinite alternate; }
+#power.smash.inzone .label { color: #3cff6e; }
+#power.smash.late .label { color: #ff5252; }
+@keyframes zonePulse { from { transform: scaleY(1); } to { transform: scaleY(1.35); } }
 
 #controls {
   position: absolute; bottom: 16px; left: 16px; font: 500 13px var(--sans); color: var(--dim);

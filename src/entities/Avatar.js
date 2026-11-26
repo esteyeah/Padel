@@ -272,11 +272,11 @@ export class Avatar {
       accent: fabric(a.accent, mt.accent),
       shorts: fabric(a.shorts, mt.shorts),
       // peau : léger voile chaud (imite la diffusion sous la peau) ; cheveux : reflets
-      skin: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.skin).multiplyScalar(0.95), roughness: 0.55, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
+      skin: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.skin).multiplyScalar(0.95), roughness: 0.58, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.18, 0.18), emissive: new THREE.Color(a.skin).multiplyScalar(0.05).lerp(new THREE.Color(0x3a0c06), 0.5), emissiveIntensity: 0.5, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
       hairCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.85), alphaMap: strandTexture(), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.7, metalness: 0.0, envMapIntensity: 0.15 }),
       beardCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).lerp(new THREE.Color(a.skin), 0.22).multiplyScalar(1.15), alphaMap: beardTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, envMapIntensity: 0.15 }),
       hair: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.72), map: hairTex(), normalMap: hairNormal(), normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.5, sheen: 0.8, sheenRoughness: 0.3, sheenColor: new THREE.Color(a.hair).lerp(new THREE.Color(0xffffff), 0.4) }),
-      faceSkin: new THREE.MeshPhysicalMaterial({ color: 0xf2e4dc, vertexColors: true, roughness: 0.55, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.3, 0.3), sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
+      faceSkin: new THREE.MeshPhysicalMaterial({ color: 0xf2e4dc, vertexColors: true, roughness: 0.52, emissive: new THREE.Color(0x2a0905), emissiveIntensity: 0.35, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.3, 0.3), sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
       white: M(0xd9d0c6, 0.3),
       iris: M(new THREE.Color(a.eye ?? 0x4a3020).multiplyScalar(0.8), 0.25),
       fade: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).lerp(new THREE.Color(a.skin), a.hairStyle === 'shaved' ? 0.72 : 0.45), roughness: 0.9 }),
