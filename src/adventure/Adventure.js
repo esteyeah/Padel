@@ -2,7 +2,7 @@
 //  Mode Aventure : deux emplacements de sauvegarde, déroulé des étapes,
 //  écrans (dans le menu principal), cinématiques et matchs dans le jeu.
 // ============================================================================
-import { STEPS, PEOPLE, START_REL, CHAPTERS, chapterOf, ENDINGS } from './Story.js';
+import { STEPS, PEOPLE, START_REL, CHAPTERS, chapterOf, ENDINGS, NAME } from './Story.js';
 import { GUESTS } from './Story2.js';
 import { DRILLS } from '../core/Drills.js';
 import { VENUE_COURTS } from '../render/Venues.js';
@@ -44,6 +44,13 @@ const NPC_ID = { eliott: 'eliott-hanras', jean: 'jean-deuxbe', raf: 'rafael-toma
 const EXTRA = ADV_NPCS;
 const LABEL = { hostess: 'L\'hôtesse', lea: 'Léa', flavien: 'Flavien', chico: 'Chico', tison: 'Benjamin Tison', fan: 'Une supportrice', zlatan: 'Zlatan', zidane: 'Zidane', tapia: 'Tapia', coello: 'Coello', ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const FRIEND_LINES = {
+  eliott: ['Karaoké improvisé dans sa voiture. Il chante faux, très fort, et il est heureux.', 'Pizza devant un match de l\'OM. Il commente chaque action comme s\'il était sur le terrain.', 'Il te raconte pour la dixième fois comment il a découvert le padel. Tu fais semblant de ne pas connaître la fin.'],
+  jean: ['Partie de pétanque derrière le club. Jean mesure chaque point au millimètre.', 'Café en terrasse. Il te donne des conseils sur ton lob, gentiment, sans en avoir l\'air.', 'Petit footing dans les collines. Il ne parle pas beaucoup, mais il t\'attend en haut.'],
+  raf: ['Il t\'invite à jouer « pour rire ». Il ne rit pas quand tu gagnes un jeu.', 'Apéro chez lui. Il montre ses trophées, un par un, avec l\'histoire de chacun.', 'Il te glisse, presque gêné : « Ton coup droit… il est pas mal, en fait. »'],
+  louka: ['Séance de rééducation : tu tiens les plots pendant qu\'il fait ses exercices.', 'Il te montre ses vidéos de match d\'avant la blessure. Il était vraiment fort.', 'Burger au port. Il te parle de son genou, puis de tout autre chose, et vous riez longtemps.'],
+};
 
 export class AdventureUI {
   /** o : { startGame(opts), back(), rerender(), show(), getLook() } */
@@ -60,7 +67,7 @@ export class AdventureUI {
   read(slot) { try { return JSON.parse(localStorage.getItem(KEY(slot)) || 'null'); } catch { return null; } }
   save() { if (this.slot) try { localStorage.setItem(KEY(this.slot), JSON.stringify(this.s)); } catch { /* ignoré */ } }
   open(slot) {
-    this.slot = slot; this.s = this.read(slot); this.page = 0; this.sel = 0; this.react = null;
+    this.slot = slot; this.s = this.read(slot); this.page = 0; this.sel = 0; this.react = null; this.view = null; this.note = null;
     if (this.s) { this.s.rep ??= 0; this.s.step = this.s.step === 'end' ? 'ch1_end' : this.s.step; if (!STEPS[this.s.step]) this.s.step = 'start'; }
     this.rerender();
   }
@@ -97,7 +104,7 @@ export class AdventureUI {
   }
 
   goto(id, autoplay = true) {
-    this.s.step = id; this.page = 0; this.sel = 0; this.react = null;
+    this.s.step = id; this.page = 0; this.sel = 0; this.react = null; this.view = null; this.note = null;
     let st = STEPS[id];
     while (st?.type === 'branch') { id = st.to(this.ctx); this.s.step = id; st = STEPS[id]; }
     if (st?.effects && st.type !== 'choice') this.apply(val(st.effects, this.ctx));
@@ -122,7 +129,10 @@ export class AdventureUI {
     if (lane && this.s?.lane) lane = this.s.lane;
     const look = this.getLook?.() || DEFAULT_LOOK;
     const print = (this.s.name.split(' ').pop() || 'JOUEUR').toUpperCase().slice(0, 12);
-    return { name: this.short.toUpperCase(), human: true, hand: 1, lane, stats: { ...this.s.stats }, appearance: { ...resolveLook(look), name: print } };
+    // fatigue accumulée (matchs, entraînements) : on joue un peu en dessous de son niveau
+    const tired = 1 - 0.14 * (this.s.fatigue || 0);
+    const stats = Object.fromEntries(Object.entries(this.s.stats).map(([k, v]) => [k, v * tired]));
+    return { name: this.short.toUpperCase(), human: true, hand: 1, lane, stats, appearance: { ...resolveLook(look), name: print } };
   }
   spec(id, kit, lane, o = {}) {
     if (id === 'me') return this.me(lane);
@@ -242,6 +252,7 @@ export class AdventureUI {
       this.s.stats.stamina = Math.min(0.95, (this.s.stats.stamina || 0.3) + 0.008);
       if (st.set) this.apply({}, val(st.set, this.ctx));
     }
+    if (st.type === 'match') this.s.fatigue = Math.min(1, (this.s.fatigue || 0) + 0.22);
     if (st.compete) this.compete(st, result);
     const next = st.type === 'drill' || st.type === 'watch' ? st.next : (result.won ? st.win : st.lose);
     this.goto(next, true);
@@ -327,6 +338,71 @@ export class AdventureUI {
     this.s.ranking = Object.entries(sc).map(([id, pts]) => ({ id, name: names[id], pts })).sort((a, b) => b.pts - a.pts);
   }
 
+  // ------------------------------------------------------------------ temps libre (avant un match)
+  /** Actions de temps libre restantes avant le prochain match. */
+  freeLeft() {
+    const f = this.s.free;
+    if (!f || f.step !== this.s.step) this.s.free = { step: this.s.step, left: 2 };
+    return this.s.free.left;
+  }
+  spend(note) { this.s.free.left--; this.note = note; this.save(); this.rerender(); }
+
+  freeActions(add) {
+    const c = this.ctx, f = this.s.flags, left = this.freeLeft();
+    if (this.view === 'train') {
+      const LBL = { drive: 'Coup droit et revers', lob: 'Lobs', smash: 'Smashs', speed: 'Déplacements', stamina: 'Endurance', strength: 'Musculation' };
+      for (const [k, l] of Object.entries(LBL)) add(`${l}<small>niveau ${Math.round((this.s.stats[k] || 0.3) * 100)}</small>`, () => {
+        this.s.stats[k] = Math.min(0.95, (this.s.stats[k] || 0.3) + 0.015);
+        this.s.fatigue = Math.min(1, (this.s.fatigue || 0) + 0.18);
+        this.view = 'free';
+        const coach = f.knowsRomeo || chapterOf(this.s.step) >= 2;
+        this.spend({ who: coach ? 'Coach Roméo' : this.short, text: coach ? pick([`${l} ? Bien. Encore dix minutes, et on ne triche pas sur la dernière série.`, 'Ça rentre. Pense à boire, tu es rouge comme une tomate.', 'Tu vois ? Quand tu t\'appliques, c\'est propre.']) : 'Une heure seul sur le court, à répéter le même geste. Ça finit par rentrer.' });
+      }, 'choice');
+      add('Retour', () => { this.view = 'free'; this.rerender(); }, 'small');
+      return;
+    }
+    if (left <= 0) { add('Plus de temps libre : place au match', () => { this.view = null; this.note = null; this.rerender(); }, 'primary'); return; }
+    add(`S'entraîner<small>+ niveau, + fatigue</small>`, () => { this.view = 'train'; this.rerender(); }, 'choice');
+    add(`Se reposer à la plage<small>fatigue ${Math.round((this.s.fatigue || 0) * 100)} %</small>`, () => {
+      this.s.fatigue = Math.max(0, (this.s.fatigue || 0) - 0.5);
+      this.spend({ who: this.short, text: pick(['Une après-midi aux Lecques, les pieds dans l\'eau. Les jambes remercient.', 'Sieste, glace, coucher de soleil sur la baie. Demain, tu seras frais.', 'Tu coupes le téléphone et tu dors dix heures. Ça fait du bien.']) });
+    }, 'choice');
+    const friends = ['eliott', 'jean', 'raf', ...(f.metLouka ? ['louka'] : [])];
+    for (const id of friends) add(`Passer du temps avec ${NAME[id]}<small>relation ${(this.s.rel[id] || 0) > 0 ? '+' : ''}${this.s.rel[id] || 0}</small>`, () => {
+      if (id === 'eliott' && f.rivalEliott && (this.s.rel.eliott || 0) < 0) { this.apply({ eliott: 2 }); this.spend({ who: 'Eliott', text: 'Il voit ton message… et ne répond pas. Il faudra du temps.' }); return; }
+      if (id === 'raf' && (this.s.rel.raf || 0) < -20) { this.apply({ raf: 3 }); this.spend({ who: 'Raf', text: '« Un verre ? Avec toi ? » Il accepte quand même, du bout des lèvres.' }); return; }
+      this.apply({ [id]: 6 });
+      this.s.fatigue = Math.min(1, (this.s.fatigue || 0) + 0.04);
+      this.spend({ who: NAME[id], text: pick(FRIEND_LINES[id]) });
+    }, 'choice');
+    const ch = chapterOf(this.s.step);
+    if (ch >= 3 && f.sponsorCh !== ch) {
+      const rep = this.s.rep || 0;
+      const sp = rep >= 10 ? { name: 'le magasin de sport de La Ciotat', money: 300, rep: 2, text: 'Un maillot floqué à leur nom et 300 € pour le tournoi. Ils aiment ton fair-play.' }
+        : rep < 0 ? { name: 'un site de paris en ligne un peu louche', money: 800, rep: -6, text: '800 € tout de suite. Le logo est criard, et les gens du club te regardent de travers.' }
+        : { name: 'la boulangerie de Ceyreste', money: 150, rep: 1, text: '150 € et des croissants à volonté le dimanche. Le maire trouve ça très bien.' };
+      add(`Rencontrer un sponsor<small>${esc(sp.name)}</small>`, () => {
+        this.apply({}, { money: sp.money, sponsorCh: ch, sponsor: sp.name }, sp.rep);
+        this.spend({ who: 'Sponsor', text: sp.text });
+      }, 'choice');
+    }
+    add('Aller au match', () => { this.view = null; this.note = null; this.rerender(); }, 'small');
+  }
+
+  journal() {
+    const lines = Object.entries(PEOPLE).filter(([, p]) => !p.hidden || this.s.flags.metLouka).map(([k, p]) => {
+      const v = this.s.rel[k] || 0;
+      const mood = v >= 50 ? 'te fait totalement confiance' : v >= 20 ? 't\'apprécie' : v >= -10 ? 'reste neutre' : v >= -40 ? 'se méfie de toi' : 'ne te supporte plus';
+      return `<b style="color:${p.color}">${esc(p.name)}</b> ${mood} (${v > 0 ? '+' : ''}${v})`;
+    });
+    const rep = this.s.rep || 0;
+    lines.push(`<b>Réputation</b> : ${rep >= 30 ? 'modèle de fair-play' : rep >= 5 ? 'plutôt bonne' : rep > -10 ? 'neutre' : rep > -40 ? 'on parle de toi dans ton dos' : 'tricheur notoire'} (${rep})`);
+    if (this.s.flags.sponsor) lines.push(`<b>Sponsor</b> : ${esc(this.s.flags.sponsor)}`);
+    lines.push(`<b>Fatigue</b> : ${Math.round((this.s.fatigue || 0) * 100)} %`);
+    const log = (this.s.log || []).slice(-6).map((x) => `· ${esc(x.choice)}`);
+    return `<div class="adv-line"><b>Journal</b><p>${lines.join('<br>')}</p>${log.length ? `<p><b>Tes derniers choix</b><br>${log.join('<br>')}</p>` : ''}</div>`;
+  }
+
   // ------------------------------------------------------------------ rendu
   gauges() {
     const people = Object.entries(PEOPLE).filter(([k, p]) => !p.hidden || this.s.flags.metLouka);
@@ -345,6 +421,8 @@ export class AdventureUI {
     }
     if (!this.s) { add('Commencer une nouvelle aventure', () => this.newGame(), 'primary'); return A; }
     const c = this.ctx, st = this.step;
+    if (this.view === 'journal') { add('Retour', () => { this.view = null; this.rerender(); }, 'primary'); return A; }
+    if (this.view === 'free' || this.view === 'train') { this.freeActions(add); return A; }
     if (this.react) {
       const r = this.react;
       if (this.page < r.pages.length - 1) add('Suivant', () => { this.page++; this.rerender(); }, 'primary');
@@ -367,9 +445,11 @@ export class AdventureUI {
       add('Reprendre la scène', () => this.play(st), 'primary');
     } else if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') {
       add(`${st.type === 'watch' ? 'Regarder' : 'Jouer'} : ${esc(val(st.label, c))}`, () => this.launch(st), 'primary');
+      if (st.type === 'match' && this.freeLeft() > 0) add(`Temps libre avant le match<small>${this.freeLeft()} activité${this.freeLeft() > 1 ? 's' : ''} · fatigue ${Math.round((this.s.fatigue || 0) * 100)} %</small>`, () => { this.view = 'free'; this.note = null; this.rerender(); }, 'choice');
     } else if (st.type === 'end') {
       if (st.next) add(`Continuer : ${esc(CHAPTERS[st.chapter + 1] || 'la suite')}`, () => this.goto(st.next), 'primary');
     }
+    add('Journal des relations', () => { this.view = 'journal'; this.rerender(); }, 'small');
     add(`Côté de jeu : ${(this.s.lane || 1) > 0 ? 'droite (drive)' : 'gauche (revers)'}`, () => { this.s.lane = -(this.s.lane || 1); this.save(); this.rerender(); }, 'small');
     add('Changer de sauvegarde', () => { this.slot = null; this.s = null; this.rerender(); }, 'small');
     add('Effacer cette sauvegarde et recommencer', () => { this.s = null; try { localStorage.removeItem(KEY(this.slot)); } catch { /* ignoré */ } this.newGame(); }, 'small');
@@ -381,6 +461,12 @@ export class AdventureUI {
     if (false) return '<p class="adv-text">Une vraie histoire, des choix qui changent l\'aventure, et un joueur qui part de rien. Deux sauvegardes possibles.</p>';
     if (!this.s) return '<p class="adv-text">Tout commence par un coup de fil d\'Eliott…</p>';
     const c = this.ctx;
+    if (this.view === 'journal') return this.journal();
+    if (this.view === 'free' || this.view === 'train') {
+      const n = this.note;
+      return n ? `<div class="adv-line"><b>${esc(n.who)}</b><p>${esc(n.text)}</p><small>Temps libre restant : ${this.s.free.left}</small></div>`
+        : `<div class="adv-line"><b>Temps libre</b><p>${this.view === 'train' ? 'Qu\'est-ce que tu travailles ?' : `Avant le match, tu as du temps pour ${this.s.free.left} activité${this.s.free.left > 1 ? 's' : ''}. S'entraîner fatigue, se reposer récupère, les amis comptent aussi.`}</p></div>`;
+    }
     if (this.react) { const p = this.react.pages[this.page]; return `<div class="adv-line"><b>${esc(p.who)}</b><p>${esc(p.text)}</p></div>`; }
     const st = this.step;
     if (st.type === 'text') { const pages = val(st.pages, c), p = pages[this.page]; return `<div class="adv-line"><b>${esc(p.who)}</b><p>${esc(p.text)}</p><small>${this.page + 1} / ${pages.length}</small></div>`; }

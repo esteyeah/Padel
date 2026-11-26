@@ -3,6 +3,12 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.75 — Vie de l'Aventure et son
+- Aventure : « Temps libre » avant chaque match (2 activités) — s'entraîner (au choix : coups, lobs, smashs, déplacements, endurance, musculation), se reposer à la plage, passer du temps avec Eliott, Jean, Raf ou Louka, rencontrer un sponsor (selon ta réputation, à partir du chapitre 3).
+- Fatigue : les matchs et l'entraînement fatiguent et font jouer un peu en dessous de son niveau ; le repos la fait baisser.
+- Journal des relations : ce que chacun pense de toi, ta réputation, ton sponsor, ta fatigue et tes derniers choix.
+- Son : bruit de cadre sur les frappes ratées, coups doux étouffés, claquement grave des gros coups ; le public tape dans ses mains en rythme ; commentaire vocal court (« Par quatre ! », « Quel échange ! », « Jeu, set et match ! »), désactivable dans les paramètres.
+
 ## v0.74 — Gameplay et corps
 - Consignes au partenaire bot (T au clavier, RB à la manette — Y en mode gâchettes) : il te suit, monte au filet ou reste au fond.
 - Chiquita : un coup doux joué depuis le fond quand les deux adversaires sont au filet part bas dans leurs pieds. Les bots l'utilisent aussi.

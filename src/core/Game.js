@@ -449,7 +449,7 @@ export class Game {
     this.lastShot = { side: player.side, type, player };
     this._lastSpeed = this.ball.state.v.length();
     this._lastHitT = this.recorder.t;
-    this.sfx.hit(info.speed);
+    this.sfx.hit(info.speed, { type, quality: info.quality });
     // stats à l'écran : vitesse des gros coups
     const kmh = Math.round((info.speed || 0) * 3.6);
     if (!this.attract && !this.drill && (type === 'smash' || type === 'serve' || type === 'drive') && kmh >= (type === 'smash' ? 70 : 95)) {
@@ -649,6 +649,14 @@ export class Game {
       if (this.rallyHits >= 8) this.hud.stat?.(`${this.rallyHits} frappes`, this.rallyHits >= this.tally.longestRally ? 'Plus long échange du match' : 'Long échange');
       this._streak = this._streakSide === d.winner ? (this._streak || 0) + 1 : 1; this._streakSide = d.winner;
       if (this._streak >= 4 && this.rallyHits < 8) this.hud.stat?.(`${this._streak} points d'affilée`, this.teamName(d.winner));
+    }
+    // commentaire et public
+    if (!this.attract && !this.drill) {
+      const R = d.reason || '';
+      const line = /por cuatro/i.test(R) ? 'Par quatre ! Incroyable !' : /por tres/i.test(R) ? 'Par trois ! Quelle puissance !' : /porte/i.test(R) ? 'Il sort par la porte !'
+        : res.match ? 'Jeu, set et match !' : res.set ? 'Et c\'est le set !' : this.rallyHits >= 16 ? 'Quel échange !' : this.lastShot?.type === 'smash' && (this._lastSpeed || 0) > 28 ? 'Smash gagnant !' : Math.random() < 0.08 ? ['Joli point.', 'Bien joué !', 'Superbe !'][Math.floor(Math.random() * 3)] : null;
+      if (line) this.sfx.say?.(line);
+      if ((res.game || this.rallyHits >= 12) && !res.match && Math.random() < 0.4) setTimeout(() => this.sfx.clapRhythm?.(2), 900);
     }
     const excite = Math.min(1, this.rallyHits / 14 + (res.game ? 0.35 : 0) + (res.set ? 0.3 : 0));
     if (this.rallyHits >= 6 || res.game) this.sfx.crowd(excite);

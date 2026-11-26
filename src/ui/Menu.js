@@ -37,6 +37,7 @@ const MATCH = [
 
 const SETTINGS = [
   { key: 'music', label: 'Musique et ambiance sonore', options: [['on', 'Oui'], ['off', 'Non']] },
+  { key: 'commentary', label: 'Commentaire vocal', options: [['on', 'Oui'], ['off', 'Non']] },
   { key: 'quality', label: 'Graphismes', options: [['high', 'Élevés'], ['low', 'Performance']] },
 ];
 

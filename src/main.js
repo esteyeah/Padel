@@ -45,6 +45,7 @@ const menu = new Menu({
   input,
   onStart: (opts) => {
     sfx.musicEnabled = opts.music !== 'off';
+    sfx.commentary = opts.commentary !== 'off';
     if (opts.venue === 'myclub') opts.club = Career.load(storage)?.s.club || null;
     sfx.unlock();
     r3d.setQuality(opts.quality);
@@ -112,7 +113,7 @@ function onlineProfile() {
 const online = new OnlineUI({
   getProfile: onlineProfile,
   getSettings: () => { const v = menu.values(); return { venue: v.venue === 'myclub' ? 'club' : v.venue, court: v.court, format: v.format, sets: v.sets, stb: !!v.matchTiebreak, golden: v.golden, difficulty: v.difficulty, ambiance: v.ambiance }; },
-  startMatch: (opts) => { menu.hide(); sfx.musicEnabled = menu.values().music !== 'off'; sfx.unlock(); r3d.setQuality(menu.values().quality); game.start(opts); },
+  startMatch: (opts) => { menu.hide(); sfx.musicEnabled = menu.values().music !== 'off'; sfx.commentary = menu.values().commentary !== 'off'; sfx.unlock(); r3d.setQuality(menu.values().quality); game.start(opts); },
   back: () => menu.open('home'),
   rerender: () => { if (menu.visible && menu.cur === 'online') menu.render(); },
   show: () => { menu.show(); menu.open('online'); },
@@ -121,7 +122,7 @@ const online = new OnlineUI({
 });
 menu.online = online;
 menu.adventure = new AdventureUI({
-  startGame: (opts) => { menu.hide(); sfx.musicEnabled = menu.values().music !== 'off'; sfx.unlock(); r3d.setQuality(menu.values().quality); game.start(opts); },
+  startGame: (opts) => { menu.hide(); sfx.musicEnabled = menu.values().music !== 'off'; sfx.commentary = menu.values().commentary !== 'off'; sfx.unlock(); r3d.setQuality(menu.values().quality); game.start(opts); },
   back: () => menu.open('home'),
   rerender: () => { if (menu.visible && menu.cur === 'adventure') menu.render(); },
   show: () => { menu.show(); menu.open('adventure'); },

@@ -27,6 +27,7 @@ const TUNES = [
 
 export class Sfx {
   constructor() {
+    this.commentary = true;
     this.ctx = null;
     this.volume = 0.7;
     this.musicEnabled = true;
@@ -291,11 +292,46 @@ export class Sfx {
     o.stop(t + dur + 0.05);
   }
 
-  hit(speed) {
+  hit(speed, o = {}) {
     if (!this.ready) return;
     const k = Math.min(1, Math.max(0.2, speed / 30));
-    this._burst({ freq: 1700 + k * 600, q: 1.4, dur: 0.05, gain: 0.25 + 0.45 * k });
-    this._tone({ f0: 650 + k * 350, f1: 260, dur: 0.07, gain: 0.15 + 0.3 * k });
+    if (o.quality != null && o.quality < 0.33 && o.type !== 'serve') {
+      // balle prise sur le cadre : « clac » sec et boisé
+      this._burst({ freq: 900, q: 3, dur: 0.04, gain: 0.35 });
+      this._tone({ f0: 320, f1: 180, dur: 0.05, gain: 0.25, type: 'triangle' });
+      return;
+    }
+    const soft = ['lob', 'drop', 'slice', 'bandeja'].includes(o.type);
+    this._burst({ freq: (soft ? 1300 : 1700) + k * 600, q: 1.4, dur: soft ? 0.06 : 0.05, gain: (0.25 + 0.45 * k) * (soft ? 0.7 : 1) });
+    this._tone({ f0: (soft ? 520 : 650) + k * 350, f1: 260, dur: 0.07, gain: (0.15 + 0.3 * k) * (soft ? 0.7 : 1) });
+    // gros coup : claquement plus grave du tamis
+    if (k > 0.8 && !soft) this._tone({ f0: 160, f1: 70, dur: 0.09, gain: 0.18 * k });
+  }
+
+  /** Public qui tape dans les mains en rythme (clap, clap, clap-clap-clap). */
+  clapRhythm(reps = 2) {
+    if (!this.ready) return;
+    const beat = [0, 0.42, 0.84, 1.1, 1.26, 1.42];
+    for (let r = 0; r < reps; r++) for (const b of beat) {
+      const t = r * 1.9 + b;
+      for (let i = 0; i < 5; i++) this._burst({ freq: 1500 + Math.random() * 1400, q: 0.9, dur: 0.045, gain: 0.05 + Math.random() * 0.05, delay: t + Math.random() * 0.03 });
+    }
+  }
+
+  /** Commentaire vocal court (synthèse vocale du navigateur, en français). */
+  say(text) {
+    if (!this.commentary || typeof speechSynthesis === 'undefined') return;
+    const now = performance.now();
+    if (now - (this._sayT || 0) < 3500) return;     // pas de bavardage
+    this._sayT = now;
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'fr-FR'; u.rate = 1.12; u.pitch = 0.95; u.volume = 0.85;
+      const v = speechSynthesis.getVoices().find((x) => /^fr/i.test(x.lang));
+      if (v) u.voice = v;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch { /* synthèse vocale indisponible */ }
   }
 
   floor(speed) {
