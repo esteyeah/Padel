@@ -241,6 +241,32 @@ function knitNormal() {
 }
 
 /** Grain de peau (pores) très léger. */
+/** Détail de couleur de la peau : marbrures, rougeurs, petites taches (très discret). */
+let _skinDetail = null;
+function skinDetail() {
+  if (_skinDetail) return _skinDetail;
+  const W = 256, c = document.createElement('canvas'); c.width = c.height = W;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, W);
+  let seed = 11; const R = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < 220; i++) {   // marbrures douces
+    const x = R() * W, y = R() * W, r = 6 + R() * 22, warm = R() < 0.6;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, warm ? 'rgba(225,170,160,0.10)' : 'rgba(200,190,170,0.08)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  for (let i = 0; i < 900; i++) {   // pores et petites taches
+    const x = R() * W, y = R() * W, r = 0.4 + R() * 1.1;
+    g.fillStyle = R() < 0.85 ? `rgba(190,150,135,${0.10 + R() * 0.12})` : `rgba(150,95,70,${0.12 + R() * 0.14})`;
+    g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  _skinDetail = new THREE.CanvasTexture(c);
+  _skinDetail.colorSpace = THREE.SRGBColorSpace;
+  _skinDetail.wrapS = _skinDetail.wrapT = THREE.RepeatWrapping;
+  _skinDetail.repeat.set(5, 3);
+  return _skinDetail;
+}
+
 function skinNormal() {
   if (_skinNrm) return _skinNrm;
   _skinNrm = noiseNormal(256, 256, (g, W, H) => {
@@ -272,16 +298,18 @@ export class Avatar {
       accent: fabric(a.accent, mt.accent),
       shorts: fabric(a.shorts, mt.shorts),
       // peau : léger voile chaud (imite la diffusion sous la peau) ; cheveux : reflets
-      skin: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.skin).multiplyScalar(0.95), roughness: 0.58, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.18, 0.18), emissive: new THREE.Color(a.skin).multiplyScalar(0.05).lerp(new THREE.Color(0x3a0c06), 0.5), emissiveIntensity: 0.5, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
+      skin: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.skin).multiplyScalar(0.95), map: skinDetail(), roughness: 0.58, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.18, 0.18), emissive: new THREE.Color(a.skin).multiplyScalar(0.05).lerp(new THREE.Color(0x3a0c06), 0.5), emissiveIntensity: 0.5, sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
       hairCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.85), alphaMap: strandTexture(), alphaTest: 0.4, side: THREE.DoubleSide, roughness: 0.7, metalness: 0.0, envMapIntensity: 0.15 }),
       beardCard: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).lerp(new THREE.Color(a.skin), 0.22).multiplyScalar(1.15), alphaMap: beardTexture(), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.85, envMapIntensity: 0.15 }),
       hair: new THREE.MeshPhysicalMaterial({ color: new THREE.Color(a.hair).multiplyScalar(0.72), map: hairTex(), normalMap: hairNormal(), normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.5, sheen: 0.8, sheenRoughness: 0.3, sheenColor: new THREE.Color(a.hair).lerp(new THREE.Color(0xffffff), 0.4) }),
-      faceSkin: new THREE.MeshPhysicalMaterial({ color: 0xf2e4dc, vertexColors: true, roughness: 0.52, emissive: new THREE.Color(0x2a0905), emissiveIntensity: 0.35, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.3, 0.3), sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
+      faceSkin: new THREE.MeshPhysicalMaterial({ color: 0xf2e4dc, vertexColors: true, map: skinDetail(), roughness: 0.52, emissive: new THREE.Color(0x2a0905), emissiveIntensity: 0.35, normalMap: skinNormal(), normalScale: new THREE.Vector2(0.3, 0.3), sheen: 0.12, sheenRoughness: 0.5, sheenColor: new THREE.Color(0xc0503a), specularIntensity: 0.6 }),
       white: M(0xd9d0c6, 0.3),
       iris: M(new THREE.Color(a.eye ?? 0x4a3020).multiplyScalar(0.8), 0.25),
       fade: new THREE.MeshStandardMaterial({ color: new THREE.Color(a.hair).lerp(new THREE.Color(a.skin), a.hairStyle === 'shaved' ? 0.72 : 0.45), roughness: 0.9 }),
       capMat: new THREE.MeshPhysicalMaterial({ color: a.capColor ?? a.shirt, roughness: 0.85, sheen: 0.4, sheenColor: new THREE.Color(0xffffff) }),
       tattoo: a.tattoo ? new THREE.MeshPhysicalMaterial({ map: tattooTexture(a.skin), roughness: 0.62, sheen: 0.22, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xd9785a) }) : null,
+      cornea: new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, roughness: 0.02, clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, depthWrite: false }),
+      mouth: new THREE.MeshStandardMaterial({ color: 0x2a0e0c, roughness: 0.6 }),
       lip: M(new THREE.Color(a.skin).multiplyScalar(0.72).lerp(new THREE.Color(0xa0453a), 0.25), 0.45),
       dark: M(0x0d0d0f, 0.4),
       sole: M(0xf2f2f2, 0.7),
@@ -459,8 +487,24 @@ export class Avatar {
       P.add(h, new THREE.SphereGeometry(0.0062, 16, 12), mat.iris, [ex, ey - 0.0006, ez + 0.0082], [0, 0, 0], [1, 1, 0.5]);
       P.add(h, new THREE.SphereGeometry(0.003, 10, 8), mat.dark, [ex, ey - 0.0006, ez + 0.011], [0, 0, 0], [1, 1, 0.45]);
       P.add(h, new THREE.SphereGeometry(0.0012, 6, 4), mat.white, [ex - sx * 0.0018, ey + 0.0012, ez + 0.0122]);
-      P.add(h, new THREE.SphereGeometry(0.0128, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.42), mat.skin, [ex, ey + 0.0008, ez + 0.0006], [0.75, 0, 0], [1.27, 0.85, 0.9]);
-      P.add(h, new THREE.SphereGeometry(0.0124, 18, 8, 0, Math.PI * 2, Math.PI * 0.66, Math.PI * 0.34), mat.skin, [ex, ey - 0.0004, ez + 0.0004], [-0.3, 0, 0], [1.26, 0.8, 0.9]);
+      // cornée : reflet brillant sur l'iris
+      P.add(h, new THREE.SphereGeometry(0.0066, 14, 10), mat.cornea, [ex, ey - 0.0006, ez + 0.0088], [0, 0, 0], [1.02, 1.02, 0.55]);
+      // paupières : maillages à part pour pouvoir cligner
+      const up = new THREE.Mesh(new THREE.SphereGeometry(0.0128, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.42), mat.skin);
+      up.position.set(ex, ey + 0.0008, ez + 0.0006); up.rotation.x = 0.75; up.scale.set(1.27, 0.85, 0.9);
+      const lo = new THREE.Mesh(new THREE.SphereGeometry(0.0124, 18, 8, 0, Math.PI * 2, Math.PI * 0.66, Math.PI * 0.34), mat.skin);
+      lo.position.set(ex, ey - 0.0004, ez + 0.0004); lo.rotation.x = -0.3; lo.scale.set(1.26, 0.8, 0.9);
+      h.add(up, lo);
+      (this.lids ||= []).push({ up, lo });
+    }
+    // bouche : intérieur sombre qui s'ouvre quand le personnage parle, crie ou force
+    {
+      const m = F.at(0, -0.437, 0.9);
+      const mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), mat.mouth);
+      mouth.position.set(m.x, m.y, m.z - 0.0026);
+      mouth.scale.set(0.017, 0.0009, 0.004);
+      h.add(mouth);
+      this.mouth = mouth;
     }
     // cheveux : coques ajustées au crâne, plus du volume selon la coiffure
     const hw0 = a.headwear;
@@ -675,6 +719,34 @@ export class Avatar {
   /** Pas d'allègement : petit saut d'équilibre quand l'adversaire frappe. */
   splitStep() { this.split = 0.32; }
 
+  /** Réaction après un point : 'joy' (poing levé), 'sad' (mains sur les hanches, tête basse). */
+  setMood(kind, dur = 2.2) { this.mood = kind; this.moodT = dur; this.moodDur = dur; }
+
+  /** Visage : clignements, bouche (parole, cri d'effort, joie), plissement des yeux. */
+  animFace(dt, s) {
+    this._ft = (this._ft || 0) + dt;
+    this._blinkIn = (this._blinkIn ?? 1 + Math.random() * 3) - dt;
+    if (this._blinkIn <= 0) { this._blink = 0.14; this._blinkIn = 1.8 + Math.random() * 3.5; }
+    let close = 0;
+    if (this._blink > 0) { this._blink -= dt; close = Math.sin(Math.PI * Math.max(0, this._blink) / 0.14); }
+    const effort = s.armed && s.armed.charge > 0.5 ? 0.35 : s.swing && s.swing.t < s.swing.dur * 0.5 ? 0.45 : 0;
+    const mood = this.moodT > 0 ? this.mood : null;
+    close = Math.max(close, effort * 0.8, mood === 'joy' ? 0.25 : mood === 'sad' ? 0.3 : 0);
+    if (this.lids) for (const L of this.lids) { L.up.rotation.x = 0.75 + 0.7 * close; L.up.scale.z = 0.9 + 0.32 * close; L.up.scale.y = 0.85 + 0.2 * close; L.lo.rotation.x = -0.3 - 0.2 * close; L.lo.scale.z = 0.9 + 0.2 * close; }
+    if (this.mouth) {
+      const t = this._ft;
+      let open = 0, wide = 1;
+      if (this.talking) open = 0.25 + 0.75 * Math.abs(Math.sin(t * 13) * Math.sin(t * 7.3 + 1));
+      if (effort) open = Math.max(open, effort);
+      if (mood === 'joy') { open = Math.max(open, 0.55 + 0.25 * Math.abs(Math.sin(t * 9))); wide = 1.3; }
+      if (mood === 'sad') wide = 0.85;
+      const k = 1 - Math.exp(-dt * 25);
+      this._mo = (this._mo || 0) + (open - (this._mo || 0)) * k;
+      this.mouth.scale.y = 0.0009 + this._mo * 0.0062;
+      this.mouth.scale.x += (0.017 * wide - this.mouth.scale.x) * k;
+    }
+  }
+
   /** Le visage rougit (colère) pendant `dur` secondes. */
   flush(dur = 2.5) { this._flushT = dur; this._flushDur = dur; }
 
@@ -750,6 +822,19 @@ export class Avatar {
     if (Y.oneHand && (st.mode === 'idle' || st.mode === 'run')) {
       P.LH.set(0.24, -0.5, 0.02);
       if (st.mode === 'idle') { P.H.set(-0.26, -0.42, 0.14); P.D.set(-0.15, -0.35, 0.92); P.F.set(1, 0, 0.1); }
+    }
+    // réactions après un point
+    if (this.moodT > 0) this.moodT -= dt;
+    const mood = this.moodT > 0 && (st.mode === 'idle' || st.mode === 'run') ? this.mood : null;
+    if (mood === 'joy') {
+      const u = 1 - this.moodT / this.moodDur, pump = Math.max(0, Math.sin(u * Math.PI * 5));
+      P.LH.set(0.27, 0.12 + 0.26 * pump, 0.2);                   // poing serré, « allez ! »
+      P.H.set(-0.42, 0.42 + 0.08 * pump, 0.02); P.D.set(-0.45, 1, -0.05); P.F.set(0, 0, 1);   // raquette levée sur le côté
+      P.lean -= 0.06;
+    } else if (mood === 'sad') {
+      P.LH.set(0.2, -0.2, -0.04);                                 // mains sur les hanches
+      P.H.set(-0.21, -0.22, -0.02); P.D.set(-0.2, -1, 0.15); P.F.set(1, 0, 0);
+      P.lean += 0.12;
     }
     if (st.mode === 'armed' || (st.mode === 'swing' && st.t / st.dur < 0.1)) {
       P.H.z = P.H.z * Y.back; P.H.x *= 0.9 + 0.1 * Y.back; P.twist *= Y.twist;
@@ -835,5 +920,9 @@ export class Avatar {
     this.lookYaw += (look - this.lookYaw) * (1 - Math.exp(-dt * 8));
     this.head.rotation.y = this.lookYaw;
     this.head.rotation.x = -this.spine.rotation.x * 0.6;
+    // tête basse après un point perdu, relevée après un point gagné
+    this._hd = (this._hd || 0) + (((this.moodT > 0 && this.mood === 'sad') ? 0.38 : (this.moodT > 0 && this.mood === 'joy') ? -0.15 : 0) - (this._hd || 0)) * (1 - Math.exp(-dt * 5));
+    this.head.rotation.x += this._hd;
+    this.animFace(dt, s);
   }
 }

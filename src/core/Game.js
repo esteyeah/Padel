@@ -654,6 +654,7 @@ export class Game {
     if (this.rallyHits >= 6 || res.game) this.sfx.crowd(excite);
     this.r3d.arena.cheer(Math.max(excite, 0.25));
     if (this.human) this.input.rumble(mine ? 0.2 : 0.6, mine ? 0.6 : 0.2, 160);
+    for (const q of this.players) q.avatar.setMood?.(q.side === d.winner ? 'joy' : 'sad', res.match ? 2.6 : 1.9);
     this.afterPoint(res.match ? 'match' : 'next', res.match ? 2.6 : 2.0);
   }
 
@@ -879,6 +880,7 @@ export class Game {
       cs.choosing = L;
       this.hud.onChoice = (k) => this.chooseLine(k);
       this.hud.dialog(L.label || who?.name || '', L.text, L.choices);
+      cs.talkFor = Math.min(4.5, 0.4 + (L.text || '').length * 0.045);
       return;
     }
     cs.choosing = null;
@@ -893,6 +895,7 @@ export class Game {
     if (L.touch) { const t = this.actors?.find((a) => a.id === L.touch) || this.players.find((q) => q !== this.players[0]); if (t) { t._touch = true; const me = this.players[0]; t.pos.set(me.pos.x + 0.42, 0, me.pos.z - 0.18); } }
     this.hud.sheet?.(L.sheet || null);
     this.hud.dialog(L.label || who?.name || '', L.text, cs.i + 1 < cs.lines.length);
+    cs.talkFor = Math.min(4.5, 0.4 + (L.text || '').length * 0.045);
   }
 
   /** Choix d'une réponse pendant une cinématique : la suite (réaction) est insérée juste après. */
@@ -911,6 +914,7 @@ export class Game {
   }
 
   endCutscene() {
+    for (const q of [...this.players, ...(this.actors || [])]) if (q.avatar) q.avatar.talking = false;
     this.clearActors();
     this.hud.sheet?.(null);
     const done = this.cutscene?.onEnd;
@@ -968,6 +972,7 @@ export class Game {
       return base + sway;
     };
     const wave = (q) => (cs.waving === q ? { kind: 'over', charge: 0.35 + 0.3 * Math.sin(cs.t * 9) } : q._touch ? { kind: 'fore', charge: 0.05 } : null);
+    for (const q of [...this.players, ...(this.actors || [])]) q.avatar.talking = q === p && cs.t < (cs.talkFor || 0);
     for (const q of this.players) {
       q.avatar.animate(dt, { speed: walking, fwd: walking, side: 0, yaw: yawOf(q, q.side > 0 ? Math.PI : 0, q === p ? Math.sin(cs.t * 1.3) * 0.15 : 0), look: 0, ready: false, armed: wave(q), swing: null });
     }

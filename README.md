@@ -3,6 +3,11 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.72 — Visages vivants et réactions
+- Les personnages clignent des yeux, la bouche bouge quand ils parlent dans les cinématiques, ils plissent les yeux et serrent les dents à l'effort (charge, frappe).
+- Cornée brillante sur les yeux, peau avec marbrures, pores et petites taches.
+- Après chaque point : les gagnants lèvent la raquette et serrent le poing, les perdants mettent les mains sur les hanches, tête basse.
+
 ## v0.71 — Jeu en ligne fluide, smash par 3/4 lisible, rendu
 - En ligne : ton joueur bouge immédiatement (prédiction locale, corrigée en douceur par l'hôte), les appuis de bouton partent sans attendre, horloge d'affichage recalée en continu (le retard pouvait monter à 0,5 s), 45 états/s au lieu de 30.
 - Smash par 3/4 : jauge agrandie avec zone verte et curseur, « RELÂCHE ! » qui clignote au bon moment, « TROP TARD » en rouge.
