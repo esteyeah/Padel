@@ -20,7 +20,7 @@ export class Petanque {
    * @param opp     acteur adversaire { avatar, pos, label }
    * @param skill   0..1 adresse de l'adversaire ; style : 'pointeur' | 'tireur'
    */
-  constructor(g, area, me, opp, { skill = 0.6, style = 'pointeur', target = 5, onEnd } = {}) {
+  constructor(g, area, me, opp, { skill = 0.6, style = 'pointeur', target = 7, onEnd } = {}) {
     Object.assign(this, { g, area, me, opp, skill, style, target, onEnd });
     this.group = new THREE.Group(); this.group.position.y = area.y || 0; g.scene.add(this.group);
     this.matMe = new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.95, roughness: 0.22 });
@@ -69,13 +69,21 @@ export class Petanque {
   }
 
   // ------------------------------------------------------------------ lancer
-  throwBall(owner, aimX, power, tir) {
+  /** Profil d'un lancer : part en vol / part roulée, hauteur et durée de la cloche. */
+  static kind(k) {
+    return { point: { fly: 0.72, h: 2.4, dur: 0.95 }, tir: { fly: 0.82, h: 0.5, dur: 0.55 }, plomb: { fly: 0.9, h: 4.2, dur: 1.35 } }[k] || { fly: 0.72, h: 2.4, dur: 0.95 };
+  }
+
+  throwBall(owner, aimX, power, kind) {
+    if (kind === true) kind = 'tir'; else if (!kind) kind = 'point';
+    const K = Petanque.kind(kind);
     const dist = 1.5 + power * 8.5;
-    const land = tir ? dist * 0.82 : dist * 0.72;          // pointer : la boule roule ensuite ~28 %
+    const land = dist * K.fly;                               // le reste de la distance se fait en roulant
     const tx = this.circle.x + Math.sin(aimX) * land, tz = this.circle.z + this.dir * Math.cos(aimX) * land;
     const b = this.addBall(owner, this.circle.x, this.circle.z);
     b.mesh.position.y = 0.6;
-    this.flying = { b, from: new THREE.Vector3(this.circle.x, 0.7, this.circle.z), to: new THREE.Vector3(tx, b.r, tz), t: 0, dur: tir ? 0.55 : 0.95, h: tir ? 0.5 : 2.4, roll: (tir ? dist * 0.18 : dist * 0.28), dir: new THREE.Vector2(Math.sin(aimX), this.dir * Math.cos(aimX)), tir };
+    const tir = kind === 'tir';
+    this.flying = { b, from: new THREE.Vector3(this.circle.x, 0.7, this.circle.z), to: new THREE.Vector3(tx, b.r, tz), t: 0, dur: K.dur, h: K.h, roll: dist * (1 - K.fly), dir: new THREE.Vector2(Math.sin(aimX), this.dir * Math.cos(aimX)), tir, owner };
     this.left[owner]--;
     this.phase = 'flight';
     // geste de lancer (par en dessous)
@@ -96,7 +104,9 @@ export class Petanque {
     // force nécessaire pour atteindre la cible (inverse de throwBall), avec l'erreur du joueur
     const need = d;                                   // vol + roulement = distance visée
     const power = Math.max(0, Math.min(1, (need - 1.5) / 8.5 + gauss() * 0.06 * (1.3 - this.skill)));
-    this.throwBall(1, aim, power, tir);
+    const plomb = !tir && this.skill > 0.6 && Math.random() < 0.25;
+    this.msg(tir ? `${this.opp.label} tire !` : plomb ? `${this.opp.label} joue une plombée` : `${this.opp.label} pointe`);
+    this.throwBall(1, aim, power, tir ? 'tir' : plomb ? 'plomb' : 'point');
   }
 
   // ------------------------------------------------------------------ boucle
@@ -114,17 +124,18 @@ export class Petanque {
       if (who === 1) { this.oppT = (this.oppT || 0) + dt; if (this.oppT > 1.3) { this.oppT = 0; this.aiThrow(); } this.camera(dt); return; }
       // visée
       this.aim = Math.max(-0.5, Math.min(0.5, this.aim + ((inp.move.x || 0) + (inp.aim.x || 0)) * dt * 0.6));
-      const btn = inp.held.A ? 'A' : inp.held.B ? 'B' : null;
+      const btn = inp.held.A ? 'A' : inp.held.B ? 'B' : inp.held.Y ? 'Y' : null;
       if (btn && !this.charging) { this.charging = btn; this.power = 0; this.chargeT = 0; }
       if (this.charging) {
         this.chargeT += dt;
         this.power = Math.min(1, this.chargeT / 1.6);
-        g.hud.setPower(this.power, this.charging === 'A' ? 'POINTER' : 'TIRER');
-        if (!inp.held[this.charging]) { const tir = this.charging === 'B'; this.charging = null; g.hud.setPower(null); this.throwBall(0, this.aim, this.power, tir); }
+        g.hud.setPower(this.power, `${{ A: 'POINTER', B: 'TIRER', Y: 'PLOMBÉE' }[this.charging]} · ${(1.5 + this.power * 8.5).toFixed(1).replace('.', ',')} m (cochonnet ${Math.hypot(this.coch.p.x - this.circle.x, this.coch.p.y - this.circle.z).toFixed(1).replace('.', ',')} m)`);
+        if (!inp.held[this.charging]) { const kd = { A: 'point', B: 'tir', Y: 'plomb' }[this.charging]; this.charging = null; g.hud.setPower(null); this.throwBall(0, this.aim, this.power, kd); }
       }
-      g.hud.hint(`Pétanque ${this.score[0]} - ${this.score[1]} · boules : toi ${this.left[0]}, ${this.opp.label} ${this.left[1]} · visée ← → · maintenir A pointer / B tirer`);
-      this.showAim(true);
-    } else this.showAim(false);
+      { const kb = g.input.padType === 'keyboard';
+        g.hud.hint(`${this.score[0]} - ${this.score[1]} · boules ${this.left[0]}/${this.left[1]} · ← → viser · ${kb ? 'K pointer · L tirer · I plombée' : 'A pointer · B tirer · Y plombée'}`); }
+      this.showAim(true); this.markers(true);
+    } else { this.showAim(false); this.markers(false); }
     if (this.phase === 'flight') {
       const F = this.flying; F.t += dt;
       const u = Math.min(1, F.t / F.dur);
@@ -147,7 +158,13 @@ export class Petanque {
         this.phase = 'aim'; this.wait = 0.5;
         if (this.coch.dead) { this.msg('Cochonnet sorti : mène annulée'); this.wait = 1.6; this.newMene(); return; }
         const h = this.holder();
-        if (h >= 0) this.msg(h === 0 ? 'Tu as le point' : `${this.opp.label} a le point`);
+        const last = this.flying?.b;
+        if (last && !last.dead) {
+          const cm = Math.round(this.dist(last) * 100);
+          this.msg(`${last.owner === 0 ? 'Ta boule' : `Boule de ${this.opp.label}`} : ${cm < 100 ? `${cm} cm` : `${(cm / 100).toFixed(1).replace('.', ',')} m`} du cochonnet · ${h === 0 ? 'tu as le point' : `${this.opp.label} a le point`}`);
+        } else if (last?.dead) this.msg('Boule hors du terrain');
+        else if (h >= 0) this.msg(h === 0 ? 'Tu as le point' : `${this.opp.label} a le point`);
+        this.markPoint();
       }
     }
     if (this.throwAnim) {
@@ -236,12 +253,39 @@ export class Petanque {
     this.aimLine.geometry.setFromPoints(pts); this.aimLine.computeLineDistances();
   }
 
+  /** Anneau sous la boule qui a le point. */
+  markPoint() {
+    if (!this.ring) { this.ring = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.008, 6, 24), new THREE.MeshBasicMaterial({ color: 0x3cff6e })); this.ring.rotation.x = Math.PI / 2; this.group.add(this.ring); }
+    const live = this.balls.filter((b) => !b.dead);
+    if (!live.length) { this.ring.visible = false; return; }
+    const best = live.reduce((a, b) => (this.dist(b) < this.dist(a) ? b : a));
+    this.ring.visible = true;
+    this.ring.material.color.set(best.owner === 0 ? 0x3cff6e : 0xff5a3c);
+    this.ring.position.set(best.p.x, 0.01, best.p.y);
+  }
+
+  /** Repères de visée : point de chute (cercle) et point d'arrêt prévu (croix). */
+  markers(on) {
+    if (!this.mk) {
+      const m = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false });
+      this.mk = { land: new THREE.Mesh(new THREE.RingGeometry(0.1, 0.13, 24), m), stop: new THREE.Mesh(new THREE.RingGeometry(0.03, 0.05, 16), new THREE.MeshBasicMaterial({ color: 0xffd400 })) };
+      for (const o of Object.values(this.mk)) { o.rotation.x = -Math.PI / 2; this.group.add(o); }
+    }
+    this.mk.land.visible = this.mk.stop.visible = on;
+    if (!on) return;
+    const K = Petanque.kind({ A: 'point', B: 'tir', Y: 'plomb' }[this.charging || 'A']);
+    const d = 1.5 + (this.charging ? this.power : 0.5) * 8.5, a = this.aim;
+    const at = (r) => [this.circle.x + Math.sin(a) * r, this.circle.z + this.dir * Math.cos(a) * r];
+    const [lx, lz] = at(d * K.fly), [sx, sz] = at(d);
+    this.mk.land.position.set(lx, 0.012, lz); this.mk.stop.position.set(sx, 0.012, sz);
+  }
+
   camera(dt) {
     const cam = this.g.cameraRig.camera, c = this.circle;
     let look = new THREE.Vector3(this.coch.p.x, 0, this.coch.p.y);
     if (this.phase === 'flight' && this.flying) look = this.flying.b.mesh.position.clone();
     if (this.phase === 'roll') { const m = this.balls.find((b) => b.v.lengthSq() > 0.01); if (m) look = m.mesh.position.clone(); }
-    const want = new THREE.Vector3(c.x + 0.9, 2.3, c.z + 2.6);
+    const want = this.phase === 'roll' || this.phase === 'flight' ? new THREE.Vector3(c.x + 0.8, 2.6, c.z + 1.6) : new THREE.Vector3(c.x + 1.0, 1.9, c.z + 2.5);
     this.camPos = this.camPos || want.clone();
     this.camPos.lerp(want, 1 - Math.exp(-dt * 4));
     this.camLook = this.camLook || look.clone();
@@ -253,11 +297,18 @@ export class Petanque {
   /** Animation des deux joueurs (appelée par la promenade). */
   animate(dt) {
     const T = this.throwAnim;
+    const thrower = this.who === 0 ? this.me : this.opp;
     for (const P of [this.me, this.opp]) {
-      const sw = T && T.av === P.avatar ? { kind: 'fore', style: 'lob', t: T.t * 0.68, dur: 0.34, contactH: 0.55, contactPos: null, jump: 0 } : null;
       P.avatar.root.position.set(P.pos.x, this.area.y || 0, P.pos.z);
-      const yaw = P === (this.who === 0 ? this.me : this.opp) ? Math.PI - (P === this.me ? this.aim : 0) : Math.atan2(this.coch.p.x - P.pos.x, this.coch.p.y - P.pos.z);
-      P.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw, look: 0, ready: false, armed: null, swing: sw, casual: !sw, pose: !sw && P !== (this.who === 0 ? this.me : this.opp) ? 'hips' : null });
+      const yaw = P === thrower ? Math.PI - (P === this.me ? this.aim : 0) : Math.atan2(this.coch.p.x - P.pos.x, this.coch.p.y - P.pos.z);
+      let pose = 'hips', bouleK = 0, squat = 0;
+      if (P === thrower && this.phase === 'aim') {
+        // en position : accroupi pour pointer, le bras recule pendant qu'on charge
+        pose = 'boule'; squat = this.charging === 'B' ? 0.15 : 0.75;
+        bouleK = this.charging ? -this.power : -0.1;
+      }
+      if (T && T.av === P.avatar) { pose = 'boule'; const u = Math.min(1, T.t / 0.45); bouleK = -1 + 2.2 * u; squat = 0.6 * (1 - u); }
+      P.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw, look: 0, ready: false, armed: null, swing: null, casual: true, pose, bouleK, squat });
     }
   }
 

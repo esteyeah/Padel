@@ -846,6 +846,13 @@ export class Avatar {
         else if (s.pose === 'drink') { const sip = Math.max(0, Math.sin(t * 0.9)) ** 6; P.LH.set(0.12 - 0.06 * sip, -0.12 + 0.52 * sip, 0.2 + 0.02 * sip); }
         else if (s.pose === 'chat') { P.H.set(-0.22, -0.2 + 0.12 * Math.max(0, Math.sin(t * 2.3)), 0.18); P.LH.set(0.22, -0.25 + 0.1 * Math.max(0, Math.sin(t * 1.7 + 1)), 0.16); }
         else if (s.pose === 'arms') { P.LH.set(0.04, -0.08, 0.16); P.H.set(-0.04, -0.06, 0.17); }
+        else if (s.pose === 'boule') {
+          // lancer de pétanque par en dessous : bras tendu qui recule puis part vers l'avant
+          const k = s.bouleK || 0;
+          P.H.set(-0.2, -0.48 + 0.3 * Math.max(0, k), 0.08 + 0.42 * k);
+          P.D.set(0, -1, 0.2); P.LH.set(0.24, -0.3, 0.12);
+          P.lean = 0.2 + 0.35 * (s.squat || 0); P.twist = -0.15 * k;
+        }
       }
     }
     // personnalisation du geste
@@ -935,13 +942,14 @@ export class Avatar {
         L.knee.rotation.x = 0.06 + Math.pow(swingK, 1.4) * (0.95 * w + 0.85 * rK) + 0.12 * Math.max(0, sw) * w + 0.15 * rK;
         L.ankle.rotation.x = -0.03 + swingK * (0.22 * w + 0.2 * rK) - Math.max(0, -sw) * (0.2 * w) * (1 - swingK);
         L.hip.rotation.z = L.sx * 0.03;
+        if (s.squat) { const q = s.squat; L.hip.rotation.x -= 1.0 * q; L.knee.rotation.x += 1.7 * q; L.ankle.rotation.x -= 0.7 * q; L.hip.rotation.z += L.sx * 0.12 * q; }
       }
     }
     if (s.casual) {
       // la tête monte au passage de la jambe d'appui, le bassin bascule et tourne avec les pas
       const w = clamp(s.speed / 1.3, 0, 1), rK = clamp((s.speed - 2.2) / 1.6, 0, 1);
       drop = 0.012 + (1 - Math.abs(Math.sin(ph))) * (0.022 * w + 0.03 * rK);
-      this.pelvis.position.y = THIGH + SHIN + 0.085 - drop;
+      this.pelvis.position.y = THIGH + SHIN + 0.085 - drop - (s.squat || 0) * 0.3;
       this.pelvis.rotation.z = Math.sin(ph) * 0.045 * w;
     } else {
       drop += Math.abs(Math.cos(ph)) * (0.014 * g + 0.03 * run) * this.sty.bounce;

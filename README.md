@@ -3,6 +3,16 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.79 — Clavier AZERTY et pétanque améliorée
+- Clavier : les lettres suivent la touche réellement tapée — ZQSD en AZERTY, WASD en QWERTY, et K, J, I, L, U, O, H, T, C sont les mêmes lettres partout.
+- Pétanque :
+  - trois lancers : pointer (A / K), tirer (B / L) et plombée (Y / I, très haute, roule à peine) ;
+  - repères au sol : cercle blanc où la boule tombe, point jaune où elle doit s'arrêter, distance en mètres dans la jauge ;
+  - mesure après chaque boule (« Ta boule : 24 cm du cochonnet ») et anneau sous la boule qui tient le point (vert pour toi, rouge pour l'adversaire) ;
+  - vrai geste : accroupi pour pointer, bras qui recule pendant la charge puis lancer par en dessous ;
+  - l'adversaire annonce son coup (« Raf tire ! ») et sait jouer la plombée ;
+  - caméra plus basse derrière le cercle, partie en 7 points, boules de décor retirées pendant la partie.
+
 ## v0.78 — Escalier de Ceyreste et démarche
 - Ceyreste : la rambarde au-dessus de l'escalier est ouverte et les rochers qui bouchaient le haut des marches ont été déplacés : on remonte de la terrasse.
 - Promenade : on monte sur les marches et petits obstacles (moins de 50 cm) au lieu de buter contre.

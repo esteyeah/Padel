@@ -50,11 +50,18 @@ const SPRINT_BTN = 10;       // clic du stick gauche : petit sprint
 const VIEW_BTN = 8;          // View / Select / Share : changer de caméra
 const COMBO_KEY = 'KeyU';    // contre-vitre au clavier
 const GAME_KEYS = new Set([
-  'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD',
+  'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyQ', 'KeyT', 'KeyP',
   'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyU', 'KeyO', 'KeyH', 'KeyT', 'KeyC', 'Enter', 'Escape', 'ShiftLeft', 'ShiftRight',
 ]);
 const STORAGE_KEY = 'padel-arena.controls';
 const TRIGGER_THRESHOLD = 0.35;
+
+/** Nom de touche : « KeyZ » pour la lettre z tapée, quel que soit le clavier ; sinon le code physique. */
+function keyName(e) {
+  const k = e.key;
+  if (k && k.length === 1 && /[a-z]/i.test(k)) return 'Key' + k.toUpperCase();
+  return e.code;
+}
 
 function deadzone(x, y, d = 0.18) {
   const m = Math.hypot(x, y);
@@ -84,15 +91,19 @@ export class InputManager {
     this.version = 0;          // change quand la configuration change (pour rafraîchir l'aide)
     this.preset = 'face';
     this.mapping = { ...PRESETS.face.map };
+    this._down = new Map();
     this.load();
 
     addEventListener('keydown', (e) => {
       // pendant la saisie d'un texte (nom du joueur), le clavier n'agit pas sur le jeu
       if (e.target.closest?.('input,textarea')) { if (e.code === 'Enter' || e.code === 'Escape') e.target.blur(); return; }
-      if (GAME_KEYS.has(e.code)) e.preventDefault();
-      this.keys.add(e.code);
+      // lettres : on suit la lettre réellement tapée (AZERTY comme QWERTY), le reste suit la touche physique
+      const c = keyName(e);
+      this._down.set(e.code, c);
+      if (GAME_KEYS.has(c) || GAME_KEYS.has(e.code)) e.preventDefault();
+      this.keys.add(c);
     });
-    addEventListener('keyup', (e) => this.keys.delete(e.code));
+    addEventListener('keyup', (e) => { const c = this._down.get(e.code) || keyName(e); this._down.delete(e.code); this.keys.delete(c); this.keys.delete(e.code); });
     addEventListener('blur', () => this.keys.clear());
     addEventListener('gamepadconnected', (e) => { this.lastPadIndex = e.gamepad.index; });
     addEventListener('gamepaddisconnected', (e) => {
@@ -184,9 +195,10 @@ export class InputManager {
 
     // --- sticks
     let mx = 0, my = 0, ax = 0, ay = 0;
-    if (k.has('KeyA')) mx -= 1;
+    // ZQSD (AZERTY) ou WASD (QWERTY)
+    if (k.has('KeyA') || k.has('KeyQ')) mx -= 1;
     if (k.has('KeyD')) mx += 1;
-    if (k.has('KeyW')) my += 1;
+    if (k.has('KeyW') || k.has('KeyZ')) my += 1;
     if (k.has('KeyS')) my -= 1;
     if (k.has('ArrowLeft')) ax -= 1;
     if (k.has('ArrowRight')) ax += 1;
@@ -242,9 +254,9 @@ export class InputManager {
   _menuState(pad, mx, my) {
     const k = this.keys;
     return {
-      up: k.has('ArrowUp') || k.has('KeyW') || my > 0.6,
+      up: k.has('ArrowUp') || k.has('KeyW') || k.has('KeyZ') || my > 0.6,
       down: k.has('ArrowDown') || k.has('KeyS') || my < -0.6,
-      left: k.has('ArrowLeft') || k.has('KeyA') || mx < -0.6,
+      left: k.has('ArrowLeft') || k.has('KeyA') || k.has('KeyQ') || mx < -0.6,
       right: k.has('ArrowRight') || k.has('KeyD') || mx > 0.6,
       confirm: k.has('Enter') || k.has('Space') || k.has('KeyK') || !!pad?.buttons[0]?.pressed,
       back: k.has('Escape') || k.has('KeyL') || !!pad?.buttons[1]?.pressed,
@@ -275,7 +287,7 @@ export class InputManager {
 
   /** Libellés des actions selon le périphérique et la configuration. */
   labels() {
-    if (this.padType === 'keyboard') return { A: 'K', B: 'L', X: 'J', Y: 'I', C: 'U', VIEW: 'C', SPRINT: 'Maj', START: 'Échap', move: 'ZQSD', aim: 'Flèches' };
+    if (this.padType === 'keyboard') return { A: 'K', B: 'L', X: 'J', Y: 'I', C: 'U', VIEW: 'C', SPRINT: 'Maj', START: 'Échap', move: 'ZQSD / WASD', aim: 'Flèches' };
     const n = (a) => this.buttonName(this.mapping[a]);
     return {
       A: n('A'), B: n('B'), X: n('X'), Y: n('Y'), C: `${n('A')}+${n('B')}`,
