@@ -429,7 +429,7 @@ export class AdventureUI {
     const R = () => 'random';
     const MATCHES = {
       prestige: [[['zidane', 'zlatan'], ['payet', 'nasri'], 'Zidane et Zlatan contre Payet et Nasri'], [['tapia', 'coello'], ['benarfa', 'lacheau'], 'Tapia et Coello en démonstration'], [['mandanda', 'hanouna'], ['sichez', 'random'], 'Mandanda et Hanouna']],
-      ceyreste: [[['raf', 'jean'], ['camille', 'timeo'], 'Raf et Jean contre Camille et Timéo'], [['nathan', R()], [R(), R()], 'Nathan Subrero et des habitués']],
+      ceyreste: [[['nathan', R()], [R(), R()], 'Nathan Subrero et des habitués'], [[R(), R()], [R(), R()], 'Des habitués du club']],
       laciotat: [[['nathan', R()], ['camille', 'timeo'], 'Nathan contre Camille et Timéo'], [[R(), R()], [R(), R()], 'Des joueurs du club']],
     }[venue] || [[[R(), R()], [R(), R()], 'Des joueurs du club']];
     const used = MATCHES.slice(0, Math.max(0, courts.length - 1));
@@ -444,18 +444,21 @@ export class AdventureUI {
     if (f.knowsRomeo || ch >= 2) ids.push('coach');
     const local = { ceyreste: 'mayor', laciotat: 'gege', hangar: 'flavien', prestige: 'hostess', beach: 'lea' }[venue];
     if (local) ids.push(local);
+    // Ceyreste : la bande de Camille et Timéo, et des habitués du village
+    if (venue === 'ceyreste') ids.push('camille', 'timeo', 'hab1', 'hab2', 'hab3', 'hab4');
     const pts = ['talk', 'between', 'bar', 'bus', 'entrance'].map((k) => S[k]).filter((q) => q && !(q[2] > 0.2 || q[2] < -0.2)).map((q) => toWorld(venue, q));
     const start = pts[0];
-    const ACT = { eliott: 'chat', louka: 'chat', jean: 'swing', raf: 'swing', coach: 'wander', mayor: 'phone', gege: 'drink', flavien: 'drink', hostess: 'wander', lea: 'phone' };
+    const ACT = { hab1: 'chat', hab2: 'chat', hab3: 'drink', hab4: 'wander', camille: 'swing', timeo: 'phone', eliott: 'chat', louka: 'chat', jean: 'swing', raf: 'swing', coach: 'wander', mayor: 'phone', gege: 'drink', flavien: 'drink', hostess: 'wander', lea: 'phone' };
     const acts = {};
     const actors = ids.map((id, i) => {
       const base = pts[(i + 1) % pts.length] || start;
       let x = base[0] + Math.sin(i * 2.4) * (2 + (i % 3)), z = base[1] + Math.cos(i * 2.4) * (2 + (i % 3));
       // Eliott et Louka discutent ensemble
       if (id === 'louka' && ids.includes('eliott')) { const e = ids.indexOf('eliott'); const b = pts[(e + 1) % pts.length] || start; x = b[0] + Math.sin(e * 2.4) * (2 + (e % 3)) + 1.1; z = b[1] + Math.cos(e * 2.4) * (2 + (e % 3)); }
-      acts[id] = { act: ACT[id] || 'idle', faceTo: id === 'eliott' && ids.includes('louka') ? 'louka' : id === 'louka' ? 'eliott' : null, wander: ACT[id] === 'wander' ? { x: x + 5, z: z - 3 } : null };
-      const sp = this.spec(id, i % 2 ? 'red' : 'blue', 0, { idle: true });
-      return { id, label: LABEL[id] || NAME[id] || id, side: 1, x, z, yaw: i * 1.3, appearance: { ...sp.appearance, name: sp.name } };
+      if (id === 'hab2') { const k = ids.indexOf('hab1'); const b = pts[(k + 1) % pts.length] || start; x = b[0] + Math.sin(k * 2.4) * (2 + (k % 3)) - 1.1; z = b[1] + Math.cos(k * 2.4) * (2 + (k % 3)); }
+      acts[id] = { act: ACT[id] || 'idle', faceTo: id === 'hab1' ? 'hab2' : id === 'hab2' ? 'hab1' : id === 'eliott' && ids.includes('louka') ? 'louka' : id === 'louka' ? 'eliott' : null, wander: ACT[id] === 'wander' ? { x: x + 5, z: z - 3 } : null };
+      const sp = this.spec(id.startsWith('hab') ? 'random' : id, i % 2 ? 'red' : 'blue', 0, { idle: true, ovr: 30 });
+      return { id, label: id.startsWith('hab') ? (sp.appearance?.female ? 'Une habituée' : 'Un habitué') : LABEL[id] || NAME[id] || id, side: 1, x, z, yaw: i * 1.3, appearance: { ...sp.appearance, name: sp.name } };
     });
     const xs = [...pts.map((q) => q[0]), ...courts.map((q) => q.x)], zs = [...pts.map((q) => q[1]), ...courts.map((q) => q.z)];
     const bounds = [Math.min(...xs) - 9, Math.max(...xs) + 9, Math.min(...zs) - 9, Math.max(...zs) + 9];
@@ -472,7 +475,8 @@ export class AdventureUI {
         bounds, startYaw: 0, acts, ambient, freeCourts, petanque,
         talk: (id, again) => {
           const rel = this.s.rel[id] || 0;
-          const pool = ROAM_TALK[id] ? ROAM_TALK[id]({ rel, ch, f, short: this.short, venue }) : [[{ who: id, text: 'Belle journée, hein ?' }]];
+          const tk = id.startsWith('hab') ? 'hab' : id;
+          const pool = ROAM_TALK[tk] ? ROAM_TALK[tk]({ rel, ch, f, short: this.short, venue, id }) : [[{ who: id, text: 'Belle journée, hein ?' }]];
           const k = ((this.s.done ??= {})['talk_' + id] || 0);
           this.s.done['talk_' + id] = k + 1;
           const lines = pool[k % pool.length].map(conv);
@@ -490,28 +494,39 @@ export class AdventureUI {
           return lines;
         },
         petanqueLines: () => {
-          const opps = ['jean', 'raf', 'eliott', 'mayor'].filter((x) => ids.includes(x)).slice(0, 3);
+          const PET = {
+            mayor: { skill: 0.97, style: 'pointeur', plomb: 0.45, hi: 'Ah, la pétanque ! Le vrai sport de Ceyreste.', win: 'Bravo ! Je dirai à tout le village que tu m\'as battu.', lose: 'Ne le prends pas mal, j\'ai quarante ans de boulodrome.', effW: {}, effL: {} },
+            coach: { skill: 0.97, style: 'tireur', hi: 'La pétanque, c\'est comme le padel : de la concentration. Et je tire au fer.', win: 'Tu m\'as battu. Je ne le dirai à personne, et toi non plus.', lose: 'Carreau. Encore carreau. Tu as vu ? C\'est ça, la précision.', effW: { coach: 4 }, effL: { coach: 2 } },
+            louka: { skill: 0.8, style: 'tireur', hi: 'Avec mon genou je ne cours plus, mais tirer, ça je sais faire.', win: 'Bien joué ! Mais attends que mon genou soit guéri…', lose: 'Ça fait du bien de gagner quelque chose en ce moment. Merci.', effW: { louka: 3 }, effL: { louka: 5 } },
+            camille: { skill: 0.5, style: 'pointeur', hi: 'Je te préviens, à la pétanque je suis imbattable. Vraiment imbattable.', win: 'Le terrain penche. C\'est évident, il penche. Je l\'ai toujours dit.', lose: 'Tu vois ? Imbattable. Je te l\'avais dit.', effW: {}, effL: {} },
+            timeo: { skill: 0.6, style: 'tireur', pose: 'knee', hi: 'Ouais, vas-y. Je tire debout, la main sur le genou. Ne pose pas de questions.', win: 'Pff. Le soleil m\'a ébloui. Deux fois.', lose: 'Main sur le genou, ça marche à tous les coups. Enfin, presque.', effW: {}, effL: {} },
+            raf: { skill: 0.7, style: 'tireur', hi: 'Tu vas voir, je tire comme un pro.', win: 'Le terrain est pourri. Les boules sont pourries. Revanche.', lose: 'Le roi de la pétanque, c\'est moi. Note-le quelque part.', effW: { raf: -3 }, effL: { raf: 5 } },
+            jean: { skill: 0.55, style: 'pointeur', hi: 'Avec plaisir. Je ne suis pas un champion, mais je mesure tout au mètre.', win: 'Bien joué. Ton dernier point, c\'était du grand art.', lose: 'Oh ! J\'ai gagné ? Ça ne m\'arrive pas souvent.', effW: { jean: 4 }, effL: { jean: 3 } },
+            eliott: { skill: 0.35, style: 'pointeur', hi: 'Super ! Je sais pas jouer, mais je suis motivé !', win: 'Je savais que tu étais bon, mais là…', lose: 'J\'AI GAGNÉ ?! J\'ai gagné ! Je vais le dire à tout le monde !', effW: { eliott: 2 }, effL: { eliott: 5 } },
+          };
+          this._pet = PET;
+          const opps = Object.keys(PET).filter((x) => ids.includes(x));
           if (!opps.length) return [line('me', 'Personne pour jouer… Il faudra revenir avec quelqu\'un.')];
-          return [line('me', 'Une partie de pétanque ? Contre qui ?', {
-            choices: [...opps.map((x) => ({ label: LABEL[x] || NAME[x] })), { label: 'Finalement non' }],
-            onChoose: (c, g) => {
-              const id = opps[c];
-              if (!id) return [];
-              const st = { jean: { skill: 0.85, style: 'pointeur' }, raf: { skill: 0.7, style: 'tireur' }, eliott: { skill: 0.35, style: 'pointeur' }, mayor: { skill: 0.97, style: 'pointeur', plomb: 0.45 } }[id];
-              g.roam.pending = (gg) => gg.startPetanque(id, st);
-              return [line(id, { jean: 'Avec plaisir. Je te préviens, je mesure tout au mètre.', raf: 'Tu vas voir, je tire comme un pro.', eliott: 'Super ! Je sais pas jouer, mais je suis motivé !', mayor: 'Ah, la pétanque ! Le vrai sport de Ceyreste.' }[id])];
-            },
-          })];
+          const page = (k) => {
+            const sl = opps.slice(k * 3, k * 3 + 3), more = opps.length > k * 3 + 3;
+            return line('me', k ? 'Et parmi les autres ?' : 'Une partie de pétanque ? Contre qui ?', {
+              choices: [...sl.map((x) => ({ label: LABEL[x] || NAME[x] })), { label: more ? 'Autres joueurs…' : 'Finalement non' }],
+              onChoose: (c, g) => {
+                const id = sl[c];
+                if (!id) return more ? [page(k + 1)] : [];
+                g.roam.pending = (gg) => gg.startPetanque(id, PET[id]);
+                return [line(id, PET[id].hi)];
+              },
+            });
+          };
+          return [page(0)];
         },
         onPetanque: (id, won, score) => {
-          const eff = won ? { jean: { jean: 4 }, raf: { raf: -3 }, eliott: { eliott: 2 }, mayor: {} }[id] : { jean: { jean: 3 }, raf: { raf: 5 }, eliott: { eliott: 5 }, mayor: {} }[id];
-          this.apply(eff || {}, {}, id === 'mayor' && won ? 1 : 0);
+          const P = this._pet?.[id] || {};
+          this.apply((won ? P.effW : P.effL) || {}, {}, id === 'mayor' && won ? 1 : 0);
           this.s.log.push({ step: this.s.step, choice: `Pétanque contre ${LABEL[id] || id} : ${won ? 'gagné' : 'perdu'} ${score[0]}-${score[1]}` });
           this.save();
-          const say = won
-            ? { jean: 'Bien joué. Ton dernier point, c\'était du grand art.', raf: 'Le terrain est pourri. Les boules sont pourries. Revanche.', eliott: 'Je savais que tu étais bon, mais là…', mayor: 'Bravo ! Je dirai à tout le village que tu m\'as battu.' }[id]
-            : { jean: 'Belle partie. Tu progresses, la prochaine sera serrée.', raf: 'Treize à rien… bon, cinq à rien. C\'est pareil. Le roi de la pétanque, c\'est moi.', eliott: 'J\'AI GAGNÉ ?! J\'ai gagné ! Je vais le dire à tout le monde !', mayor: 'Ne le prends pas mal, j\'ai quarante ans de boulodrome.' }[id];
-          return [line(id, `${say} (${score[0]} - ${score[1]})`)];
+          return [line(id, `${(won ? P.win : P.lose) || 'Belle partie.'} (${score[0]} - ${score[1]})`)];
         },
         trainLines: () => [line('me', 'Un court libre. Qu\'est-ce que je travaille ?', {
           choices: [{ label: 'Services' }, { label: 'Lobs' }, { label: 'Smash par 3' }, { label: 'Rien, je continue' }],

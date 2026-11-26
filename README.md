@@ -3,6 +3,12 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.81 — Ceyreste plus vivant, pétanque contre toute la bande
+- Ceyreste : Camille, Timéo et des habitués du village (discussions, verre à la main, promenade) en plus de la bande ; Raf et Jean ne sont plus pris par un match.
+- Pétanque contre le maire, Roméo, Louka, Camille, Timéo, Raf, Jean ou Eliott (liste en pages) :
+  le maire pointe à la perfection, Roméo tire au fer, Louka tire bien, Raf tire, Camille se croit imbattable mais reste moyen, Jean est moyen, Eliott débute ;
+  Timéo tire debout, une main sur le genou. Chacun a ses répliques et le résultat change vos relations.
+
 ## v0.80 — Pétanque
 - Le maire est un pointeur redoutable : très précis, et il joue souvent la plombée.
 - L'ancien cochonnet est retiré du terrain à chaque nouvelle mène.

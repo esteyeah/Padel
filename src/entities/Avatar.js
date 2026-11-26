@@ -852,6 +852,7 @@ export class Avatar {
           P.H.set(-0.2, -0.48 + 0.3 * Math.max(0, k), 0.08 + 0.42 * k);
           P.D.set(0, -1, 0.2); P.LH.set(0.24, -0.3, 0.12);
           P.lean = 0.2 + 0.35 * (s.squat || 0); P.twist = -0.15 * k;
+          if (s.handKnee) { P.LH.set(0.12, -0.62, 0.26); P.lean = 0.45; }   // debout, la main posée sur le genou (Timéo)
         }
       }
     }

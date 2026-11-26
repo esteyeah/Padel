@@ -119,6 +119,20 @@ export const ROAM_TALK = {
     [P('hostess', 'Bienvenue au Riviera. Si vous avez besoin de quoi que ce soit, je suis là.')],
     [P('hostess', 'Les joueurs pros passent souvent par ici. Restez dans le coin, vous en croiserez peut-être.')],
   ],
+  camille: () => [
+    [P('camille', 'Tu as vu mon dernier match ? Non ? Dommage, j\'étais injouable.')],
+    [P('camille', 'La pétanque, le padel, le ping-pong… je suis bon partout. C\'est un don.'), P('me', 'Ah oui ?'), P('camille', 'Demande à Timéo. Enfin, non, ne lui demande pas.')],
+  ],
+  timeo: () => [
+    [P('timeo', 'Laisse-moi, je regarde les résultats du tournoi de Marseille.')],
+    [P('timeo', 'Camille raconte encore qu\'il est le meilleur ? Il dit ça depuis le CM2.')],
+  ],
+  hab: ({ id }) => ({
+    hab1: [[P('hab1', 'Le padel, de mon temps, ça n\'existait pas. Maintenant il y a plus de monde ici qu\'au marché !')]],
+    hab2: [[P('hab2', 'Vous jouez bien, vous ! On vous a vu l\'autre jour. Continuez comme ça.')]],
+    hab3: [[P('hab3', 'Santé ! Le meilleur moment du club, c\'est après le match. Tout le monde le sait.')]],
+    hab4: [[P('hab4', 'Je fais mon petit tour du soir. Les cigales, le soleil… on est bien à Ceyreste.')]],
+  }[id] || [[P(id, 'Bonne journée !')]]),
   lea: () => [
     [P('lea', 'Encore toi ? Tu me suis, ou c\'est la plage qui te plaît ?'), P('me', 'Un peu des deux.'), P('lea', 'Bonne réponse.')],
     [P('lea', 'Tu m\'apprendras à jouer, un jour ? Je promets de ne pas casser ta raquette.')],

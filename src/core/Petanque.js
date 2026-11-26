@@ -20,8 +20,8 @@ export class Petanque {
    * @param opp     acteur adversaire { avatar, pos, label }
    * @param skill   0..1 adresse de l'adversaire ; style : 'pointeur' | 'tireur'
    */
-  constructor(g, area, me, opp, { skill = 0.6, style = 'pointeur', target = 7, plomb = 0.25, onEnd } = {}) {
-    this.plombRate = plomb;
+  constructor(g, area, me, opp, { skill = 0.6, style = 'pointeur', target = 7, plomb = 0.25, pose = null, onEnd } = {}) {
+    this.plombRate = plomb; this.oppPose = pose;
     Object.assign(this, { g, area, me, opp, skill, style, target, onEnd });
     this.group = new THREE.Group(); this.group.position.y = area.y || 0; g.scene.add(this.group);
     this.matMe = new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.95, roughness: 0.22 });
@@ -307,10 +307,13 @@ export class Petanque {
       if (P === thrower && this.phase === 'aim') {
         // en position : accroupi pour pointer, le bras recule pendant qu'on charge
         pose = 'boule'; squat = this.charging === 'B' ? 0.15 : 0.75;
+        if (P === this.opp && this.oppPose === 'knee') squat = 0;
         bouleK = this.charging ? -this.power : -0.1;
       }
       if (T && T.av === P.avatar) { pose = 'boule'; const u = Math.min(1, T.t / 0.45); bouleK = -1 + 2.2 * u; squat = 0.6 * (1 - u); }
-      P.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw, look: 0, ready: false, armed: null, swing: null, casual: true, pose, bouleK, squat });
+      const knee = P === this.opp && this.oppPose === 'knee' && pose === 'boule';
+      if (knee) squat = 0;
+      P.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw, look: 0, ready: false, armed: null, swing: null, casual: true, pose, bouleK, squat, handKnee: knee });
     }
   }
 
