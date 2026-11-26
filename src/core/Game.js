@@ -151,13 +151,15 @@ export class Game {
     document.body.classList.remove('cinema'); this.hud.replayBadge?.(false);
     this.cutscene = !this.attract && o.cutscene?.length ? { lines: o.cutscene, i: -1, t: 0 } : null;
     // figurants des cinématiques (ex. le maire), retirés à la fin de la scène
-    if (this.cutscene && o.actors) {
+    this.roam = !this.attract && o.roam ? { ...o.roam, talked: new Set() } : null;
+    document.body.classList.toggle('roaming', !!this.roam);
+    if ((this.cutscene || this.roam) && o.actors) {
       this.actors = o.actors.map((ac) => {
         const avatar = new Avatar({ ...ac.appearance });
         avatar.racket.visible = false;
         avatar.root.position.set(ac.x, 0, ac.z);
         this.scene.add(avatar.root);
-        return { id: ac.id, avatar, side: ac.side, pos: avatar.root.position, name: ac.id };
+        return { id: ac.id, avatar, side: ac.side, pos: avatar.root.position, name: ac.id, label: ac.label, baseYaw: ac.yaw ?? 0 };
       });
     }
     // spectateurs au bord du court (aventure : on regarde le match de ses amis)
@@ -185,7 +187,7 @@ export class Game {
       return;
     }
     this.setupServe(1);
-    if (!this.attract) this.hud.banner(o.title || 'MATCH', o.subtitle ? `${o.subtitle} · ${this.teamName(1)} vs ${this.teamName(-1)}` : `${this.teamName(1)}  vs  ${this.teamName(-1)}`, 2.6);
+    if (!this.attract && !o.roam) this.hud.banner(o.title || 'MATCH', o.subtitle ? `${o.subtitle} · ${this.teamName(1)} vs ${this.teamName(-1)}` : `${this.teamName(1)}  vs  ${this.teamName(-1)}`, 2.6);
     // placement des personnages (aventure) une fois le service préparé
     o.onStarted?.(this);
   }
@@ -847,7 +849,7 @@ export class Game {
       }
     } else if (!this.attract && inp.pressed.VIEW) {
       this.hud.shotInfo(`Caméra : ${this.cameraRig.cycle()}`, 1);
-    } else if (!this.attract && inp.pressed.START) {
+    } else if (!this.attract && !this.roam && inp.pressed.START) {
       this.paused = !this.paused;
       if (this.paused) this.hud.showPause(this.career); else this.hud.hidePause();
     } else if (this.paused) {
@@ -865,6 +867,7 @@ export class Game {
       const cb = this.opts.onEnd; this.start({ attract: true, difficulty: 'hard', ambiance: this.opts.ambiance }); cb?.({ watched: true }); return;
     }
     if (this.cutscene && !this.paused) { this.updateCutscene(dt); return; }
+    if (this.roam && !this.paused) { this.updateRoam(dt); return; }
     if (this.tvReplay && !this.paused) { this.updateTvReplay(dt); return; }
     // replay télé d'un beau point, une fois l'action retombée
     if (this.replayAt != null && this.state === 'pointOver' && !this.paused && this.recorder.t - this.replayAt > 0.9) this.startTvReplay();
@@ -926,6 +929,84 @@ export class Game {
     this.nextLine();
   }
 
+  // =========================================================================
+  //  Promenade libre (aventure) : on marche dans le club et on parle aux gens
+  // =========================================================================
+  updateRoam(dt) {
+    const R = this.roam, me = this.players[0], inp = this.input, cam = this.cameraRig.camera;
+    this.ball.setVisible(false);
+    if (this.players[1]) { this.players[1].avatar.root.visible = false; this.players[1].pos.set(0, -50, 0); }
+    if (inp.pressed.START || inp.menu.back) { this.endRoam(); return; }
+    R.yaw = (R.yaw ?? R.startYaw ?? 0) - (inp.aim.x || 0) * dt * 2.4;
+    const fx = -Math.sin(R.yaw), fz = -Math.cos(R.yaw), rx = Math.cos(R.yaw), rz = -Math.sin(R.yaw);
+    let vx = rx * inp.move.x + fx * inp.move.y, vz = rz * inp.move.x + fz * inp.move.y;
+    const L = Math.hypot(vx, vz); if (L > 1) { vx /= L; vz /= L; }
+    const sp = (inp.held.SPRINT ? 4.2 : 2.3);
+    R.v = R.v || { x: 0, z: 0 };
+    const k = 1 - Math.exp(-dt * 8);
+    R.v.x += (vx * sp - R.v.x) * k; R.v.z += (vz * sp - R.v.z) * k;
+    const p = me.pos;
+    p.x += R.v.x * dt; p.z += R.v.z * dt;
+    // limites de la zone et obstacles (courts vitrés, personnages)
+    const [x0, x1, z0, z1] = R.bounds;
+    p.x = Math.max(x0, Math.min(x1, p.x)); p.z = Math.max(z0, Math.min(z1, p.z));
+    for (const c of R.courts || []) {
+      const hx = c.rot ? 10.6 : 5.6, hz = c.rot ? 5.6 : 10.6;
+      const dx = p.x - c.x, dz = p.z - c.z;
+      if (Math.abs(dx) < hx && Math.abs(dz) < hz) { if (hx - Math.abs(dx) < hz - Math.abs(dz)) p.x = c.x + Math.sign(dx || 1) * hx; else p.z = c.z + Math.sign(dz || 1) * hz; }
+    }
+    for (const ac of this.actors || []) {
+      const dx = p.x - ac.pos.x, dz = p.z - ac.pos.z, d = Math.hypot(dx, dz);
+      if (d < 0.75 && d > 1e-3) { p.x = ac.pos.x + dx / d * 0.75; p.z = ac.pos.z + dz / d * 0.75; }
+    }
+    const speed = Math.hypot(R.v.x, R.v.z);
+    if (speed > 0.15) R.face = Math.atan2(R.v.x, R.v.z);
+    me.avatar.root.position.set(p.x, 0, p.z);
+    me.avatar.animate(dt, { speed, fwd: speed, side: 0, yaw: R.face ?? R.yaw + Math.PI, look: 0, ready: false, armed: null, swing: null });
+    // personnages : ils se tournent vers toi quand tu approches
+    let near = null, best = 1.9;
+    for (const ac of this.actors || []) {
+      const dx = p.x - ac.pos.x, dz = p.z - ac.pos.z, d = Math.hypot(dx, dz);
+      ac.avatar.animate(dt, { speed: 0, fwd: 0, side: 0, yaw: d < 4.5 ? Math.atan2(dx, dz) : ac.baseYaw, look: 0, ready: false, armed: null, swing: null });
+      if (d < best) { best = d; near = ac; }
+    }
+    this.hud.hint(near ? `${this.input.padType === 'keyboard' ? 'K' : 'A'} : parler à ${near.label || near.id}` : `Promenade · ${this.input.padType === 'keyboard' ? 'Échap' : 'B'} pour partir`);
+    if (near && inp.pressed.A) {
+      const lines = R.talk?.(near.id, R.talked.has(near.id)) || [];
+      R.talked.add(near.id);
+      if (lines.length) {
+        this.hud.hint('');
+        const C = [(p.x + near.pos.x) / 2, (p.z + near.pos.z) / 2];
+        this.opts.sceneCenter = C; this.opts.sceneR = 0.8;
+        // les deux se font face pendant la discussion
+        me.avatar.root.position.set(p.x, 0, p.z);
+        this.cutscene = { lines, i: -1, t: 0, onEnd: () => { this.opts.sceneCenter = null; this.cameraRig.snap = true; } };
+        document.body.classList.add('cinema');
+        this.nextLine();
+        return;
+      }
+    }
+    // caméra à l'épaule, derrière le joueur
+    const want = new THREE.Vector3(p.x - fx * 3.4, 2.1, p.z - fz * 3.4);
+    R.cam = R.cam || want.clone();
+    R.cam.lerp(want, 1 - Math.exp(-dt * 6));
+    cam.position.copy(R.cam);
+    cam.lookAt(p.x + fx * 1.2, 1.25, p.z + fz * 1.2);
+    this.cameraRig.pos?.copy?.(cam.position);
+    this.effects.setReticle(0, 0, false); this.effects.setPlayerRing(null);
+    this.hud.update(dt);
+  }
+
+  endRoam() {
+    const cb = this.opts.onSceneEnd;
+    this.roam = null;
+    document.body.classList.remove('roaming');
+    this.clearActors();
+    this.hud.hint(''); this.hud.dialog(null); document.body.classList.remove('cinema');
+    this.start({ attract: true, difficulty: 'hard', ambiance: this.opts.ambiance });
+    cb?.();
+  }
+
   clearActors() {
     for (const ac of this.actors || []) this.scene.remove(ac.avatar.root);
     this.actors = null;
@@ -933,7 +1014,7 @@ export class Game {
 
   endCutscene() {
     for (const q of [...this.players, ...(this.actors || [])]) if (q.avatar) q.avatar.talking = false;
-    this.clearActors();
+    if (!this.roam) this.clearActors();
     this.hud.sheet?.(null);
     const done = this.cutscene?.onEnd;
     this.cutscene = null;

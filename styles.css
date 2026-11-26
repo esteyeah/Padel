@@ -470,3 +470,4 @@ body.cinema #hud { visibility: hidden; }
 #stat.show { opacity: 1; transform: none; }
 #stat b { display: block; font: 800 30px var(--cond); color: var(--cyan); letter-spacing: .5px; }
 #stat small { font: 600 12px var(--sans); color: var(--dim); }
+body.roaming #scoreboard, body.roaming #energy, body.roaming #power { display: none; }

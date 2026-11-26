@@ -45,12 +45,7 @@ const EXTRA = ADV_NPCS;
 const LABEL = { hostess: 'L\'hôtesse', lea: 'Léa', flavien: 'Flavien', chico: 'Chico', tison: 'Benjamin Tison', fan: 'Une supportrice', zlatan: 'Zlatan', zidane: 'Zidane', tapia: 'Tapia', coello: 'Coello', ruffier: 'Stéphane Ruffier', nasri: 'Samir Nasri', mandanda: 'Steve Mandanda', hanouna: 'Cyril Hanouna', benarfa: 'Hatem Ben Arfa', lacheau: 'Philippe Lacheau', sichez: 'Romain Sichez', journalist: 'Journaliste', veteran: 'Un vieux joueur', philippe: 'Philippe', eliott: 'Eliott', jean: 'Jean', raf: 'Raf', coach: 'Coach Roméo', camille: 'Camille', timeo: 'Timéo', mayor: 'Le maire', payet: 'Dimitri Payet', louka: 'Louka', gege: 'Gégé', momo: 'Momo', opp: 'Adversaire', ref: 'Juge-arbitre', narr: 'Narrateur' };
 const val = (v, c) => (typeof v === 'function' ? v(c) : v);
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
-const FRIEND_LINES = {
-  eliott: ['Karaoké improvisé dans sa voiture. Il chante faux, très fort, et il est heureux.', 'Pizza devant un match de l\'OM. Il commente chaque action comme s\'il était sur le terrain.', 'Il te raconte pour la dixième fois comment il a découvert le padel. Tu fais semblant de ne pas connaître la fin.'],
-  jean: ['Partie de pétanque derrière le club. Jean mesure chaque point au millimètre.', 'Café en terrasse. Il te donne des conseils sur ton lob, gentiment, sans en avoir l\'air.', 'Petit footing dans les collines. Il ne parle pas beaucoup, mais il t\'attend en haut.'],
-  raf: ['Il t\'invite à jouer « pour rire ». Il ne rit pas quand tu gagnes un jeu.', 'Apéro chez lui. Il montre ses trophées, un par un, avec l\'histoire de chacun.', 'Il te glisse, presque gêné : « Ton coup droit… il est pas mal, en fait. »'],
-  louka: ['Séance de rééducation : tu tiens les plots pendant qu\'il fait ses exercices.', 'Il te montre ses vidéos de match d\'avant la blessure. Il était vraiment fort.', 'Burger au port. Il te parle de son genou, puis de tout autre chose, et vous riez longtemps.'],
-};
+import { REST, GROUP, FRIEND_ACTS, COACH_TRAIN, ROAM_TALK } from './FreeTime.js';
 
 export class AdventureUI {
   /** o : { startGame(opts), back(), rerender(), show(), getLook() } */
@@ -339,16 +334,23 @@ export class AdventureUI {
   }
 
   // ------------------------------------------------------------------ temps libre (avant un match)
-  /** Actions de temps libre restantes avant le prochain match. */
+  /** Temps libre : une seule fois par chapitre (3 activités), pour ne pas devenir répétitif. */
   freeLeft() {
-    const f = this.s.free;
-    if (!f || f.step !== this.s.step) this.s.free = { step: this.s.step, left: 2 };
+    const ch = chapterOf(this.s.step);
+    if (!this.s.free || this.s.free.ch !== ch) this.s.free = { ch, left: 3 };
     return this.s.free.left;
   }
   spend(note) { this.s.free.left--; this.note = note; this.save(); this.rerender(); }
+  /** Prochaine activité pas encore faite d'une liste (on évite les répétitions). */
+  nextOf(key, list) {
+    const done = (this.s.done ??= {})[key] || [];
+    const i = list.findIndex((_, k) => !done.includes(k));
+    return i < 0 ? { i: Math.floor(Math.random() * list.length), item: list[Math.floor(Math.random() * list.length)], again: true } : { i, item: list[i] };
+  }
+  markDone(key, i) { const d = (this.s.done ??= {}); d[key] = [...new Set([...(d[key] || []), i])]; }
 
   freeActions(add) {
-    const c = this.ctx, f = this.s.flags, left = this.freeLeft();
+    const f = this.s.flags, left = this.freeLeft();
     if (this.view === 'train') {
       const LBL = { drive: 'Coup droit et revers', lob: 'Lobs', smash: 'Smashs', speed: 'Déplacements', stamina: 'Endurance', strength: 'Musculation' };
       for (const [k, l] of Object.entries(LBL)) add(`${l}<small>niveau ${Math.round((this.s.stats[k] || 0.3) * 100)}</small>`, () => {
@@ -356,25 +358,49 @@ export class AdventureUI {
         this.s.fatigue = Math.min(1, (this.s.fatigue || 0) + 0.18);
         this.view = 'free';
         const coach = f.knowsRomeo || chapterOf(this.s.step) >= 2;
-        this.spend({ who: coach ? 'Coach Roméo' : this.short, text: coach ? pick([`${l} ? Bien. Encore dix minutes, et on ne triche pas sur la dernière série.`, 'Ça rentre. Pense à boire, tu es rouge comme une tomate.', 'Tu vois ? Quand tu t\'appliques, c\'est propre.']) : 'Une heure seul sur le court, à répéter le même geste. Ça finit par rentrer.' });
+        this.spend({ who: coach ? 'Coach Roméo' : this.short, text: coach ? pick(COACH_TRAIN[k]) : 'Une heure seul sur le court, à répéter le même geste. Ça finit par rentrer.' });
       }, 'choice');
       add('Retour', () => { this.view = 'free'; this.rerender(); }, 'small');
       return;
     }
-    if (left <= 0) { add('Plus de temps libre : place au match', () => { this.view = null; this.note = null; this.rerender(); }, 'primary'); return; }
+    if (this.view === 'cards') {
+      // belote au club-house avec la bande
+      const res = (who, text) => { this.view = 'free'; this.spend({ who, text }); };
+      add('Jouer sérieusement', () => { if (Math.random() < 0.5) { this.apply({ raf: -3, jean: 2 }); res('Raf', '« Belote… rebelote… et dix de der. » Tu gagnes. Raf jette ses cartes : « Elles étaient mal battues. »'); } else { this.apply({ raf: 3, eliott: 1 }); res('Raf', 'Raf gagne et fait le tour de la table en levant les bras. Il est d\'excellente humeur pour une fois.'); } }, 'choice');
+      add('Tenter un gros bluff', () => { if (Math.random() < 0.45) { this.apply({ eliott: 3, jean: 2 }); res('Eliott', 'Personne n\'ose suivre. Tu retournes tes cartes : rien du tout. Eliott pleure de rire.'); } else { this.apply({ raf: 2 }, {}, -1); res('Jean', 'Jean te regarde par-dessus ses lunettes : « Tu n\'as rien, toi. » Grillé. Toute la table se moque de toi.'); } }, 'choice');
+      add('Faire équipe avec Eliott et le laisser briller', () => { this.apply({ eliott: 6, raf: -2 }); res('Eliott', 'Il annonce un capot et le réussit, grâce à toi. Il en parlera pendant trois semaines.'); }, 'choice');
+      return;
+    }
+    if (left <= 0) { add('Plus de temps libre pour ce chapitre', () => { this.view = null; this.note = null; this.rerender(); }, 'primary'); return; }
     add(`S'entraîner<small>+ niveau, + fatigue</small>`, () => { this.view = 'train'; this.rerender(); }, 'choice');
-    add(`Se reposer à la plage<small>fatigue ${Math.round((this.s.fatigue || 0) * 100)} %</small>`, () => {
-      this.s.fatigue = Math.max(0, (this.s.fatigue || 0) - 0.5);
-      this.spend({ who: this.short, text: pick(['Une après-midi aux Lecques, les pieds dans l\'eau. Les jambes remercient.', 'Sieste, glace, coucher de soleil sur la baie. Demain, tu seras frais.', 'Tu coupes le téléphone et tu dors dix heures. Ça fait du bien.']) });
+    const rest = this.nextOf('rest', REST);
+    add(`${rest.item.label}<small>récupération · fatigue ${Math.round((this.s.fatigue || 0) * 100)} %</small>`, () => {
+      this.s.fatigue = Math.max(0, (this.s.fatigue || 0) - 0.5); this.markDone('rest', rest.i);
+      this.spend({ who: this.short, text: rest.item.text });
     }, 'choice');
+    // activité de groupe (une différente à chaque fois)
+    const grp = this.nextOf('group', GROUP);
+    add(`${grp.item.label}<small>avec toute la bande</small>`, () => {
+      this.markDone('group', grp.i);
+      if (grp.item.cards) { this.view = 'cards'; this.note = { who: 'Club-house', text: 'Jean sort le jeu de cartes, Raf compte les points, Eliott a déjà commandé les boissons. Une belote, à quatre. Comment tu joues ?' }; this.rerender(); return; }
+      this.apply(grp.item.rel || {});
+      this.s.fatigue = Math.min(1, Math.max(0, (this.s.fatigue || 0) + (grp.item.fat || 0)));
+      this.spend({ who: grp.item.who, text: grp.item.text });
+    }, 'choice');
+    // une activité propre à chacun, qui change à chaque fois
     const friends = ['eliott', 'jean', 'raf', ...(f.metLouka ? ['louka'] : [])];
-    for (const id of friends) add(`Passer du temps avec ${NAME[id]}<small>relation ${(this.s.rel[id] || 0) > 0 ? '+' : ''}${this.s.rel[id] || 0}</small>`, () => {
-      if (id === 'eliott' && f.rivalEliott && (this.s.rel.eliott || 0) < 0) { this.apply({ eliott: 2 }); this.spend({ who: 'Eliott', text: 'Il voit ton message… et ne répond pas. Il faudra du temps.' }); return; }
-      if (id === 'raf' && (this.s.rel.raf || 0) < -20) { this.apply({ raf: 3 }); this.spend({ who: 'Raf', text: '« Un verre ? Avec toi ? » Il accepte quand même, du bout des lèvres.' }); return; }
-      this.apply({ [id]: 6 });
-      this.s.fatigue = Math.min(1, (this.s.fatigue || 0) + 0.04);
-      this.spend({ who: NAME[id], text: pick(FRIEND_LINES[id]) });
-    }, 'choice');
+    for (const id of friends) {
+      const a = this.nextOf(id, FRIEND_ACTS[id]);
+      add(`${a.item.label}<small>${NAME[id]} · relation ${(this.s.rel[id] || 0) > 0 ? '+' : ''}${this.s.rel[id] || 0}</small>`, () => {
+        if (id === 'eliott' && f.rivalEliott && (this.s.rel.eliott || 0) < 0) { this.apply({ eliott: 2 }); this.spend({ who: 'Eliott', text: 'Il voit ton message… et ne répond pas. Il faudra du temps.' }); return; }
+        if (id === 'raf' && (this.s.rel.raf || 0) < -20) { this.apply({ raf: 3 }); this.spend({ who: 'Raf', text: '« Avec toi ? » Il accepte quand même, du bout des lèvres, et regarde son téléphone tout du long.' }); return; }
+        this.markDone(id, a.i);
+        this.apply({ [id]: a.item.rel ?? 6 });
+        if (a.item.stat) this.s.stats[a.item.stat] = Math.min(0.95, (this.s.stats[a.item.stat] || 0.3) + 0.01);
+        this.s.fatigue = Math.min(1, Math.max(0, (this.s.fatigue || 0) + (a.item.fat ?? 0.04)));
+        this.spend({ who: NAME[id], text: a.item.text });
+      }, 'choice');
+    }
     const ch = chapterOf(this.s.step);
     if (ch >= 3 && f.sponsorCh !== ch) {
       const rep = this.s.rep || 0;
@@ -386,7 +412,57 @@ export class AdventureUI {
         this.spend({ who: 'Sponsor', text: sp.text });
       }, 'choice');
     }
-    add('Aller au match', () => { this.view = null; this.note = null; this.rerender(); }, 'small');
+    add('Retour', () => { this.view = null; this.note = null; this.rerender(); }, 'small');
+  }
+
+  // ------------------------------------------------------------------ promenade libre dans le club
+  roamVenue() {
+    const v = this.s.venue || 'ceyreste';
+    return SPOTS[v] && v !== 'national' && v !== 'pro' ? v : 'ceyreste';
+  }
+  roam() {
+    const c = this.ctx, f = this.s.flags, venue = this.roamVenue(), ch = chapterOf(this.s.step);
+    const S = SPOTS[venue];
+    const ids = ['jean', 'raf'];
+    if (!f.rivalEliott || (this.s.rel.eliott || 0) > -30) ids.unshift('eliott');
+    if (f.metLouka) ids.push('louka');
+    if (f.knowsRomeo || ch >= 2) ids.push('coach');
+    const local = { ceyreste: 'mayor', laciotat: 'gege', hangar: 'flavien', prestige: 'hostess', beach: 'lea' }[venue];
+    if (local) ids.push(local);
+    // points de rendez-vous au sol (on ignore les terrasses surélevées)
+    const pts = ['talk', 'between', 'bar', 'bus', 'entrance'].map((k) => S[k]).filter((q) => q && !(q[2] > 0.2 || q[2] < -0.2)).map((q) => toWorld(venue, q));
+    const start = pts[0];
+    const actors = ids.map((id, i) => {
+      const base = pts[(i + 1) % pts.length] || start;
+      const ang = i * 2.4, r = 1.8 + (i % 3) * 1.1;
+      const sp = this.spec(id, i % 2 ? 'red' : 'blue', 0, { idle: true });
+      return { id, label: LABEL[id] || NAME[id] || id, side: 1, x: base[0] + Math.sin(ang) * r, z: base[1] + Math.cos(ang) * r, yaw: ang + Math.PI, appearance: { ...sp.appearance, name: sp.name } };
+    });
+    const xs = [...pts.map((q) => q[0]), ...actors.map((a) => a.x)], zs = [...pts.map((q) => q[1]), ...actors.map((a) => a.z)];
+    const bounds = [Math.min(...xs) - 6, Math.max(...xs) + 6, Math.min(...zs) - 6, Math.max(...zs) + 6];
+    const c0 = (VENUE_COURTS[venue] || [[0, 0]])[0];
+    const courts = (VENUE_COURTS[venue] || [[0, 0]]).map((q) => ({ x: q[0] - c0[0], z: q[1] - c0[1], rot: Math.abs(Math.sin(q[2] || 0)) > 0.5 }));
+    const me = this.me(0);
+    const conv = (L) => (L.who === 'me' ? { side: 1, label: this.short, text: L.text } : { actor: L.who, label: LABEL[L.who] || NAME[L.who] || L.who, text: L.text });
+    this.startGame({
+      mode: 'career', sceneOnly: true, format: '1v1', sets: 1, matchTiebreak: 7, venue, ambiance: ['ceyreste', 'laciotat', 'beach'].includes(venue) ? 'sunset' : 'day',
+      lineup: { near: [{ ...me, lane: 0 }], far: [{ ...this.spec('random', 'red', 0), lane: 0 }] }, actors, party: false,
+      roam: {
+        bounds, courts, startYaw: 0,
+        talk: (id, again) => {
+          const rel = this.s.rel[id] || 0;
+          const pool = ROAM_TALK[id] ? ROAM_TALK[id]({ rel, ch, f, short: this.short, venue }) : [[{ who: id, text: 'Belle journée, hein ?' }]];
+          const k = ((this.s.done ??= {})['talk_' + id] || 0);
+          this.s.done['talk_' + id] = k + 1;
+          const lines = pool[k % pool.length];
+          if (!again && !(this.s.talkCh ??= {})[id + ch] && PEOPLE[id]) { this.apply({ [id]: 2 }); this.s.talkCh[id + ch] = 1; }
+          this.save();
+          return lines.map(conv);
+        },
+      },
+      onStarted: (g) => { g.players[0].pos.set(start[0], 0, start[1] + 1.5); g.players[0].avatar.racket.visible = false; },
+      onSceneEnd: () => this.show(),
+    });
   }
 
   journal() {
@@ -422,7 +498,7 @@ export class AdventureUI {
     if (!this.s) { add('Commencer une nouvelle aventure', () => this.newGame(), 'primary'); return A; }
     const c = this.ctx, st = this.step;
     if (this.view === 'journal') { add('Retour', () => { this.view = null; this.rerender(); }, 'primary'); return A; }
-    if (this.view === 'free' || this.view === 'train') { this.freeActions(add); return A; }
+    if (this.view === 'free' || this.view === 'train' || this.view === 'cards') { this.freeActions(add); return A; }
     if (this.react) {
       const r = this.react;
       if (this.page < r.pages.length - 1) add('Suivant', () => { this.page++; this.rerender(); }, 'primary');
@@ -445,7 +521,8 @@ export class AdventureUI {
       add('Reprendre la scène', () => this.play(st), 'primary');
     } else if (st.type === 'drill' || st.type === 'match' || st.type === 'watch') {
       add(`${st.type === 'watch' ? 'Regarder' : 'Jouer'} : ${esc(val(st.label, c))}`, () => this.launch(st), 'primary');
-      if (st.type === 'match' && this.freeLeft() > 0) add(`Temps libre avant le match<small>${this.freeLeft()} activité${this.freeLeft() > 1 ? 's' : ''} · fatigue ${Math.round((this.s.fatigue || 0) * 100)} %</small>`, () => { this.view = 'free'; this.note = null; this.rerender(); }, 'choice');
+      if (st.type === 'match' && this.freeLeft() > 0) add(`Temps libre<small>${this.freeLeft()} activité${this.freeLeft() > 1 ? 's' : ''} pour ce chapitre · fatigue ${Math.round((this.s.fatigue || 0) * 100)} %</small>`, () => { this.view = 'free'; this.note = null; this.rerender(); }, 'choice');
+      add(`Se promener au club<small>marcher, parler à tout le monde</small>`, () => this.roam(), 'choice');
     } else if (st.type === 'end') {
       if (st.next) add(`Continuer : ${esc(CHAPTERS[st.chapter + 1] || 'la suite')}`, () => this.goto(st.next), 'primary');
     }
@@ -462,10 +539,10 @@ export class AdventureUI {
     if (!this.s) return '<p class="adv-text">Tout commence par un coup de fil d\'Eliott…</p>';
     const c = this.ctx;
     if (this.view === 'journal') return this.journal();
-    if (this.view === 'free' || this.view === 'train') {
+    if (this.view === 'free' || this.view === 'train' || this.view === 'cards') {
       const n = this.note;
-      return n ? `<div class="adv-line"><b>${esc(n.who)}</b><p>${esc(n.text)}</p><small>Temps libre restant : ${this.s.free.left}</small></div>`
-        : `<div class="adv-line"><b>Temps libre</b><p>${this.view === 'train' ? 'Qu\'est-ce que tu travailles ?' : `Avant le match, tu as du temps pour ${this.s.free.left} activité${this.s.free.left > 1 ? 's' : ''}. S'entraîner fatigue, se reposer récupère, les amis comptent aussi.`}</p></div>`;
+      return n ? `<div class="adv-line"><b>${esc(n.who)}</b><p>${esc(n.text)}</p>${this.view === 'cards' ? '' : `<small>Temps libre restant : ${this.s.free.left}</small>`}</div>`
+        : `<div class="adv-line"><b>Temps libre</b><p>${this.view === 'train' ? 'Qu\'est-ce que tu travailles ?' : `Pendant ce chapitre, tu as du temps pour ${this.s.free.left} activité${this.s.free.left > 1 ? 's' : ''}. S'entraîner fatigue, se reposer récupère, les amis comptent aussi.`}</p></div>`;
     }
     if (this.react) { const p = this.react.pages[this.page]; return `<div class="adv-line"><b>${esc(p.who)}</b><p>${esc(p.text)}</p></div>`; }
     const st = this.step;

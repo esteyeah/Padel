@@ -3,6 +3,12 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.76 — Promenades au club et temps libre renouvelé
+- Aventure : « Se promener au club » — tu marches librement (caméra à l'épaule, stick droit pour tourner, sprint), tu croises la bande, le coach et les figures du lieu (le maire à Ceyreste, Gégé à La Ciotat, Flavien au Hangar, l'hôtesse au Riviera, Léa à la plage) et tu leur parles avec A ; chacun a plusieurs conversations différentes selon votre relation. B / Échap pour repartir.
+- Temps libre : une seule fois par chapitre (3 activités) au lieu d'avant chaque match.
+- Activités de groupe : belote au club-house (jouer sérieux, bluffer ou faire briller Eliott), barbecue chez Jean, foot sur la plage, pétanque, match de l'OM au bar, karaoké, sortie en bateau.
+- Activités variées avec chacun (5 par ami, sans répétition), repos variés, conseils du coach propres à chaque exercice.
+
 ## v0.75 — Vie de l'Aventure et son
 - Aventure : « Temps libre » avant chaque match (2 activités) — s'entraîner (au choix : coups, lobs, smashs, déplacements, endurance, musculation), se reposer à la plage, passer du temps avec Eliott, Jean, Raf ou Louka, rencontrer un sponsor (selon ta réputation, à partir du chapitre 3).
 - Fatigue : les matchs et l'entraînement fatiguent et font jouer un peu en dessous de son niveau ; le repos la fait baisser.
