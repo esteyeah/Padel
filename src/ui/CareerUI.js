@@ -420,7 +420,7 @@ export class CareerUI {
         ${t
     ? `<button class="c-btn primary wide" data-nav data-default data-act="goto" data-arg="bracket">Continuer : ${esc(t.name)}<small>${roundName(t)} · ${esc(VENUES[t.venue]?.label || '')}</small></button>`
     : `<button class="c-btn primary wide" data-nav data-default data-act="goto" data-arg="tournaments">Tournois de la semaine<small>Semaine ${c.weekInSeason} · saison ${c.season}</small></button>`}
-        <button class="c-btn primary wide" data-nav data-act="clubhouse">Se promener au club-house<small>Boutique, vestiaire, entraînement, vitrine… et les gens du club</small></button>
+        <button class="c-btn primary wide" data-nav data-act="clubhouse">Se promener au club-house<small>${s.club ? 'Ton club-house : boutique, vestiaires, trophées, buvette…' : 'Aperçu (achète ton club pour qu\'il soit à toi)'}</small></button>
         ${t ? '' : `<button class="c-btn" data-nav data-act="goto" data-arg="training">Entraînement<small>${c.canTrain() ? 'Un atelier par semaine' : 'Déjà fait cette semaine'}</small></button>`}
         <button class="c-btn" data-nav data-act="goto" data-arg="attributes">Attributs<small>${s.sp > 0 ? `<em>${s.sp} point${s.sp > 1 ? 's' : ''} à dépenser</em>` : 'Aucun point disponible'}</small></button>
         <button class="c-btn" data-nav data-act="goto" data-arg="shop">Boutique<small>${fr(s.shopPts)} points boutique</small></button>

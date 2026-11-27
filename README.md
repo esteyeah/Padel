@@ -3,6 +3,14 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.83 — Un vrai club-house
+- Carrière : le club-house est un vrai bâtiment avec un intérieur (enseigne au nom de ton club, porte, vitrines) et six pièces :
+  hall-buvette (comptoir, tireuses, étagère de bouteilles, tabourets, tables hautes, télé, ardoise de Dédé), boutique (mur de raquettes, chaussures, portants de maillots, caisse et vendeuse),
+  vestiaires (casiers dont le tien à ton nom, bancs, serviettes, douches, miroir, tableau tactique avec ton prochain adversaire),
+  salle des trophées (vitrines éclairées qui se remplissent de tes vrais titres, cadres des derniers titres), bureau (staff, gestion du club, classement), salle de musculation.
+- Le club-house est vivant : barman, vendeuse, secrétaire, ton partenaire au vestiaire, le coach à la muscu, une joueuse à l'entraînement, des habitués au bar, un visiteur devant les vitrines.
+- C'est le club-house de ton club une fois acheté ; en attendant, il reste accessible en aperçu. Le bâtiment est réutilisable pour de futures cinématiques.
+
 ## v0.82 — Club-house de la carrière et scènes d'avant-match
 - Carrière : « Se promener au club-house » — on marche dans un hall de stands : boutique, vestiaire (prochain match / tournois), tableau des tournois, salle d'entraînement, vitrine à trophées, bureau (staff et club), classement, miroir (apparence) et buvette. A / K devant un stand ouvre l'écran correspondant.
 - On y croise son partenaire (qui propose de changer d'équipe), le coach Roméo (attributs), Dédé le barman et des membres du club, avec des répliques qui ne reviennent pas tout de suite.

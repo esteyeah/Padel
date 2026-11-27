@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { npcSpec } from './Career.js';
 import { COACH, genericNpc } from './data/roster.js';
+import { buildClubhouse } from '../render/ClubhouseBuilding.js';
 
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
@@ -41,72 +42,103 @@ const KIOSK = {
 };
 
 /**
- * Lance la promenade dans le club-house.
+ * Lance la promenade dans le club-house (un vrai bâtiment, avec ses pièces).
  * @param ui  CareerUI (game, career, show(), act(), hide())
  */
 export function startClubhouse(ui) {
   const c = ui.career, s = c.s, t = s.tournament, game = ui.game;
   const myName = (s.profile.name || 'Joueur').split(' ')[0];
-  // les stands, en arc derrière le court principal
+  const owned = !!s.club;
+  const O = { x: 0, z: 48 };                                   // le club-house, à l'écart des courts
+  const W = (x, z) => ({ x: O.x + x, z: O.z + z });
+  const nm = c.nextMatch?.();
+  const oppName = nm ? nm.opponents.players?.map((q) => q.short).join(' / ') || nm.opponents.name || 'l\'adversaire' : null;
   const go = (screen) => (g) => g.endRoam(() => ui.show(screen));
-  const STANDS = [
-    { id: 'shop', kiosk: 'shop', title: 'BOUTIQUE', color: '#c62828', label: 'ouvrir la boutique', run: go('shop') },
-    { id: 'locker', kiosk: 'locker', title: 'VESTIAIRE', color: '#37474f', label: t ? 'préparer le prochain match' : 'choisir un tournoi', run: go(t ? 'bracket' : 'tournaments') },
-    { id: 'board', kiosk: 'board', title: 'TOURNOIS', color: '#1565c0', label: 'voir le tableau des tournois', run: go(t ? 'bracket' : 'tournaments') },
-    { id: 'gym', kiosk: 'gym', title: 'ENTRAÎNEMENT', color: '#2e7d32', label: 'aller à l\'entraînement', run: go('training') },
-    { id: 'trophy', kiosk: 'trophy', title: 'VITRINE', color: '#b8860b', label: 'regarder la vitrine à trophées', run: go('trophies') },
-    { id: 'office', kiosk: 'office', title: 'STAFF & CLUB', color: '#4e342e', label: 'passer au bureau (staff, club)', run: go('staff') },
-    { id: 'ranking', kiosk: 'ranking', title: 'CLASSEMENT', color: '#0d47a1', label: 'consulter le classement mondial', run: go('ranking') },
-    { id: 'mirror', kiosk: 'mirror', title: 'MIROIR', color: '#6a1b9a', label: 'changer d\'apparence', run: (g) => g.endRoam(() => ui.act('look')) },
-    { id: 'bar', kiosk: 'bar', title: 'BUVETTE', color: '#ef6c00', label: 'prendre un verre au comptoir', run: (g) => g.roamLines([{ actor: 'barman', label: 'Dédé, le barman', text: pick(BAR) }]) },
+  const SP = [
+    // boutique
+    [-6.2, 6.3, 'payer en caisse : ouvrir la boutique', go('shop')],
+    [-8, 1.4, 'regarder les raquettes (boutique)', go('shop')],
+    // vestiaires
+    [7.9, 1.3, t ? 'ouvrir ton casier : préparer le prochain match' : 'ouvrir ton casier : choisir un tournoi', go(t ? 'bracket' : 'tournaments')],
+    [4.9, 4.6, 'lire le tableau tactique', go(t ? 'bracket' : 'tournaments')],
+    [11.1, 2.8, 'se regarder dans le miroir (apparence)', (g) => g.endRoam(() => ui.act('look'))],
+    // salle des trophées
+    [-10.4, 12.4, 'admirer la vitrine à trophées', go('trophies')],
+    // bureau
+    [0, 12.9, 's\'asseoir au bureau : staff', go('staff')],
+    [1.7, 13.6, 'gérer le club', go('club')],
+    [0, 15.1, 'consulter le classement mondial', go('ranking')],
+    // musculation
+    [8, 12.8, 'séance de musculation : entraînement', go('training')],
+    [5.2, 12.5, 'courir sur le tapis : attributs', go('attributes')],
+    // hall
+    [-3.2, 4, 'regarder les tournois à la télé', go(t ? 'bracket' : 'tournaments')],
+    [0, 5.75, 'commander au comptoir', (g) => g.roamLines([{ actor: 'barman', label: 'Dédé, le barman', text: pickFresh('bar', BAR) }], g.actors?.find((a) => a.id === 'barman'))],
   ];
-  const Z0 = 14.5, N = STANDS.length;
-  // arc ouvert vers le court : chaque stand regarde le centre du hall
-  const CX = 0, CZ = Z0 + 3;
-  STANDS.forEach((st, i) => { const a = (i / (N - 1) - 0.5) * 2.4; st.x = CX + Math.sin(a) * 10; st.z = CZ + Math.cos(a) * 6; st.yaw = Math.atan2(CX - st.x, CZ - st.z); });
-  const spots = STANDS.map((st) => ({ x: st.x + Math.sin(st.yaw) * 1.3, z: st.z + Math.cos(st.yaw) * 1.3, r: 1.3, label: st.label, run: st.run }));
+  const spots = SP.map(([x, z, label, run]) => ({ ...W(x, z), r: 1.0, label, run }));
   const build = (scene) => {
-    const root = new THREE.Group();
-    // sol du hall : grand tapis de béton clair
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 12), M(0xbdb6aa, { roughness: 0.9 }));
-    floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0.01, Z0 + 4); floor.receiveShadow = true; root.add(floor);
-    for (const st of STANDS) {
-      const g = new THREE.Group(); g.position.set(st.x, 0, st.z); g.rotation.y = st.yaw;
-      KIOSK[st.kiosk](g);
-      const lb = label(st.title, st.color); lb.position.set(0, 2.7, 0); g.add(lb);
-      root.add(g);
-    }
-    scene.add(root);
-    return root;
+    const { group } = buildClubhouse({ name: s.club?.name || (owned ? 'Mon club' : 'Club-house (aperçu)'), trophies: s.trophies || [], player: { name: myName, number: s.profile.number ?? 10 }, next: nm ? { opp: oppName, round: nm.round, tournament: nm.tournament?.name } : null, rank: c.rank, money: s.money });
+    group.position.set(O.x, 0, O.z);
+    // parvis devant l'entrée
+    const pav = new THREE.Mesh(new THREE.PlaneGeometry(26, 8), new THREE.MeshStandardMaterial({ color: 0xbdb6aa, roughness: 0.9 }));
+    pav.rotation.x = -Math.PI / 2; pav.position.set(0, 0.01, -4); group.add(pav);
+    scene.add(group);
+    return group;
   };
-  // personnages : partenaire, coach, barman, membres du club (différents à chaque visite)
+  // les gens du club : chacun dans sa pièce, occupé
   const rnd = Math.random;
-  const members = Array.from({ length: 5 }, (_, i) => ({ id: `m${i}`, npc: genericNpc(rnd, 30 + Math.floor(rnd() * 30)) }));
+  const gen = (k) => npcSpec(genericNpc(rnd, 25 + Math.floor(rnd() * 35)), ['red', 'green', 'orange', 'white', 'blue', 'black'][k % 6], 0, true);
+  const P = (id, label, spec, x, z, act, extra = {}) => ({ id, label, spec, ...W(x, z), act, ...extra });
   const people = [
-    { id: 'partner', label: s.partner.name, spec: npcSpec(s.partner, 'blue', 0, true), x: -2.5, z: CZ + 1.8, act: 'swing' },
-    { id: 'coach', label: c.hasStaff('coach') ? 'Coach Roméo (ton coach)' : 'Coach Roméo', spec: npcSpec(COACH, 'black', 0, true), x: 3, z: CZ + 2.2, act: 'wander' },
-    { id: 'barman', label: 'Dédé, le barman', spec: npcSpec(genericNpc(rnd, 30), 'white', 0, true), x: STANDS[8].x - Math.sin(STANDS[8].yaw) * 0.9, z: STANDS[8].z - Math.cos(STANDS[8].yaw) * 0.9, act: 'drink' },
-    ...members.map((m, i) => ({ id: m.id, label: pick(['Un membre du club', 'Une habituée', 'Un joueur du club', 'Un supporter']), spec: npcSpec(m.npc, ['red', 'green', 'orange', 'white', 'blue'][i], 0, true), x: -6 + i * 3 + rnd(), z: CZ + 1.5 + rnd() * 2, act: ['chat', 'chat', 'phone', 'wander', 'drink'][i] })),
+    P('barman', 'Dédé, le barman', gen(0), 0, 7.2, 'drink'),
+    P('cashier', 'La vendeuse', gen(1), -6.2, 7.6, 'phone'),
+    P('partner', s.partner.name, npcSpec(s.partner, 'blue', 0, true), 9.2, 3.4, 'chat', { faceTo: 'm_lock' }),
+    P('m_lock', 'Un joueur du club', gen(2), 7.6, 3.4, 'chat', { faceTo: 'partner' }),
+    P('coach', c.hasStaff('coach') ? 'Coach Roméo (ton coach)' : 'Coach Roméo', npcSpec(COACH, 'black', 0, true), 7, 10.6, 'wander', { wander: W(10.2, 13.6) }),
+    P('m_gym', 'Une joueuse à l\'entraînement', gen(3), 5.2, 14.2, 'swing'),
+    P('m_bar1', 'Un habitué', gen(4), -2.4, 3.0, 'chat', { faceTo: 'm_bar2' }),
+    P('m_bar2', 'Une habituée', gen(5), -2.4, 1.8, 'chat', { faceTo: 'm_bar1' }),
+    P('m_bar3', 'Un supporter', gen(6), 2.4, 4.8, 'drink'),
+    P('m_bar4', 'Un membre du club', gen(7), 2.0, 2.0, 'phone'),
+    P('m_tro', 'Un visiteur', gen(8), -8.5, 11.2, 'arms'),
+    P('secretary', 'La secrétaire du club', gen(9), -1.6, 15.0, 'phone'),
   ];
-  const acts = Object.fromEntries(people.map((p) => [p.id, { act: p.act, faceTo: p.id === 'm0' ? 'm1' : p.id === 'm1' ? 'm0' : null, wander: p.act === 'wander' ? { x: p.x + 4, z: p.z + 2 } : null }]));
-  const actors = people.map((p, i) => ({ id: p.id, label: p.label, side: 1, x: p.x, z: p.z, yaw: i, appearance: { ...p.spec.appearance, name: p.spec.name } }));
+  const acts = Object.fromEntries(people.map((p) => [p.id, { act: p.act, faceTo: p.faceTo || null, wander: p.wander || null }]));
+  const actors = people.map((p, i) => ({ id: p.id, label: p.label, side: 1, x: p.x, z: p.z, yaw: i * 1.7, appearance: { ...p.spec.appearance, name: p.spec.name } }));
   const talk = (id) => {
-    const L = (text, extra = {}) => ({ actor: id, label: people.find((p) => p.id === id)?.label || id, text, ...extra });
+    const lab = people.find((p) => p.id === id)?.label || id;
+    const L = (text, extra = {}) => ({ actor: id, label: lab, text, ...extra });
     if (id === 'partner') return [L(pickFresh('partner', partnerLines(c, myName, t))), L('On change quelque chose dans l\'équipe ?', { choices: [{ label: 'Voir les partenaires' }, { label: 'Non, on continue ensemble' }], onChoose: (k, g) => { if (k === 0) g.roam.pending = (gg) => gg.endRoam(() => ui.show('partner')); return []; } })];
     if (id === 'coach') return [L(pickFresh('coach', coachLines(c, myName))), L('Tu veux travailler tes attributs ?', { choices: [{ label: 'Voir mes attributs' }, { label: 'Plus tard' }], onChoose: (k, g) => { if (k === 0) g.roam.pending = (gg) => gg.endRoam(() => ui.show('attributes')); return []; } })];
     if (id === 'barman') return [L(pickFresh('bar', BAR))];
+    if (id === 'cashier') return [L(pickFresh('shopTalk', SHOP))];
+    if (id === 'secretary') return [L(pickFresh('secretary', SECRETARY(c, owned)))];
     return [L(pickFresh('member', memberLines(c, myName)))];
   };
   ui.hide();
   game.start({
-    mode: 'career', sceneOnly: true, format: '1v1', sets: 1, matchTiebreak: 7, venue: 'club', ambiance: 'sunset',
+    mode: 'career', sceneOnly: true, format: '1v1', sets: 1, matchTiebreak: 7, venue: owned ? 'myclub' : 'club', club: owned ? s.club : null, ambiance: 'sunset',
     lineup: { near: [{ ...c.humanSpec(c.lookFor(), 0), lane: 0 }], far: [{ ...npcSpec(genericNpc(rnd, 30), 'red', 0), lane: 0 }] },
     actors, party: false,
-    roam: { camDist: 2.5, bounds: [-14, 14, 18.4, CZ + 7.5], startYaw: Math.PI, acts, spots, build, talk },
-    onStarted: (g) => { g.players[0].pos.set(0, 0, 18.8); g.players[0].avatar.racket.visible = false; },
+    roam: { camDist: 2.1, bounds: [O.x - 11.7, O.x + 11.7, O.z - 6, O.z + 15.7], startYaw: Math.PI, acts, spots, build, talk },
+    onStarted: (g) => { g.players[0].pos.set(O.x, 0, O.z - 2.5); g.players[0].avatar.racket.visible = false; if (!owned) g.hud.banner('CLUB-HOUSE', 'Aperçu : achète ton club pour en faire le tien', 3); },
     onSceneEnd: () => ui.show('hub'),
   });
 }
+
+const SHOP = [
+  'Les nouvelles raquettes sont arrivées ce matin. Celle en carbone, elle part comme des petits pains.',
+  'Vous voulez essayer des chaussures ? Le gazon synthétique use les semelles en trois mois, je vous préviens.',
+  'Les maillots du club sont à moitié prix cette semaine. Enfin, pour les membres. Vous êtes membre, non ?',
+  'Un client a acheté la même raquette que vous. Il est revenu me dire qu\'elle ne jouait pas pareil. Je lui ai dit : c\'est pas la raquette.',
+  'On fait aussi le cordage. Vingt-quatre heures, et c\'est comme neuf.',
+];
+const SECRETARY = (c, owned) => [
+  owned ? 'Les cotisations rentrent bien ce mois-ci. Le club se porte à merveille.' : 'Ce club-house pourrait être le vôtre, vous savez. Il suffit de racheter le club.',
+  'Le planning des courts est complet jusqu\'à jeudi. Tout le monde veut jouer où vous jouez.',
+  'Un journaliste a appelé trois fois. Je lui ai dit que vous étiez à l\'entraînement. C\'était presque vrai.',
+  'Il faudra signer les papiers du tournoi interne. Et goûter les gâteaux de l\'association, ils insistent.',
+];
 
 // ------------------------------------------------------------------ répliques (sans répétition rapprochée)
 /** Choisit une réplique pas entendue récemment (mémorisée dans le navigateur). */
