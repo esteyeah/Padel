@@ -971,6 +971,7 @@ export class Game {
         if (ac.act === 'drink') { const beer = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.17, 12), new THREE.MeshStandardMaterial({ color: 0xd99a1c, roughness: 0.15, transparent: true, opacity: 0.85 })); beer.position.set(0, -0.3, 0.02); ac.avatar.lElbow?.add(beer); }
         if (ac.act === 'phone') { const ph = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.14, 0.01), new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 })); ph.position.set(0, -0.28, 0.03); ac.avatar.lElbow?.add(ph); }
       }
+      if (R.build) { R.props = R.build(this.scene); }
       R.col = this.roamColliders();
       R.rc = new THREE.Raycaster();
       R.y = 0;
@@ -1033,7 +1034,9 @@ export class Game {
     // ce qu'on peut faire ici
     let action = null;
     const key = this.input.padType === 'keyboard' ? 'K' : 'A';
+    const spot = (R.spots || []).find((q) => Math.hypot(p.x - q.x, p.z - q.z) < (q.r || 1.6));
     if (near) action = { label: `parler à ${near.label || near.id}`, run: () => this.roamTalk(near) };
+    else if (spot) action = { label: spot.label, run: () => spot.run(this) };
     else if (R.petanque && Math.abs(p.x - R.petanque.x) < R.petanque.w / 2 + 1.2 && Math.abs(p.z - R.petanque.z) < R.petanque.l / 2 + 1.2) action = { label: 'jouer à la pétanque', run: () => this.roamLines(R.petanqueLines?.() || []) };
     else {
       const m = R.matches.find((q) => q.contains(p.x, p.z, 3.5) && !q.contains(p.x, p.z, -0.5));
@@ -1046,7 +1049,8 @@ export class Game {
     this.hud.hint(action ? `${key} : ${action.label}` : `Promenade · ${this.input.padType === 'keyboard' ? 'Échap' : 'B'} pour partir · Maj pour courir`);
     if (action && inp.pressed.A) { action.run(); return; }
     // caméra à l'épaule, derrière le joueur
-    const want = new THREE.Vector3(p.x - fx * 3.4, R.y + 2.0, p.z - fz * 3.4);
+    const cd = R.camDist || 3.4;
+    const want = new THREE.Vector3(p.x - fx * cd, R.y + 2.0, p.z - fz * cd);
     R.cam = R.cam || want.clone();
     R.cam.lerp(want, 1 - Math.exp(-dt * 6));
     cam.position.copy(R.cam);
@@ -1129,6 +1133,7 @@ export class Game {
   endRoam(next = null) {
     const cb = next || this.opts.onSceneEnd;
     for (const m of this.roam?.matches || []) m.dispose();
+    if (this.roam?.props) this.scene.remove(this.roam.props);
     this.roam?.pet?.dispose();
     this.roam = null;
     document.body.classList.remove('roaming');

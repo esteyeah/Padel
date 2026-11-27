@@ -223,7 +223,45 @@ function ambientCutscene(ctx) {
     ])),
     me(pick(['Je vais faire de mon mieux.', 'On en reparle après le match.'])),
   ]);
-  return pick(scenes);
+  scenes.push(...extraScenes({ off, me, pa, myName, opp, final, tournament, tier }));
+  // on évite de revoir une scène vue récemment (mémorisé dans le navigateur)
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem('padel-arena.seen.prematch') || '[]'); } catch { /* ignoré */ }
+  const keyOf = (sc) => sc[0]?.label || '';
+  const fresh = scenes.filter((sc) => !seen.includes(keyOf(sc)));
+  const out = pick(fresh.length ? fresh : scenes);
+  seen = [...seen.filter((k) => k !== keyOf(out)), keyOf(out)].slice(-18);
+  try { localStorage.setItem('padel-arena.seen.prematch', JSON.stringify(seen)); } catch { /* ignoré */ }
+  return out;
+}
+
+/** Scènes d'avant-match supplémentaires, pour la variété. */
+function extraScenes({ off, me, pa, myName, opp, final, tournament, tier }) {
+  const big = tier === 'national' || tier === 'pro';
+  const oppName = opp ? (opp.short.charAt(0) + opp.short.slice(1).toLowerCase()) : 'l\'adversaire';
+  return [
+    [off('Le kiné du tournoi', pick(['Je te fais un strap à la cheville ? Préventif. Tout le monde en veut un depuis que Tapia en porte.', 'Tu as le dos raide, je le vois d\'ici. Dix minutes d\'étirements, et pas de discussion.'])), me(pick(['Va pour le strap.', 'Je m\'étire, promis.']))],
+    [off('Une journaliste de La Provence', pick([`Une question rapide, ${myName} : vous vous sentez favori contre ${oppName} ?`, 'On fait un portrait de vous pour l\'édition de dimanche. Une anecdote d\'enfance, peut-être ?'])), me(pick(['Pas de favori, juste un match à jouer.', 'Une anecdote ? J\'ai cassé une fenêtre avec un lob, à dix ans.', 'Après le match, avec plaisir.']))],
+    [off('Un photographe', pick(['Un sourire avant le match ? Non, plus naturel. Encore. Voilà, parfait… enfin, presque.', 'Tenez la raquette comme une guitare. Ça fait vendre, croyez-moi.'])), me(pick(['Comme ça ?', 'Je ne joue pas de la guitare, moi.'])), pa('Il m\'a coupé sur la photo, c\'est sûr.')],
+    [off('Le cordeur de raquettes', pick(['J\'ai recordé ton tamis à 25 kilos. Ça va claquer. Ne le tords pas, c\'est de l\'art.', 'Tes cordes étaient mortes. Je ne sais pas comment tu jouais avec. Maintenant, tu n\'as plus d\'excuse.'])), me(pick(['Merci, tu es un artiste.', 'Plus d\'excuse, compris.']))],
+    [off('Un ancien champion du club', pick(['J\'ai gagné ce tournoi en 1998. À l\'époque, on jouait avec des raquettes en bois. Et sans vitres. Bon, c\'était du tennis.', 'Un conseil de vieux : regarde leurs pieds au service. Ils te disent tout.'])), me(pick(['Merci pour le conseil.', 'Avec des raquettes en bois ? Respect.']))],
+    [off(`La maman de ${oppName}`, pick(['Soyez gentil avec mon fils, hein. Il a passé la nuit à réviser ses lobs.', 'Je vous préviens, je crie fort dans les tribunes. Ne le prenez pas personnellement.'])), me(pick(['Promis, madame.', 'Criez, c\'est le jeu !'])), pa('Elle me fait peur, honnêtement.')],
+    [off('Un fan avec une banderole', pick([`Regarde ! « ${myName.toUpperCase()} PRÉSIDENT ». J'ai peint ça cette nuit. Il manque un R, mais c'est l'intention qui compte.`, 'J\'ai fait trois heures de route pour te voir jouer. Pas de pression, hein.'])), me(pick(['C\'est magnifique. Même sans le R.', 'Trois heures ? On va te faire un beau match.']))],
+    [off('Le ramasseur de balles', pick(['C\'est mon premier tournoi comme ramasseur. Si je rate une balle, vous criez pas, hein ?', 'Je vous donne toujours la balle avec le logo en haut. C\'est ma technique secrète.'])), me(pick(['Personne ne criera, promis.', 'Le logo en haut. Je note.']))],
+    [off('Un influenceur qui filme', pick(['Salut la commu ! Je suis avec LA star du jour ! Dis bonjour à mes 1 200 abonnés !', 'Tu peux faire un défi ? Viser une canette avec un smash ? Pour la vidéo.'])), me(pick(['Bonjour… les 1 200.', 'Après le match, peut-être.'])), pa(pick(['On n\'a pas le temps pour ça.', 'Mets-moi dans la vidéo, au moins.']))],
+    [off('Le gardien du parking', pick(['C\'est votre voiture, la grise ? Vous êtes garé sur deux places. Mais bon, pour un joueur, je ferme les yeux.', 'Si vous gagnez, je vous laisse la place devant l\'entrée demain.'])), me(pick(['Désolé, je la déplace après.', 'Marché conclu.']))],
+    [off('Un vendeur de raquettes d\'occasion', pick(['Psst. Raquette de pro, à peine utilisée. Elle a gagné un tournoi. Ou elle l\'a regardé, je sais plus.', 'Cinquante euros, avec la housse. La housse vaut quarante.'])), me(pick(['Non merci, j\'ai la mienne.', 'Et elle vaut combien sans la housse ?']))],
+    [off('La DJ du tournoi', pick(['Quelle musique pour ton entrée ? J\'ai de l\'électro, du rap, ou… Jul. Évidemment Jul.', 'Je mets ta chanson à chaque point gagné. Fais-en beaucoup, j\'ai une playlist énorme.'])), me(pick(['Jul, évidemment.', 'Surprends-moi.']))],
+    [off('Un joueur éliminé au tour précédent', pick([`J'ai perdu contre ${oppName} hier. Méfie-toi de son revers long de ligne. Et de son sourire.`, 'Ils jouent très bien les vitres. Joue-leur dans les pieds, ils détestent.'])), me(pick(['Merci, ça m\'aide.', 'Dans les pieds, compris.']))],
+    [off('L\'organisateur', pick(['Petite info météo : vent de face côté tribune. Vos lobs vont faire des choses bizarres.', 'On a un peu de retard. Profitez-en pour vous échauffer. Ou pour manger une crêpe, la buvette en fait.'])), me(pick(['Merci pour l\'info.', 'Une crêpe, pourquoi pas.']))],
+    [off('Une petite fille au bord du court', pick(['Tu peux me donner une balle après le match ? Je la mettrai à côté de mon lit.', 'Moi aussi je ferai du padel. Mais d\'abord je dois grandir un peu.'])), me(pick(['Promis, elle est pour toi.', 'Tu vas devenir très forte.']))],
+    [off('Le commentateur de la webradio', pick([`Et nous voici avec ${myName} ! Un mot pour nos quarante-trois auditeurs ?`, 'Votre plan de jeu en trois mots ?'])), me(pick(['Bonjour à tous les quarante-trois !', 'Patience, lob, smash.']))],
+    [off('Le stagiaire de l\'organisation', pick(['Euh… on a un petit souci : je ne retrouve plus les balles neuves. Vous pouvez jouer avec des un peu vieilles ?', 'C\'est vous, le match de 16 h ? Ou de 18 h ? J\'ai mélangé les feuilles.'])), me(pick(['On fera avec.', 'C\'est le match de maintenant, je crois.'])), pa('On commence bien.')],
+    [off('Un vieux couple de supporters', pick(['On ne rate aucun de vos matchs. Mon mari a même acheté un bob à vos couleurs.', 'Allez, on compte sur vous ! On a apporté des sandwichs pour tout le match.'])), me(pick(['Merci, ça me touche.', 'Gardez-moi un sandwich !']))],
+    [pa(pick(['Ne panique pas… j\'ai oublié mes chaussures. Je joue en baskets de ville. Ça va aller.', 'J\'ai rêvé qu\'on gagnait 6-0 6-0. Je le prends comme un signe.', 'J\'ai mangé trop de pâtes. Si je cours lentement, c\'est pour ça.'])), me(pick(['Sérieusement ?', 'Prends ça comme un signe, alors.', 'On fera avec.']))],
+    ...(big ? [[off('Ton agent', pick(['Gagne ce match et je te décroche une pub pour des boissons énergisantes. Rouges. Avec un taureau, peut-être.', 'Les recruteurs d\'une grande marque sont en tribune. Pas de pression. Énormément de pression.'])), me(pick(['Je m\'occupe du padel, toi des contrats.', 'Merci de me le dire maintenant…']))]] : []),
+    ...(final ? [[off('L\'organisateur', `Finale du ${tournament} ! Le trophée est là, sur la table. Ne le regardez pas trop, ça porte malheur.`), me(pick(['Je ne le regarde pas.', 'Trop tard, je l\'ai vu.']))]] : []),
+  ];
 }
 
 /** Finale à Ceyreste : le maire (maillot de l'OM, médailles autour du cou) lance la finale. */
@@ -290,7 +328,7 @@ export function matchCutscene(opponents, myName, partner, stats, ctx = {}) {
     { side: 1, label: myName, text: pick(['On est là pour jouer, Eliott.', 'Chante pas trop pendant les points, hein.', 'Toujours en forme, toi.']) },
     { name: eli.short, label: 'Eliott Hanras', text: pick(['Que le spectacle commence ! Tadaaa !', 'Promis, je chante seulement entre les jeux.', 'Et un, et deux, et trois… padel !']) },
   ];
-  if (!raf) return (ctx.venue === 'hangar' || Math.random() < 0.6) ? ambientCutscene({ opponents, myName, partner, ...ctx }) : null;
+  if (!raf) return (ctx.venue === 'hangar' || Math.random() < 0.8) ? ambientCutscene({ opponents, myName, partner, ...ctx }) : null;
   const mate = opponents.find((p) => p !== raf);
   const lines = [
     { name: raf.short, label: 'Raf Tomatis', text: (raf.taunts || ['Tu vas voir.'])[Math.floor(Math.random() * (raf.taunts?.length || 1))].replace(/^Raf Tomatis : « |»$/g, '').trim() },

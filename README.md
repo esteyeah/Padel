@@ -3,6 +3,11 @@
 Simulation de padel en 3D jouable dans le navigateur (Three.js + Gamepad API).
 Aucun build ni asset externe : tout (court, joueurs, textures, sons) est généré par le code.
 
+## v0.82 — Club-house de la carrière et scènes d'avant-match
+- Carrière : « Se promener au club-house » — on marche dans un hall de stands : boutique, vestiaire (prochain match / tournois), tableau des tournois, salle d'entraînement, vitrine à trophées, bureau (staff et club), classement, miroir (apparence) et buvette. A / K devant un stand ouvre l'écran correspondant.
+- On y croise son partenaire (qui propose de changer d'équipe), le coach Roméo (attributs), Dédé le barman et des membres du club, avec des répliques qui ne reviennent pas tout de suite.
+- Avant-match : une vingtaine de nouvelles scènes (kiné, journaliste de La Provence, photographe, cordeur, ancien champion, maman de l'adversaire, fan à banderole, ramasseur de balles, influenceur, gardien du parking, vendeur de raquettes, DJ, joueur éliminé, organisateur et météo, petite fille, webradio, stagiaire perdu, vieux couple, partenaire sans chaussures, agent…) ; une scène vue récemment n'est pas reproposée, et les scènes arrivent plus souvent.
+
 ## v0.81 — Ceyreste plus vivant, pétanque contre toute la bande
 - Ceyreste : Camille, Timéo et des habitués du village (discussions, verre à la main, promenade) en plus de la bande ; Raf et Jean ne sont plus pris par un match.
 - Pétanque contre le maire, Roméo, Louka, Camille, Timéo, Raf, Jean ou Eliott (liste en pages) :
